@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.idea.backup.*/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+**/bin/
+**/obj/
+artifacts/
+artifacts-check/
+TestResults/
+**/TestResults/
+
+# NuGet package artifacts
+*.nupkg
+*.snupkg
+
+# Temporary files
+*.bak
+*.tmp
+*.temp
+*.log

@@ -1,0 +1,78 @@
+name: Publish NuGet
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nuget-publish-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore SYT.RozetkaPay.sln
+
+      - name: Build
+        run: dotnet build SYT.RozetkaPay.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test SYT.RozetkaPay.sln -c Release --no-build
+
+      - name: Pack
+        run: dotnet pack src/SYT.RozetkaPay/SYT.RozetkaPay.csproj -c Release --no-build -o ./artifacts
+
+      - name: Check NuGet API key
+        id: keycheck
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip publish (missing NUGET_API_KEY)
+        if: ${{ steps.keycheck.outputs.has_key == 'false' }}
+        run: echo "NUGET_API_KEY is not configured. Package publish is skipped."
+
+      - name: Push to NuGet
+        if: ${{ steps.keycheck.outputs.has_key == 'true' }}
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "./artifacts/*.nupkg" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate
+
+      - name: Push symbols to NuGet
+        if: ${{ steps.keycheck.outputs.has_key == 'true' }}
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "./artifacts/*.snupkg" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate
