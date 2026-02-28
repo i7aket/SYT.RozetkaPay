@@ -155,17 +155,9 @@ catch (RozetkaPayAuthorizationException ex)
 
 ## Maintainer
 
-<table>
-  <tr>
-    <td width="190" valign="top">
-      <img src="docs/images/anatoliy-yermakov.jpeg" alt="Anatoliy Yermakov" width="170" />
-    </td>
-    <td valign="top">
-      <p>Maintained by <strong>Anatoliy Yermakov</strong> for RozetkaPay integrators.</p>
-      <p>Support is provided on a best-effort basis as time permits.</p>
-    </td>
-  </tr>
-</table>
+|  |  |
+|---|---|
+| ![Anatoliy Yermakov](https://raw.githubusercontent.com/i7aket/SYT.RozetkaPay/main/src/SYT.RozetkaPay/docs/images/anatoliy-yermakov.jpeg) | Maintained by **Anatoliy Yermakov** for RozetkaPay integrators. Support is provided on a best-effort basis as time permits. |
 
 ## License
 

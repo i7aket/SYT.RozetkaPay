@@ -8,7 +8,7 @@
         <Nullable>enable</Nullable>
         <PackageId>SYT.RozetkaPay</PackageId>
         <Title>SYT RozetkaPay SDK</Title>
-        <Version>0.1.0-alpha.1</Version>
+        <Version>0.1.0-alpha.2</Version>
         <Authors>Anatoliy Yermakov</Authors>
         <Company>SYT</Company>
         <Description>.NET SDK for RozetkaPay API with typed models, service clients, DI integration, and webhook payload support.</Description>
@@ -25,6 +25,7 @@ Alpha preview package for early integration and validation.
 Highlights:
 - finalized namespace normalization to SYT.RozetkaPay.*
 - updated README and usage examples for production-style onboarding
+- fixed NuGet README maintainer rendering using markdown and an allowed image host
 - prepared package metadata for public NuGet publication
         </PackageReleaseNotes>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
