@@ -57,10 +57,13 @@ dotnet add package SYT.RozetkaPay --prerelease
   "RozetkaPay": {
     "Login": "your_login",
     "Password": "your_password",
-    "BaseUrl": "https://api.rozetkapay.com"
+    "Environment": "Production"
   }
 }
 ```
+
+`Environment` picks the endpoint, so no URL has to be written by hand. Keep the password out of source
+control — see [Configuration](#configuration).
 
 ### 2) Register SDK in DI
 
@@ -113,6 +116,122 @@ IRozetkaPayClient client = serviceProvider.GetRequiredService<IRozetkaPayClient>
 
 PaymentResponse info = await client.Payments.GetInfoAsync("external-order-id", cancellationToken);
 ```
+
+## Configuration
+
+The SDK binds the `RozetkaPay` configuration section to `RozetkaPayOptions`
+(`RozetkaPayOptions.SectionName`) and validates it through the standard options pipeline.
+
+| Setting | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `Login` | `string` | — | Required. |
+| `Password` | `string` | — | Required. Also the key RozetkaPay signs callbacks with. |
+| `Environment` | `Production` \| `Sandbox` | `Production` | Selects the endpoint. |
+| `BaseUrl` | `string?` | *unset* | Explicit endpoint override; see below. |
+| `OnBehalfOf` | `string?` | *unset* | `X-ON-BEHALF-OF` header (partnership mode). |
+| `CustomerAuth` | `string?` | *unset* | `X-CUSTOMER-AUTH` header (customer wallet access). |
+| `Timeout` | `TimeSpan` | `00:00:30` | Must be greater than zero. |
+| `UserAgent` | `string` | `RozetkaPaySDK/.NET` | |
+| `ValidateSslCertificate` | `bool` | `true` | |
+| `RetryPolicy` | object | disabled | `Enabled`, `MaxRetryAttempts`, `BaseDelay`, `MaxDelay`, `BackoffStrategy`, `RetriableStatusCodes`. |
+
+### Environments
+
+| `Environment` | Endpoint |
+| --- | --- |
+| `Production` (default) | `https://api.rozetkapay.com` |
+| `Sandbox` | `https://api-epdev.rozetkapay.com` |
+
+Both are the servers published by the official RozetkaPay OpenAPI document, and both are available as
+constants: `RozetkaPayOptions.ProductionBaseUrl` and `RozetkaPayOptions.SandboxBaseUrl`. Sandbox needs
+sandbox credentials — production credentials will not authenticate there.
+
+```json
+{
+  "RozetkaPay": {
+    "Login": "your_sandbox_login",
+    "Password": "your_sandbox_password",
+    "Environment": "Sandbox"
+  }
+}
+```
+
+`Environment` defaults to `Production`, so an application that never sets it keeps talking to the endpoint
+it always has.
+
+### BaseUrl override
+
+`BaseUrl` overrides the endpoint of `Environment` and is meant for a private gateway, a proxy, or a local
+test server. Leave it out to use the endpoint of the selected environment; only an absent value means
+"not set", and an empty or whitespace `BaseUrl` is rejected rather than treated as unset. It must be an
+absolute `http` or `https` URL.
+
+### Configuring in code
+
+For worker services, console applications, and tests there is an overload that takes the options directly —
+no `IConfiguration` required:
+
+```csharp
+using SYT.RozetkaPay.Configuration;
+using SYT.RozetkaPay.Extensions;
+
+services.AddRozetkaPay(options =>
+{
+    options.Login = login;
+    options.Password = password;
+    options.Environment = RozetkaPayEnvironment.Sandbox;
+});
+```
+
+`RozetkaPayOptions` is available to your own code through `IOptions<RozetkaPayOptions>`.
+
+### Startup validation
+
+Validation is registered with `ValidateOnStart()`, so a broken configuration fails while the host is
+starting rather than on the first payment request. Failures surface as `OptionsValidationException`, and the
+message names the configuration key and the rule it broke — it never contains a login, a password, or an
+authentication header.
+
+Validated rules: `Login` and `Password` are present and not whitespace; `Environment` is a defined value
+(there is no silent fallback to production); an explicit `BaseUrl` is an absolute `http`/`https` URL;
+`Timeout` is greater than zero; and the retry policy is internally consistent (no negative attempts or
+delays, and when retries are enabled, at least one attempt with `MaxDelay` no smaller than `BaseDelay`).
+
+### One snapshot, no hot reload
+
+The options value is read once and turned into a single snapshot that the named `HttpClient`, every service,
+and the webhook verifier share, so they can never disagree about credentials or endpoint. Editing
+`appsettings.json` at run time does **not** re-configure the SDK; rotating credentials or switching
+environment requires a restart. `IOptionsMonitor<RozetkaPayOptions>` reload semantics are deliberately not
+supported.
+
+### Storing the password
+
+Never commit credentials. Use `dotnet user-secrets` locally, environment variables or a secret store in
+production, and repository secrets in CI:
+
+```bash
+dotnet user-secrets set "RozetkaPay:Password" "<your password>"
+```
+
+### Configuration objects still work
+
+`RozetkaPayConfiguration` and the overloads that take it are unchanged, and remain the way to configure the
+client without DI:
+
+```csharp
+services.AddRozetkaPay(new RozetkaPayConfiguration
+{
+    Login = login,
+    Password = password,
+    BaseUrl = RozetkaPayOptions.SandboxBaseUrl
+});
+
+services.AddRozetkaPay(login, password);
+```
+
+A `RozetkaPayConfiguration` is copied when it is registered, and its `BaseUrl` acts as an explicit endpoint
+override. It also stays resolvable from DI as the SDK's configuration snapshot.
 
 ## Interfaces and Testing
 

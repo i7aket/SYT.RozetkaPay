@@ -24,11 +24,19 @@ unit tests:
   `IAlternativePaymentService`, `IMerchantService`, `IFinMonService`
 - `IRozetkaPayWebhookSignatureVerifier` — verifies the `X-ROZETKAPAY-SIGNATURE` header on
   incoming callbacks
+- `RozetkaPayOptions` / `RozetkaPayEnvironment` — typed settings bound from the `RozetkaPay`
+  configuration section, resolvable as `IOptions<RozetkaPayOptions>`
 
 `AddRozetkaPay` registers both the interface and the concrete type, and each pair resolves
 to the same DI-managed instance. API services are scoped; the immutable webhook verifier is
 a singleton. The concrete types stay public and unchanged, so existing code continues to
 compile. Details and testing examples are in the package README.
+
+Configuration goes through the options pattern: set `Environment` to `Production` (the default) or
+`Sandbox` to pick the endpoint instead of writing a URL, and the settings are validated at startup
+so a broken configuration fails before the first request instead of during one. The pre-existing
+`RozetkaPayConfiguration` overloads are unchanged. See
+[Configuration](src/SYT.RozetkaPay/README.md#configuration) in the package README.
 
 Callback signatures must be checked against the raw request body before the payload is
 deserialized; the package README documents the full flow under
