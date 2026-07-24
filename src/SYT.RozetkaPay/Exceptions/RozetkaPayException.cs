@@ -22,6 +22,28 @@ public class RozetkaPayException : Exception
     /// <param name="message">Error message.</param>
     /// <param name="innerException">Inner exception.</param>
     public RozetkaPayException(string message, Exception innerException) : base(message, innerException) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RozetkaPayException"/> class with an error message and
+    /// the structured details of a failed API response.
+    /// </summary>
+    /// <param name="message">Error message.</param>
+    /// <param name="innerException">Inner exception, or <see langword="null"/>.</param>
+    /// <param name="apiError">Structured details of the failed API response.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="apiError"/> is <see langword="null"/>.</exception>
+    protected internal RozetkaPayException(string message, Exception? innerException, RozetkaPayApiError apiError)
+        : base(message, innerException)
+    {
+        ApiError = apiError ?? throw new ArgumentNullException(nameof(apiError));
+    }
+
+    /// <summary>
+    /// Structured details of the failed API response — HTTP status, provider error code, request
+    /// identifier, and the unmodified response body — or <see langword="null"/> when the failure did not
+    /// come from an HTTP response, for example a manually constructed exception, a transport failure, or a
+    /// response the SDK could not deserialize.
+    /// </summary>
+    public RozetkaPayApiError? ApiError { get; }
 }
 
 /// <summary>
@@ -46,6 +68,11 @@ public class RozetkaPayAuthorizationException : RozetkaPayException
     /// <param name="message">Error message.</param>
     /// <param name="innerException">Inner exception.</param>
     public RozetkaPayAuthorizationException(string message, Exception innerException) : base(message, innerException) { }
+
+    internal RozetkaPayAuthorizationException(string message, RozetkaPayApiError apiError)
+        : base(message, null, apiError)
+    {
+    }
 }
 
 /// <summary>
@@ -70,6 +97,11 @@ public class RozetkaPayValidationException : RozetkaPayException
     /// <param name="message">Error message.</param>
     /// <param name="innerException">Inner exception.</param>
     public RozetkaPayValidationException(string message, Exception innerException) : base(message, innerException) { }
+
+    internal RozetkaPayValidationException(string message, RozetkaPayApiError apiError)
+        : base(message, null, apiError)
+    {
+    }
 }
 
 /// <summary>
@@ -94,6 +126,11 @@ public class RozetkaPayRateLimitException : RozetkaPayException
     /// <param name="message">Error message.</param>
     /// <param name="innerException">Inner exception.</param>
     public RozetkaPayRateLimitException(string message, Exception innerException) : base(message, innerException) { }
+
+    internal RozetkaPayRateLimitException(string message, RozetkaPayApiError apiError)
+        : base(message, null, apiError)
+    {
+    }
 }
 
 /// <summary>
@@ -118,4 +155,9 @@ public class RozetkaPayNotFoundException : RozetkaPayException
     /// <param name="message">Error message.</param>
     /// <param name="innerException">Inner exception.</param>
     public RozetkaPayNotFoundException(string message, Exception innerException) : base(message, innerException) { }
+
+    internal RozetkaPayNotFoundException(string message, RozetkaPayApiError apiError)
+        : base(message, null, apiError)
+    {
+    }
 }

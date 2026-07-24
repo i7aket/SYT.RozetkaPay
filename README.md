@@ -42,6 +42,11 @@ Callback signatures must be checked against the raw request body before the payl
 deserialized; the package README documents the full flow under
 [Webhook Signature Verification](src/SYT.RozetkaPay/README.md#webhook-signature-verification).
 
+Failed API calls carry structured details: `RozetkaPayException.ApiError` exposes a
+`RozetkaPayApiError` with the HTTP status, the provider error code as text, the request ID, and the
+raw response body. Treat the raw body as sensitive — the SDK never logs it. See
+[Error Handling](src/SYT.RozetkaPay/README.md#error-handling) in the package README.
+
 ## Repository Structure
 
 - SDK source: `src/SYT.RozetkaPay`

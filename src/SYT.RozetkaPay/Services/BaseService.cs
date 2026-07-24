@@ -15,6 +15,17 @@ namespace SYT.RozetkaPay.Services;
 public abstract class BaseService
 {
     /// <summary>
+    /// Response header carrying the request identifier. Not declared by the official OpenAPI document, but
+    /// commonly added by gateways, so it takes precedence over the body identifier when present.
+    /// </summary>
+    private const string RequestIdHeaderName = "X-Request-Id";
+
+    /// <summary>
+    /// Alternative spelling of the request-identifier response header.
+    /// </summary>
+    private const string LegacyRequestIdHeaderName = "Request-Id";
+
+    /// <summary>
     /// SDK configuration used by service requests.
     /// </summary>
     protected readonly RozetkaPayConfiguration Configuration;
@@ -260,14 +271,14 @@ public abstract class BaseService
             {
                 return await operation().ConfigureAwait(false);
             }
-            catch (RozetkaPayException ex) when (ex.InnerException is HttpRequestException && 
+            catch (RozetkaPayException ex) when (ex.InnerException is HttpRequestException &&
                 retryPolicy.ShouldRetry(ex.InnerException) && currentAttempt < retryPolicy.MaxRetryAttempts)
             {
                 lastException = ex.InnerException;
                 currentAttempt++;
                 await HandleRetryAsync(currentAttempt, lastException, retryPolicy, cancellationToken).ConfigureAwait(false);
             }
-            catch (RozetkaPayRateLimitException ex) when (retryPolicy.ShouldRetry(HttpStatusCode.TooManyRequests) && 
+            catch (RozetkaPayRateLimitException ex) when (retryPolicy.ShouldRetry(HttpStatusCode.TooManyRequests) &&
                 currentAttempt < retryPolicy.MaxRetryAttempts)
             {
                 lastException = ex;
@@ -310,8 +321,8 @@ public abstract class BaseService
     private async Task HandleRetryAsync(int attempt, Exception? exception, RetryPolicy retryPolicy, CancellationToken cancellationToken)
     {
         TimeSpan delay = retryPolicy.CalculateDelay(attempt);
-        
-        Logger?.LogWarning("Request attempt {Attempt} failed{Exception}. Retrying in {Delay}ms", 
+
+        Logger?.LogWarning("Request attempt {Attempt} failed{Exception}. Retrying in {Delay}ms",
             attempt, exception != null ? $" with exception: {exception.Message}" : "", delay.TotalMilliseconds);
 
         if (delay > TimeSpan.Zero)
@@ -325,59 +336,158 @@ public abstract class BaseService
     /// </summary>
     private void HandleErrorResponse(HttpResponseMessage response, string content)
     {
-        string? errorMessage = TryParseErrorMessage(content);
-        Logger?.LogError("API error response received. StatusCode: {StatusCode}. Message: {Message}", response.StatusCode, errorMessage);
+        // The body is read once by the caller and kept verbatim: it is the only place a caller can inspect
+        // provider fields this SDK version does not know about.
+        string rawBody = content ?? string.Empty;
+        ParseErrorPayload(rawBody, out string? apiCode, out string? errorMessage, out string? bodyErrorId);
+
+        string? requestId = TryGetFirstNonBlankHeaderValue(response, RequestIdHeaderName)
+            ?? TryGetFirstNonBlankHeaderValue(response, LegacyRequestIdHeaderName)
+            ?? bodyErrorId;
+
+        RozetkaPayApiError apiError = new RozetkaPayApiError(response.StatusCode, apiCode, requestId, rawBody);
+
+        // Only safe identifiers are logged. The raw body and the provider message can carry customer data.
+        Logger?.LogError(
+            "RozetkaPay API error. StatusCode: {StatusCode}. ApiCode: {ApiCode}. RequestId: {RequestId}",
+            apiError.StatusCode,
+            apiError.Code,
+            apiError.RequestId);
 
         switch (response.StatusCode)
         {
             case HttpStatusCode.Unauthorized:
-                throw new RozetkaPayAuthorizationException("Unauthorized: Invalid credentials or deactivated account");
+                throw new RozetkaPayAuthorizationException("Unauthorized: Invalid credentials or deactivated account", apiError);
             case HttpStatusCode.Forbidden:
-                throw new RozetkaPayAuthorizationException("Forbidden: Access denied");
+                throw new RozetkaPayAuthorizationException("Forbidden: Access denied", apiError);
             case HttpStatusCode.BadRequest:
-                throw new RozetkaPayValidationException(errorMessage ?? "Bad request");
+                throw new RozetkaPayValidationException(errorMessage ?? "Bad request", apiError);
             case HttpStatusCode.NotFound:
-                throw new RozetkaPayNotFoundException("Resource not found");
+                throw new RozetkaPayNotFoundException("Resource not found", apiError);
             case HttpStatusCode.TooManyRequests:
                 double retryAfter = response.Headers.RetryAfter?.Delta?.TotalSeconds ?? 60;
-                throw new RozetkaPayRateLimitException($"Rate limit exceeded. Retry after {retryAfter} seconds");
+                throw new RozetkaPayRateLimitException($"Rate limit exceeded. Retry after {retryAfter} seconds", apiError);
             case HttpStatusCode.InternalServerError:
-                throw new RozetkaPayException("Internal server error");
+                throw new RozetkaPayException("Internal server error", null, apiError);
             default:
-                throw new RozetkaPayException(errorMessage != null
-                    ? $"API error: {response.StatusCode} - {errorMessage}"
-                    : $"API error: {response.StatusCode}");
+                throw new RozetkaPayException(
+                    errorMessage != null
+                        ? $"API error: {response.StatusCode} - {errorMessage}"
+                        : $"API error: {response.StatusCode}",
+                    null,
+                    apiError);
         }
     }
 
     /// <summary>
-    /// Try to parse error message from response content
+    /// Read the provider error code, human-readable message, and error identifier out of a response body.
+    /// A body the SDK cannot parse leaves every field null instead of hiding the HTTP failure behind a
+    /// parser error.
     /// </summary>
-    private string? TryParseErrorMessage(string content)
+    private static void ParseErrorPayload(string content, out string? code, out string? message, out string? errorId)
     {
+        code = null;
+        message = null;
+        errorId = null;
+
         if (string.IsNullOrWhiteSpace(content))
         {
-            return null;
+            return;
         }
 
         try
         {
-            using JsonDocument errorDoc = JsonDocument.Parse(content);
-            if (errorDoc.RootElement.TryGetProperty("message", out JsonElement messageElement))
+            using JsonDocument document = JsonDocument.Parse(content);
+            JsonElement root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
             {
-                return messageElement.GetString();
+                return;
             }
-            if (errorDoc.RootElement.TryGetProperty("error", out JsonElement errorElement))
-            {
-                return errorElement.GetString();
-            }
+
+            bool hasNestedError = root.TryGetProperty("error", out JsonElement nestedError)
+                && nestedError.ValueKind == JsonValueKind.Object;
+
+            // The code falls back to the nested object only when the top level does not declare it, so an
+            // explicit top-level null stays null. The request identifier is a precedence chain instead.
+            code = ReadDeclaredIdentifier(root, "code", hasNestedError ? nestedError : null);
+
+            errorId = ReadIdentifier(root, "error_id")
+                ?? (hasNestedError ? ReadIdentifier(nestedError, "error_id") : null);
+
+            message = ReadText(root, "message")
+                ?? ReadText(root, "error")
+                ?? (hasNestedError ? ReadText(nestedError, "message") : null);
         }
-        catch
+        catch (JsonException)
         {
-            // Ignore parsing errors
+            // A malformed body must not replace the status-specific SDK exception. The caller still gets the
+            // body verbatim through RozetkaPayApiError.RawBody.
+        }
+    }
+
+    /// <summary>
+    /// Read a provider identifier, preferring the top-level property and falling back to the nested error
+    /// object only when the top level does not declare it at all.
+    /// </summary>
+    private static string? ReadDeclaredIdentifier(JsonElement root, string propertyName, JsonElement? nestedError)
+    {
+        if (root.TryGetProperty(propertyName, out JsonElement element))
+        {
+            return ReadIdentifierValue(element);
         }
 
-        return null;
+        return nestedError is { } nested ? ReadIdentifier(nested, propertyName) : null;
+    }
+
+    /// <summary>
+    /// Read a provider identifier from a single object, or null when the property is absent or carries a
+    /// value that cannot be represented as an identifier.
+    /// </summary>
+    private static string? ReadIdentifier(JsonElement owner, string propertyName)
+    {
+        return owner.TryGetProperty(propertyName, out JsonElement element)
+            ? ReadIdentifierValue(element)
+            : null;
+    }
+
+    /// <summary>
+    /// Keep a provider identifier as text. A numeric value keeps its raw JSON text, so a code this SDK
+    /// version does not know about is never mapped onto a wrong enum value; any other shape, and a blank
+    /// string, yields null so that a precedence chain treats it as absent.
+    /// </summary>
+    private static string? ReadIdentifierValue(JsonElement element)
+    {
+        string? value = element.ValueKind switch
+        {
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number => element.GetRawText(),
+            _ => null
+        };
+
+        return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    /// <summary>
+    /// Read a string property, ignoring values of any other JSON kind.
+    /// </summary>
+    private static string? ReadText(JsonElement owner, string propertyName)
+    {
+        return owner.TryGetProperty(propertyName, out JsonElement element) && element.ValueKind == JsonValueKind.String
+            ? element.GetString()
+            : null;
+    }
+
+    /// <summary>
+    /// Read the first non-blank value of a response header. Header name matching is case-insensitive.
+    /// </summary>
+    private static string? TryGetFirstNonBlankHeaderValue(HttpResponseMessage response, string headerName)
+    {
+        if (!response.Headers.TryGetValues(headerName, out IEnumerable<string>? values))
+        {
+            return null;
+        }
+
+        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
     }
 
     private TResponse DeserializeResponse<TResponse>(string content, HttpStatusCode statusCode)
@@ -437,7 +547,7 @@ public abstract class BaseService
             WriteIndented = false,
             NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-            Converters = { 
+            Converters = {
                 new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower),
                 new FlexibleDecimalConverter(),
                 new FlexibleDecimalConverterNonNullable(),

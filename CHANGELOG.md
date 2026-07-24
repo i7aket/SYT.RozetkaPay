@@ -11,6 +11,22 @@ immediately before tagging a release (see the release process in `README.md`).
 ## [Unreleased]
 
 ### Added
+- `RozetkaPayApiError` in `SYT.RozetkaPay.Exceptions` and `RozetkaPayException.ApiError`: structured
+  details of a failed API call — HTTP status (`HttpStatusCode`), provider error code, request
+  identifier, and the raw response body. Every exception raised from a non-success HTTP response
+  carries one; manually constructed exceptions, transport failures, and responses the SDK cannot
+  deserialize leave `ApiError` as `null`.
+- The error code is exposed as a `string`, not as the `ResponseCode` enum, so a code the provider adds
+  after this release survives unchanged instead of failing to deserialize or being mapped onto a wrong
+  fallback value. A numeric code keeps its raw JSON text.
+- The request identifier is resolved from the `X-Request-Id` response header, then `Request-Id`, then
+  the payload `error_id`, then `error.error_id`. Header matching is case-insensitive and blank values
+  are skipped.
+- The raw response body is preserved verbatim, so a malformed, plain-text, or unmodelled payload stays
+  inspectable and still yields the same status-specific exception instead of a parser error. The SDK
+  never logs the raw body and never places it in `Exception.Message` or `Exception.ToString()`; the
+  error log line carries only the HTTP status, the API code, and the request ID. Callers must treat the
+  raw body as sensitive and scrub it before logging or storage.
 - `RozetkaPayOptions` and `RozetkaPayEnvironment` in `SYT.RozetkaPay.Configuration`: typed
   settings bound from the `RozetkaPay` configuration section
   (`RozetkaPayOptions.SectionName`) and resolvable as `IOptions<RozetkaPayOptions>`.
@@ -35,6 +51,16 @@ immediately before tagging a release (see the release process in `README.md`).
 - Tag-triggered NuGet publishing and GitHub Releases (`Release NuGet` workflow).
 
 ### Changed
+- The exception hierarchy and every pre-existing public exception constructor are unchanged:
+  `RozetkaPayException`, `RozetkaPayAuthorizationException`, `RozetkaPayValidationException`,
+  `RozetkaPayRateLimitException`, and `RozetkaPayNotFoundException` keep their parameterless,
+  `(string)`, and `(string, Exception)` constructors, none is obsolete, and the status-to-exception
+  mapping is untouched. `ApiError` is an added get-only property, and the structured construction path
+  is internal, so `new RozetkaPayException("message", null)` stays unambiguous.
+- The API error log line changed from `API error response received. StatusCode: … Message: …` to
+  `RozetkaPay API error. StatusCode: … ApiCode: … RequestId: …`; the parsed provider message is no
+  longer logged. Exception messages themselves are unchanged, and error-message parsing additionally
+  accepts a nested `error.message`.
 - A push to `main` no longer publishes a NuGet package; publishing now happens
   only when a version tag is pushed.
 - `AddRozetkaPay` now builds its configuration snapshot from the validated options. The existing
