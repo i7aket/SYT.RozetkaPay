@@ -389,11 +389,15 @@ if (webhook?.IsSuccess == true &&
 
 ## Error Handling
 
-The SDK throws typed exceptions:
-- `RozetkaPayException`
-- `RozetkaPayAuthorizationException`
-- `RozetkaPayValidationException`
-- `RozetkaPayRateLimitException`
+The SDK throws typed exceptions, all deriving from `RozetkaPayException`:
+
+| HTTP status | Exception |
+|---|---|
+| 400 | `RozetkaPayValidationException` |
+| 401, 403 | `RozetkaPayAuthorizationException` |
+| 404 | `RozetkaPayNotFoundException` |
+| 429 | `RozetkaPayRateLimitException` |
+| 500 and any other non-success status | `RozetkaPayException` |
 
 ```csharp
 try
@@ -409,6 +413,70 @@ catch (RozetkaPayAuthorizationException ex)
     // wrong credentials or access denied
 }
 ```
+
+### Structured API error details
+
+Every exception raised from a non-success HTTP response carries a `RozetkaPayApiError` on the
+`RozetkaPayException.ApiError` property:
+
+| Member | Type | Meaning |
+|---|---|---|
+| `StatusCode` | `System.Net.HttpStatusCode` | HTTP status of the failed response |
+| `Code` | `string?` | Provider error code as text, `null` when the response carries none |
+| `RequestId` | `string?` | Request identifier for support correspondence, `null` when absent |
+| `RawBody` | `string` | Response body exactly as received, `string.Empty` for an empty body |
+
+```csharp
+try
+{
+    PaymentResponse response = await payments.GetInfoAsync(
+        externalId,
+        cancellationToken);
+}
+catch (RozetkaPayException exception)
+    when (exception.ApiError is { } error)
+{
+    logger.LogWarning(
+        "RozetkaPay request failed: status={Status}, code={Code}, requestId={RequestId}",
+        error.StatusCode,
+        error.Code,
+        error.RequestId);
+
+    // Treat error.RawBody as sensitive. Scrub it before logging or storage.
+}
+```
+
+`Code` is a `string`, not an enum, on purpose: RozetkaPay adds error codes between SDK releases, so an
+unrecognized code is returned unchanged instead of failing to deserialize or being mapped onto a wrong
+fallback value. A numeric code is returned as its raw JSON text. The code is read from the top-level
+`code` field, falling back to `error.code`.
+
+`RequestId` is resolved in a fixed order — the `X-Request-Id` response header, then the `Request-Id`
+response header, then the `error_id` field of the payload, then `error.error_id` — and is `null` when the
+response carries none. Header name matching is case-insensitive, and blank values are skipped. The
+request-ID headers are not declared by the official OpenAPI document but are commonly added by gateways;
+`error_id` is the identifier the documented error payload declares.
+
+`RawBody` is the provider payload verbatim — never reformatted, never replaced by a parser error — so a
+malformed body, a plain-text body, or fields this SDK version does not model all remain inspectable. A
+body the SDK cannot parse still produces the status-specific exception above, with `Code` and `RequestId`
+left `null`.
+
+> **`RawBody` may contain customer or provider data.** The SDK never logs it and never puts it in
+> `Exception.Message` or `Exception.ToString()`; it logs only the HTTP status, the API code, and the
+> request ID. Scrub the raw body before writing it to a log, a store, or an error tracker.
+
+`ApiError` is `null` when the failure did not come from an HTTP response — a manually constructed
+exception, a transport failure, or a response the SDK could not deserialize:
+
+```csharp
+// ApiError is null: nothing was received from the API.
+var manual = new RozetkaPayException("cannot reach the gateway");
+```
+
+All pre-existing exception constructors — parameterless, `(string message)`, and
+`(string message, Exception innerException)` — remain public and unchanged on every exception type, and
+none is obsolete.
 
 ## Maintainer
 
