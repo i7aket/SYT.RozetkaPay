@@ -71,6 +71,31 @@ immediately before tagging a release (see the release process in `README.md`).
   whitespace-only login or password, an inconsistent retry policy — are now rejected while the
   host starts instead of failing on the first request.
 
+### Fixed
+- Every dynamic query value the SDK puts into a request URI is now percent-encoded as an
+  individual value. A caller value can no longer add or overwrite a query parameter
+  (`external_id=pay&status=success` stays one `external_id`), start a fragment (`#`), smuggle a
+  raw `?`, or reach the path with `/`. This covers `PaymentService.GetInfoAsync`,
+  `GetReceiptAsync`, and `GetListAsync`; `PayoutService.GetInfoAsync` and `GetListAsync`;
+  `PayPartsService.GetOperationsAsync`; `AlternativePaymentService.GetOperationsAsync`; and the
+  FinMon P2P pre-limits query. Endpoints that already encoded their values — the customer wallet
+  endpoints, the payout account balance, and the PayParts/Alternative Payments info endpoints —
+  are unchanged and are still encoded exactly once.
+- Encoding semantics: a space becomes `%20` (never `+`), a literal `+` becomes `%2B`, and `&`,
+  `=`, `?`, `#`, `/`, `%` become `%26`, `%3D`, `%3F`, `%23`, `%2F`, `%25`. Non-ASCII text is sent
+  as UTF-8 percent-encoded octets. RFC 3986 unreserved characters stay readable, so request URIs
+  built from ordinary IDs, dates, and pagination values are byte-for-byte what they were before.
+- Callers pass raw values. The SDK encodes once, so a value that already looks encoded is treated
+  as literal text: `already%2Fencoded` is sent as `already%252Fencoded`. Do not pre-encode.
+- List filter dates and pagination are formatted with `CultureInfo.InvariantCulture`. Under a
+  non-Gregorian ambient culture the `yyyy-MM-dd` filters previously rendered in that calendar —
+  `th-TH` turned `2026-02-28` into `2569-02-28` — and a culture-specific negative sign could reach
+  the query. Both now always render invariantly.
+- A whitespace-only string filter is still sent, and now arrives as its encoded characters
+  (`status=%20%20%20`) instead of being truncated to an empty value by URI canonicalization. Null
+  and empty filters are still omitted, and query parameter names, ordering, and endpoint paths are
+  unchanged.
+
 ## [0.1.0-alpha.2] - 2026-02-28
 
 ### Fixed

@@ -306,6 +306,25 @@ using IRozetkaPayClient client = RozetkaPayClient.Create(
 var paymentInfo = await client.Payments.GetInfoAsync("external-order-id");
 ```
 
+## Request Encoding
+
+Pass **raw** values to the SDK. Every value the SDK puts into a query string — external IDs, status
+and date filters, pagination — is percent-encoded as a single query value, so a value containing
+`&`, `=`, `?`, `#`, `/`, `%`, a space, or non-ASCII text stays one value instead of changing the
+request target.
+
+```csharp
+// Raw value: one query parameter, no injected "status" and no fragment.
+await client.Payments.GetInfoAsync("order 42+A&status=success");
+// GET /api/payments/v1/info?external_id=order%2042%2BA%26status%3Dsuccess
+```
+
+A space becomes `%20` (never `+`), a literal `+` becomes `%2B`, and non-ASCII text is sent as UTF-8
+percent-encoded octets. Because the SDK encodes exactly once, a pre-encoded value is treated as
+literal text — `already%2Fencoded` is sent as `already%252Fencoded`. Values made only of unreserved
+characters, such as `external-order-id` or `2026-02-28`, are unchanged. List filter dates and
+pagination always use the invariant culture, so the ambient culture cannot alter a request URI.
+
 ## Webhook Signature Verification
 
 RozetkaPay signs every callback with the merchant password used for the payment operation and sends

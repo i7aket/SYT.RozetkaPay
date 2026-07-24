@@ -1,3 +1,4 @@
+using System.Globalization;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Models.PayParts;
 using Microsoft.Extensions.Logging;
@@ -159,17 +160,33 @@ public class PayPartsService : BaseService, IPayPartsService
     public async Task<PayPartsOperationsListResponse> GetOperationsAsync(PayPartsOperationsListRequest request, CancellationToken cancellationToken = default)
     {
         List<string> queryParams = new List<string>();
-        
+
         if (request.DateFrom.HasValue)
-            queryParams.Add($"date_from={request.DateFrom:yyyy-MM-dd}");
+        {
+            string dateFrom = request.DateFrom.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            queryParams.Add($"date_from={Uri.EscapeDataString(dateFrom)}");
+        }
+
         if (request.DateTo.HasValue)
-            queryParams.Add($"date_to={request.DateTo:yyyy-MM-dd}");
+        {
+            string dateTo = request.DateTo.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            queryParams.Add($"date_to={Uri.EscapeDataString(dateTo)}");
+        }
+
         if (!string.IsNullOrEmpty(request.Status))
-            queryParams.Add($"status={request.Status}");
+        {
+            queryParams.Add($"status={Uri.EscapeDataString(request.Status)}");
+        }
+
         if (request.Limit.HasValue)
-            queryParams.Add($"limit={request.Limit}");
+        {
+            queryParams.Add($"limit={Uri.EscapeDataString(request.Limit.Value.ToString(CultureInfo.InvariantCulture))}");
+        }
+
         if (request.Offset.HasValue)
-            queryParams.Add($"offset={request.Offset}");
+        {
+            queryParams.Add($"offset={Uri.EscapeDataString(request.Offset.Value.ToString(CultureInfo.InvariantCulture))}");
+        }
 
         string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
         return await GetAsync<PayPartsOperationsListResponse>($"/api/payparts/v1/operations{query}", cancellationToken);
@@ -197,4 +214,4 @@ public class PayPartsService : BaseService, IPayPartsService
     {
         return await PostAsync<PayPartsResendCallbackRequest, PayPartsResendCallbackResponse>("/api/payparts/v1/callback/resend", request, cancellationToken);
     }
-} 
+}
