@@ -1,4 +1,3 @@
-using System.Net;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Security;
 using SYT.RozetkaPay.Services;
@@ -6,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace SYT.RozetkaPay.Extensions;
 
@@ -20,8 +20,17 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection</param>
     /// <param name="login">RozetkaPay API login</param>
     /// <param name="password">RozetkaPay API password</param>
-    /// <param name="baseUrl">Optional API base URL (defaults to production API)</param>
+    /// <param name="baseUrl">
+    /// Optional API base URL. When omitted the production endpoint
+    /// (<see cref="RozetkaPayOptions.ProductionBaseUrl"/>) is used; supplying a value overrides the endpoint
+    /// of <see cref="RozetkaPayOptions.Environment"/>.
+    /// </param>
     /// <returns>The service collection for chaining</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="login"/>, <paramref name="password"/>, or <paramref name="baseUrl"/> is missing or
+    /// malformed.
+    /// </exception>
     public static IServiceCollection AddRozetkaPay(
         this IServiceCollection services,
         string login,
@@ -34,18 +43,31 @@ public static class ServiceCollectionExtensions
         {
             Login = login,
             Password = password,
-            BaseUrl = baseUrl ?? "https://api.rozetkapay.com"
+            BaseUrl = baseUrl ?? RozetkaPayOptions.ProductionBaseUrl
         };
 
-        return services.AddRozetkaPay(configuration);
+        RozetkaPayOptions options = SnapshotLegacyConfiguration(configuration);
+
+        // No caller-supplied URL means "use the endpoint of the environment" rather than a pinned override.
+        options.BaseUrl = baseUrl;
+
+        return AddRozetkaPayCore(services, options);
     }
 
     /// <summary>
     /// Add RozetkaPay SDK services to the service collection using configuration object
     /// </summary>
     /// <param name="services">The service collection</param>
-    /// <param name="configuration">RozetkaPay configuration</param>
+    /// <param name="configuration">
+    /// RozetkaPay configuration. It is copied at registration time, so later changes to the instance do not
+    /// affect the SDK, and its <see cref="RozetkaPayConfiguration.BaseUrl"/> becomes an explicit endpoint
+    /// override.
+    /// </param>
     /// <returns>The service collection for chaining</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="services"/> or <paramref name="configuration"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">The configuration is missing a required value.</exception>
     public static IServiceCollection AddRozetkaPay(
         this IServiceCollection services,
         RozetkaPayConfiguration configuration)
@@ -53,13 +75,136 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        if (!configuration.IsValid())
+        return AddRozetkaPayCore(services, SnapshotLegacyConfiguration(configuration));
+    }
+
+    /// <summary>
+    /// Add RozetkaPay SDK services to the service collection using IConfiguration
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configuration">
+    /// Application configuration containing the <see cref="RozetkaPayOptions.SectionName"/> section. The
+    /// section is bound to <see cref="RozetkaPayOptions"/> and validated at startup.
+    /// </param>
+    /// <returns>The service collection for chaining</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="services"/> or <paramref name="configuration"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// The section is absent, or does not carry a login and a password.
+    /// </exception>
+    public static IServiceCollection AddRozetkaPay(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        IConfigurationSection rozetkaPaySection = configuration.GetSection(RozetkaPayOptions.SectionName);
+
+        // A section that is absent, or that carries no credentials at all, is reported here rather than at
+        // startup validation: this is the failure the SDK has always thrown on, and the message points at the
+        // configuration key that is missing. Everything else is left to the options pipeline below.
+        RozetkaPayOptions bound = rozetkaPaySection.Get<RozetkaPayOptions>() ??
+                                  throw new InvalidOperationException(
+                                      $"{RozetkaPayOptions.SectionName} section is not configured in appsettings");
+
+        if (string.IsNullOrWhiteSpace(bound.Login))
         {
-            throw new InvalidOperationException("RozetkaPay configuration is invalid. BaseUrl, Login and Password are required.");
+            throw new InvalidOperationException(
+                $"{RozetkaPayOptions.SectionName}:{nameof(RozetkaPayOptions.Login)} is not configured in appsettings");
         }
 
-        RozetkaPayConfiguration registeredConfiguration = CloneConfiguration(configuration);
-        services.TryAddSingleton(registeredConfiguration);
+        if (string.IsNullOrWhiteSpace(bound.Password))
+        {
+            throw new InvalidOperationException(
+                $"{RozetkaPayOptions.SectionName}:{nameof(RozetkaPayOptions.Password)} is not configured in appsettings");
+        }
+
+        return AddRozetkaPayCore(services, builder => builder.Bind(rozetkaPaySection));
+    }
+
+    /// <summary>
+    /// Add RozetkaPay SDK services to the service collection, configuring the typed options in code. Use this
+    /// overload to switch between <see cref="RozetkaPayEnvironment.Production"/> and
+    /// <see cref="RozetkaPayEnvironment.Sandbox"/> without an <see cref="IConfiguration"/>.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configure">
+    /// Callback that populates the options. It runs once, when the options are first resolved, and the result
+    /// is validated before the application starts.
+    /// </param>
+    /// <returns>The service collection for chaining</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="services"/> or <paramref name="configure"/> is <see langword="null"/>.
+    /// </exception>
+    public static IServiceCollection AddRozetkaPay(
+        this IServiceCollection services,
+        Action<RozetkaPayOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configure);
+
+        return AddRozetkaPayCore(services, builder => builder.Configure(configure));
+    }
+
+    /// <summary>
+    /// Copy a caller-supplied configuration into options, failing immediately when it is unusable.
+    /// </summary>
+    /// <remarks>
+    /// The copy happens now, not when the options are resolved, so mutating the caller's instance afterwards
+    /// cannot change what the SDK runs with.
+    /// </remarks>
+    private static RozetkaPayOptions SnapshotLegacyConfiguration(RozetkaPayConfiguration configuration)
+    {
+        if (!configuration.IsValid())
+        {
+            throw new InvalidOperationException(
+                "RozetkaPay configuration is invalid. BaseUrl, Login and Password are required.");
+        }
+
+        return RozetkaPayOptionsMapper.FromConfiguration(configuration);
+    }
+
+    private static IServiceCollection AddRozetkaPayCore(IServiceCollection services, RozetkaPayOptions options)
+    {
+        return AddRozetkaPayCore(
+            services,
+            builder => builder.Configure(target => RozetkaPayOptionsMapper.CopyInto(options, target)));
+    }
+
+    /// <summary>
+    /// Register the options pipeline and every SDK service exactly once.
+    /// </summary>
+    private static IServiceCollection AddRozetkaPayCore(
+        IServiceCollection services,
+        Action<OptionsBuilder<RozetkaPayOptions>> configureOptions)
+    {
+        // First registration wins, as it always has. Returning early — instead of relying on TryAdd alone —
+        // also keeps a second call from binding another configuration source over the first one.
+        if (services.Any(static descriptor => descriptor.ServiceType == typeof(RozetkaPayRegistrationMarker)))
+        {
+            return services;
+        }
+
+        services.Add(ServiceDescriptor.Singleton(typeof(RozetkaPayRegistrationMarker), RozetkaPayRegistrationMarker.Instance));
+
+        OptionsBuilder<RozetkaPayOptions> optionsBuilder = services.AddOptions<RozetkaPayOptions>();
+        configureOptions(optionsBuilder);
+        optionsBuilder
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // TryAddEnumerable keeps the validator single even if the SDK is registered again, and leaves any
+        // validator a consumer added for the same options in place.
+        services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IValidateOptions<RozetkaPayOptions>, RozetkaPayOptionsValidator>());
+
+        // One validated snapshot per provider, shared by the HTTP client, the services, and the verifier, so
+        // they can never disagree about credentials or endpoint. Reading IOptions<>.Value here is what runs
+        // validation, so an invalid configuration cannot reach a request.
+        services.TryAddSingleton(static provider =>
+            RozetkaPayOptionsMapper.ToConfiguration(provider.GetRequiredService<IOptions<RozetkaPayOptions>>().Value));
 
         services.AddHttpClient("RozetkaPay", (provider, client) =>
         {
@@ -152,7 +297,7 @@ public static class ServiceCollectionExtensions
 
         // The webhook signature verifier is a singleton: it holds nothing but the immutable merchant
         // password, creates its hash primitives per call, and keeps no request state.
-        services.TryAddSingleton(provider =>
+        services.TryAddSingleton(static provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
             return new RozetkaPayWebhookSignatureVerifier(config.Password);
@@ -179,61 +324,15 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Add RozetkaPay SDK services to the service collection using IConfiguration
+    /// Records that the SDK has already been registered on a service collection. Not resolved by anything;
+    /// its presence is the whole signal.
     /// </summary>
-    /// <param name="services">The service collection</param>
-    /// <param name="configuration">Application configuration containing RozetkaPay section</param>
-    /// <returns>The service collection for chaining</returns>
-    public static IServiceCollection AddRozetkaPay(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    private sealed class RozetkaPayRegistrationMarker
     {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
+        internal static readonly RozetkaPayRegistrationMarker Instance = new();
 
-        IConfigurationSection rozetkaPaySection = configuration.GetSection("RozetkaPay");
-        RozetkaPayConfiguration rozetkaPayConfiguration = rozetkaPaySection.Get<RozetkaPayConfiguration>() ??
-                                                          throw new InvalidOperationException("RozetkaPay section is not configured in appsettings");
-
-        if (string.IsNullOrWhiteSpace(rozetkaPayConfiguration.Login))
+        private RozetkaPayRegistrationMarker()
         {
-            throw new InvalidOperationException("RozetkaPay:Login is not configured in appsettings");
         }
-
-        if (string.IsNullOrWhiteSpace(rozetkaPayConfiguration.Password))
-        {
-            throw new InvalidOperationException("RozetkaPay:Password is not configured in appsettings");
-        }
-
-        return services.AddRozetkaPay(rozetkaPayConfiguration);
-    }
-
-    private static RozetkaPayConfiguration CloneConfiguration(RozetkaPayConfiguration source)
-    {
-        return new RozetkaPayConfiguration
-        {
-            BaseUrl = source.BaseUrl,
-            Login = source.Login,
-            Password = source.Password,
-            OnBehalfOf = source.OnBehalfOf,
-            CustomerAuth = source.CustomerAuth,
-            Timeout = source.Timeout,
-            UserAgent = source.UserAgent,
-            ValidateSslCertificate = source.ValidateSslCertificate,
-            RetryPolicy = CloneRetryPolicy(source.RetryPolicy)
-        };
-    }
-
-    private static RetryPolicy CloneRetryPolicy(RetryPolicy source)
-    {
-        return new RetryPolicy
-        {
-            Enabled = source.Enabled,
-            MaxRetryAttempts = source.MaxRetryAttempts,
-            BaseDelay = source.BaseDelay,
-            MaxDelay = source.MaxDelay,
-            BackoffStrategy = source.BackoffStrategy,
-            RetriableStatusCodes = new HashSet<HttpStatusCode>(source.RetriableStatusCodes)
-        };
     }
 }
