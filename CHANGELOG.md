@@ -11,6 +11,11 @@ immediately before tagging a release (see the release process in `README.md`).
 ## [Unreleased]
 
 ### Added
+- `IRozetkaPayWebhookSignatureVerifier` and `RozetkaPayWebhookSignatureVerifier` in
+  `SYT.RozetkaPay.Security`, verifying the `X-ROZETKAPAY-SIGNATURE` header on incoming
+  callbacks against the raw request body. Registered as a singleton by `AddRozetkaPay`.
+  Missing, malformed, and incorrect signatures return `false` instead of throwing, and
+  digests are compared in constant time.
 - Tag-based [MinVer](https://github.com/adamralph/minver) versioning; the package
   version is derived from the `v*.*.*` release tag instead of a hardcoded value.
 - Pull request build, test, and package verification (`Build & Test` workflow).

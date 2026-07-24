@@ -1,5 +1,6 @@
 using System.Net;
 using SYT.RozetkaPay.Configuration;
+using SYT.RozetkaPay.Security;
 using SYT.RozetkaPay.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -149,6 +150,14 @@ public static class ServiceCollectionExtensions
             return new RozetkaPayClient(config, httpClient, provider.GetService<ILogger<RozetkaPayClient>>());
         });
 
+        // The webhook signature verifier is a singleton: it holds nothing but the immutable merchant
+        // password, creates its hash primitives per call, and keeps no request state.
+        services.TryAddSingleton(provider =>
+        {
+            RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
+            return new RozetkaPayWebhookSignatureVerifier(config.Password);
+        });
+
         // Interface aliases resolve to the concrete registrations above, so a concrete type and its
         // interface share the same scoped instance. TryAdd is used so that an interface a consumer
         // registered before AddRozetkaPay (a fake in tests, a decorator in production) is preserved.
@@ -163,6 +172,8 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IMerchantService>(static provider => provider.GetRequiredService<MerchantService>());
         services.TryAddScoped<IFinMonService>(static provider => provider.GetRequiredService<FinMonService>());
         services.TryAddScoped<IRozetkaPayClient>(static provider => provider.GetRequiredService<RozetkaPayClient>());
+        services.TryAddSingleton<IRozetkaPayWebhookSignatureVerifier>(
+            static provider => provider.GetRequiredService<RozetkaPayWebhookSignatureVerifier>());
 
         return services;
     }

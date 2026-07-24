@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Models.Common;
 using SYT.RozetkaPay.Models.Payments;
+using SYT.RozetkaPay.Security;
 using SYT.RozetkaPay.Services;
 using SYT.RozetkaPay.Tests.TestInfrastructure;
 
@@ -35,6 +36,16 @@ public class PublicInterfacesTests
 
     private static readonly (Type Interface, Type Implementation)[] AllContractPairs =
         [(typeof(IRozetkaPayClient), typeof(RozetkaPayClient)), .. ServiceContractPairs];
+
+    /// <summary>
+    /// Public interfaces that are part of the package surface without being API service contracts: they
+    /// mirror no concrete service operations and hang off no client property, so the parity and client
+    /// property checks above do not apply to them.
+    /// </summary>
+    private static readonly Type[] NonServiceInterfaces = [typeof(IRozetkaPayWebhookSignatureVerifier)];
+
+    private static IEnumerable<Type> AllExportedInterfaces =>
+        AllContractPairs.Select(pair => pair.Interface).Concat(NonServiceInterfaces);
 
     /// <summary>
     /// Expected client property name to service interface mapping, in declaration order.
@@ -69,16 +80,19 @@ public class PublicInterfacesTests
     }
 
     [Fact]
-    public void Assembly_ShouldExportExactlyTheElevenCoveredInterfaces()
+    public void Assembly_ShouldExportExactlyTheCoveredInterfaces()
     {
         Type[] exportedInterfaces = typeof(IRozetkaPayClient).Assembly
             .GetExportedTypes()
             .Where(type => type.IsInterface)
             .ToArray();
 
+        // Eleven API service contracts from EXP-331 plus the webhook verifier from EXP-332. Adding a
+        // public interface without listing it here is a deliberate trip wire on the package surface.
         Assert.Equal(11, AllContractPairs.Length);
+        Assert.Single(NonServiceInterfaces);
         Assert.Equal(
-            AllContractPairs.Select(pair => pair.Interface.FullName).Order(StringComparer.Ordinal),
+            AllExportedInterfaces.Select(type => type.FullName).Order(StringComparer.Ordinal),
             exportedInterfaces.Select(type => type.FullName).Order(StringComparer.Ordinal));
     }
 
@@ -275,7 +289,7 @@ public class PublicInterfacesTests
     {
         HashSet<string> documented = LoadDocumentedMemberNames();
 
-        foreach ((Type interfaceType, _) in AllContractPairs)
+        foreach (Type interfaceType in AllExportedInterfaces)
         {
             string typeName = interfaceType.FullName!;
 

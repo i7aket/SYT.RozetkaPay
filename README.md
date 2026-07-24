@@ -22,10 +22,17 @@ unit tests:
 - `IPaymentService`, `IBatchPaymentService`, `IPayPartsService`, `IPayoutService`,
   `ICustomerService`, `ISubscriptionService`, `IReportService`,
   `IAlternativePaymentService`, `IMerchantService`, `IFinMonService`
+- `IRozetkaPayWebhookSignatureVerifier` — verifies the `X-ROZETKAPAY-SIGNATURE` header on
+  incoming callbacks
 
-`AddRozetkaPay` registers both the interface and the concrete type, and the two resolve to
-the same scoped instance. The concrete types stay public and unchanged, so existing code
-continues to compile. Details and testing examples are in the package README.
+`AddRozetkaPay` registers both the interface and the concrete type, and each pair resolves
+to the same DI-managed instance. API services are scoped; the immutable webhook verifier is
+a singleton. The concrete types stay public and unchanged, so existing code continues to
+compile. Details and testing examples are in the package README.
+
+Callback signatures must be checked against the raw request body before the payload is
+deserialized; the package README documents the full flow under
+[Webhook Signature Verification](src/SYT.RozetkaPay/README.md#webhook-signature-verification).
 
 ## Repository Structure
 
