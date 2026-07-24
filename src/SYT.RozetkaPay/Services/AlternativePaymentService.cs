@@ -1,3 +1,4 @@
+using System.Globalization;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Models.AlternativePayments;
 using Microsoft.Extensions.Logging;
@@ -120,17 +121,31 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     public async Task<AlternativePaymentOperationsResponse> GetOperationsAsync(GetAlternativePaymentOperationsRequest request, CancellationToken cancellationToken = default)
     {
         List<string> queryParams = new List<string>();
-        
+
         if (!string.IsNullOrEmpty(request.DateFrom))
-            queryParams.Add($"date_from={request.DateFrom}");
+        {
+            queryParams.Add($"date_from={Uri.EscapeDataString(request.DateFrom)}");
+        }
+
         if (!string.IsNullOrEmpty(request.DateTo))
-            queryParams.Add($"date_to={request.DateTo}");
+        {
+            queryParams.Add($"date_to={Uri.EscapeDataString(request.DateTo)}");
+        }
+
         if (!string.IsNullOrEmpty(request.Status))
-            queryParams.Add($"status={request.Status}");
+        {
+            queryParams.Add($"status={Uri.EscapeDataString(request.Status)}");
+        }
+
         if (request.Limit.HasValue)
-            queryParams.Add($"limit={request.Limit}");
+        {
+            queryParams.Add($"limit={Uri.EscapeDataString(request.Limit.Value.ToString(CultureInfo.InvariantCulture))}");
+        }
+
         if (request.Offset.HasValue)
-            queryParams.Add($"offset={request.Offset}");
+        {
+            queryParams.Add($"offset={Uri.EscapeDataString(request.Offset.Value.ToString(CultureInfo.InvariantCulture))}");
+        }
 
         string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
         return await GetAsync<AlternativePaymentOperationsResponse>($"/api/alternative-payments/v1/operations{query}", cancellationToken);
@@ -171,4 +186,4 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     {
         return await GetAsync<AlternativePaymentStatusResponse>($"/api/alternative-payments/v1/{paymentId}/status", cancellationToken);
     }
-} 
+}

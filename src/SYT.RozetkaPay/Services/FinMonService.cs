@@ -1,3 +1,4 @@
+using System.Globalization;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Models.FinMon;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,9 @@ public class FinMonService : BaseService, IFinMonService
     /// <returns>P2P limits response</returns>
     public async Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(int recipientIpn, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<FinMonP2PPaymentPreLimitsResponse>($"/api/finmon/v1/p2p-payment/pre-limits?recipient_ipn={recipientIpn}", cancellationToken);
+        string ipn = recipientIpn.ToString(CultureInfo.InvariantCulture);
+        return await GetAsync<FinMonP2PPaymentPreLimitsResponse>(
+            $"/api/finmon/v1/p2p-payment/pre-limits?recipient_ipn={Uri.EscapeDataString(ipn)}",
+            cancellationToken);
     }
-} 
+}
