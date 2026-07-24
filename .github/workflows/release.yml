@@ -1,0 +1,220 @@
+name: Release NuGet
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+# Only 'contents: write' is required, and only because this workflow creates a
+# GitHub Release and uploads assets. Publishing to nuget.org uses an API key, so
+# no 'packages: write' scope is needed.
+permissions:
+  contents: write
+
+concurrency:
+  # Serialize per tag; never cancel an in-progress publish for the same tag.
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      - name: Validate tag and resolve version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          # GITHUB_REF_NAME is the trusted, pushed tag name (e.g. v1.2.3).
+          tag="${GITHUB_REF_NAME}"
+          echo "Release tag: ${tag}"
+          if [ "${tag#v}" = "${tag}" ]; then
+            echo "::error::Release tag must start with 'v' (got '${tag}')."
+            exit 1
+          fi
+          version="${tag#v}"
+          if [ -z "${version}" ]; then
+            echo "::error::Version is empty after stripping the 'v' prefix."
+            exit 1
+          fi
+          # SemVer 2.0 shape: MAJOR.MINOR.PATCH[-prerelease][+buildmetadata].
+          # Each dot-separated identifier must be non-empty.
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$'
+          if [[ ! "${version}" =~ $semver ]]; then
+            echo "::error::Tag '${tag}' does not resolve to a valid SemVer 2.0 version ('${version}')."
+            exit 1
+          fi
+          # NuGet package version drops build metadata; use it for name matching.
+          pkg_version="${version%%+*}"
+          # Numeric prerelease identifiers must not contain leading zeroes.
+          if [ "${pkg_version#*-}" != "${pkg_version}" ]; then
+            prerelease_value="${pkg_version#*-}"
+            IFS='.' read -r -a prerelease_identifiers <<< "${prerelease_value}"
+            for identifier in "${prerelease_identifiers[@]}"; do
+              if [[ "${identifier}" =~ ^[0-9]+$ ]] &&
+                 [ "${#identifier}" -gt 1 ] &&
+                 [ "${identifier#0}" != "${identifier}" ]; then
+                echo "::error::Numeric prerelease identifier '${identifier}' must not contain leading zeroes."
+                exit 1
+              fi
+            done
+          fi
+          # Prerelease when a hyphen is present in the version core (before '+').
+          if [ "${pkg_version#*-}" != "${pkg_version}" ]; then
+            prerelease=true
+          else
+            prerelease=false
+          fi
+          {
+            echo "version=${pkg_version}"
+            echo "prerelease=${prerelease}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved package version: ${pkg_version} (prerelease=${prerelease})"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history and tags are required so MinVer computes the exact
+          # version from the pushed tag.
+          fetch-depth: 0
+
+      - name: Verify tagged commit belongs to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::Release tag must point to a commit reachable from origin/main."
+            exit 1
+          fi
+          echo "Verified tagged commit is reachable from origin/main."
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore SYT.RozetkaPay.sln
+
+      - name: Build
+        run: dotnet build SYT.RozetkaPay.sln -c Release --no-restore -warnaserror
+
+      - name: Test
+        run: |
+          dotnet test SYT.RozetkaPay.sln -c Release --no-build \
+            --logger "trx;LogFilePrefix=test-results" \
+            --results-directory ./TestResults
+
+      - name: Pack
+        run: dotnet pack src/SYT.RozetkaPay/SYT.RozetkaPay.csproj -c Release --no-build -o ./artifacts
+
+      - name: Verify package version matches tag
+        id: verify
+        shell: bash
+        env:
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          nupkgs=(./artifacts/*.nupkg)
+          snupkgs=(./artifacts/*.snupkg)
+          if [ "${#nupkgs[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one .nupkg, found ${#nupkgs[@]}: ${nupkgs[*]:-none}"
+            exit 1
+          fi
+          if [ "${#snupkgs[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one .snupkg, found ${#snupkgs[@]}: ${snupkgs[*]:-none}"
+            exit 1
+          fi
+          nupkg="${nupkgs[0]}"
+          snupkg="${snupkgs[0]}"
+          if [ ! -s "${nupkg}" ]; then
+            echo "::error::Package is empty: ${nupkg}"
+            exit 1
+          fi
+          if [ ! -s "${snupkg}" ]; then
+            echo "::error::Symbol package is empty: ${snupkg}"
+            exit 1
+          fi
+          expected_name="SYT.RozetkaPay.${EXPECTED_VERSION}.nupkg"
+          expected_symbols_name="SYT.RozetkaPay.${EXPECTED_VERSION}.snupkg"
+          actual_name="$(basename "${nupkg}")"
+          actual_symbols_name="$(basename "${snupkg}")"
+          if [ "${actual_name}" != "${expected_name}" ]; then
+            echo "::error::Package '${actual_name}' does not match tag-derived '${expected_name}'. Refusing to publish."
+            exit 1
+          fi
+          if [ "${actual_symbols_name}" != "${expected_symbols_name}" ]; then
+            echo "::error::Symbol package '${actual_symbols_name}' does not match tag-derived '${expected_symbols_name}'. Refusing to publish."
+            exit 1
+          fi
+          nuspec_version="$(
+            unzip -p "${nupkg}" '*.nuspec' |
+              sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p'
+          )"
+          if [ "${nuspec_version}" != "${EXPECTED_VERSION}" ]; then
+            echo "::error::Package nuspec version '${nuspec_version:-missing}' does not match tag-derived '${EXPECTED_VERSION}'. Refusing to publish."
+            exit 1
+          fi
+          {
+            echo "nupkg=${nupkg}"
+            echo "snupkg=${snupkg}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Verified package matches tag: ${nupkg}"
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ./artifacts
+          sha256sum -- *.nupkg *.snupkg > SHA256SUMS
+          echo "SHA256SUMS:"
+          cat SHA256SUMS
+
+      - name: Publish to NuGet
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUPKG_PATH: ${{ steps.verify.outputs.nupkg }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NUGET_API_KEY:-}" ]; then
+            echo "::error::NUGET_API_KEY secret is not configured; aborting release before publish."
+            exit 1
+          fi
+          # Pushing the primary .nupkg also pushes the adjacent .snupkg to
+          # nuget.org automatically. --skip-duplicate keeps reruns idempotent.
+          dotnet nuget push "$NUPKG_PATH" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          # Created only after a successful NuGet publish. gh release create
+          # hard-fails if a release already exists for this tag, so a rerun never
+          # silently overwrites an existing release.
+          args=(
+            "$GITHUB_REF_NAME"
+            ./artifacts/*.nupkg
+            ./artifacts/*.snupkg
+            ./artifacts/SHA256SUMS
+            --title "$GITHUB_REF_NAME"
+            --verify-tag
+            --generate-notes
+          )
+          if [ "${PRERELEASE}" = "true" ]; then
+            args+=(--prerelease)
+          fi
+          gh release create "${args[@]}"
