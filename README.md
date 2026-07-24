@@ -12,6 +12,21 @@
 Consumer installation and usage documentation lives in the package README
 (`src/SYT.RozetkaPay/README.md`), which is also shipped on NuGet.
 
+## Public API
+
+The SDK exposes each service through a public interface and the whole surface through a
+single aggregate contract, so consumers can depend on abstractions and substitute them in
+unit tests:
+
+- `IRozetkaPayClient` — aggregate contract, derives from `IDisposable`
+- `IPaymentService`, `IBatchPaymentService`, `IPayPartsService`, `IPayoutService`,
+  `ICustomerService`, `ISubscriptionService`, `IReportService`,
+  `IAlternativePaymentService`, `IMerchantService`, `IFinMonService`
+
+`AddRozetkaPay` registers both the interface and the concrete type, and the two resolve to
+the same scoped instance. The concrete types stay public and unchanged, so existing code
+continues to compile. Details and testing examples are in the package README.
+
 ## Repository Structure
 
 - SDK source: `src/SYT.RozetkaPay`

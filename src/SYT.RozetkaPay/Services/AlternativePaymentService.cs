@@ -7,7 +7,7 @@ namespace SYT.RozetkaPay.Services;
 /// <summary>
 /// Service for alternative payment methods
 /// </summary>
-public class AlternativePaymentService : BaseService
+public class AlternativePaymentService : BaseService, IAlternativePaymentService
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="AlternativePaymentService"/> class.

@@ -7,7 +7,7 @@ namespace SYT.RozetkaPay.Services;
 /// <summary>
 /// Service for batch payment operations
 /// </summary>
-public class BatchPaymentService : BaseService
+public class BatchPaymentService : BaseService, IBatchPaymentService
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchPaymentService"/> class.

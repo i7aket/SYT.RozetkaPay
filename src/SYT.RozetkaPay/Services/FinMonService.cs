@@ -7,7 +7,7 @@ namespace SYT.RozetkaPay.Services;
 /// <summary>
 /// Service for financial monitoring operations
 /// </summary>
-public class FinMonService : BaseService
+public class FinMonService : BaseService, IFinMonService
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="FinMonService"/> class.

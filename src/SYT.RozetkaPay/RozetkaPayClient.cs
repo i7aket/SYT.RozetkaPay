@@ -7,7 +7,7 @@ namespace SYT.RozetkaPay;
 /// <summary>
 /// Main client for RozetkaPay API that provides access to all services
 /// </summary>
-public class RozetkaPayClient : IDisposable
+public class RozetkaPayClient : IRozetkaPayClient
 {
     private readonly HttpClient HttpClient;
     private readonly bool _ownsHttpClient;
@@ -62,6 +62,39 @@ public class RozetkaPayClient : IDisposable
     /// FinMon service for financial monitoring
     /// </summary>
     public FinMonService FinMon { get; }
+
+    // Explicit IRozetkaPayClient members expose the same service instances as the concrete
+    // properties above. The concrete property types are kept as-is for source compatibility.
+
+    /// <inheritdoc />
+    IPaymentService IRozetkaPayClient.Payments => Payments;
+
+    /// <inheritdoc />
+    IBatchPaymentService IRozetkaPayClient.BatchPayments => BatchPayments;
+
+    /// <inheritdoc />
+    IPayPartsService IRozetkaPayClient.PayParts => PayParts;
+
+    /// <inheritdoc />
+    IPayoutService IRozetkaPayClient.Payouts => Payouts;
+
+    /// <inheritdoc />
+    ICustomerService IRozetkaPayClient.Customers => Customers;
+
+    /// <inheritdoc />
+    ISubscriptionService IRozetkaPayClient.Subscriptions => Subscriptions;
+
+    /// <inheritdoc />
+    IReportService IRozetkaPayClient.Reports => Reports;
+
+    /// <inheritdoc />
+    IAlternativePaymentService IRozetkaPayClient.AlternativePayments => AlternativePayments;
+
+    /// <inheritdoc />
+    IMerchantService IRozetkaPayClient.Merchants => Merchants;
+
+    /// <inheritdoc />
+    IFinMonService IRozetkaPayClient.FinMon => FinMon;
 
     /// <summary>
     /// Initialize RozetkaPayClient with configuration
