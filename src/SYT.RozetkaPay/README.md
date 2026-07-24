@@ -12,6 +12,10 @@ It provides typed clients and models for:
 - Merchant and FinMon APIs
 - Webhook payloads (`PaymentWebhook`)
 
+Every service is exposed through a public interface (`IPaymentService`, `IPayoutService`, …) plus a
+single aggregate contract (`IRozetkaPayClient`), so application code can depend on abstractions and
+substitute them in unit tests. See [Interfaces and Testing](#interfaces-and-testing).
+
 ## Package
 
 - Package ID: `SYT.RozetkaPay`
@@ -73,7 +77,7 @@ using SYT.RozetkaPay.Models.Common;
 using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Services;
 
-PaymentService payments = serviceProvider.GetRequiredService<PaymentService>();
+IPaymentService payments = serviceProvider.GetRequiredService<IPaymentService>();
 
 CreatePaymentRequest request = new()
 {
@@ -100,12 +104,82 @@ PaymentResponse response = await payments.CreateAsync(request, cancellationToken
 string? checkoutUrl = response.Action?.Value ?? response.CheckoutUrl;
 ```
 
-## Direct Client Usage (without DI)
+### 4) Or inject the whole SDK behind one contract
 
 ```csharp
 using SYT.RozetkaPay;
 
-RozetkaPayClient client = RozetkaPayClient.Create(
+IRozetkaPayClient client = serviceProvider.GetRequiredService<IRozetkaPayClient>();
+
+PaymentResponse info = await client.Payments.GetInfoAsync("external-order-id", cancellationToken);
+```
+
+## Interfaces and Testing
+
+`AddRozetkaPay` registers every service twice — once as its concrete type and once as its interface —
+and both resolve to the **same scoped instance**:
+
+| Contract | Implementation |
+|---|---|
+| `IRozetkaPayClient` | `RozetkaPayClient` |
+| `IPaymentService` | `PaymentService` |
+| `IBatchPaymentService` | `BatchPaymentService` |
+| `IPayPartsService` | `PayPartsService` |
+| `IPayoutService` | `PayoutService` |
+| `ICustomerService` | `CustomerService` |
+| `ISubscriptionService` | `SubscriptionService` |
+| `IReportService` | `ReportService` |
+| `IAlternativePaymentService` | `AlternativePaymentService` |
+| `IMerchantService` | `MerchantService` |
+| `IFinMonService` | `FinMonService` |
+
+Guidance:
+
+- Depend on the interface at your application boundary — inject `IPaymentService` into the class that
+  needs payments, or `IRozetkaPayClient` when a component needs the whole surface.
+- The concrete types remain public and unchanged, so existing code that injects `PaymentService` or
+  reads `client.Payments` as a `PaymentService` keeps compiling.
+- Registrations use `TryAdd`, so an interface you register **before** calling `AddRozetkaPay` is not
+  overwritten. That is how you swap in a fake for a single service.
+- `RozetkaPayClient` builds its own service instances, so replacing `IPaymentService` in the container
+  does not change `client.Payments`. Substitute `IRozetkaPayClient` to replace the aggregate, or the
+  individual service interface for fine-grained injection.
+
+In tests you can substitute a contract with any mocking framework, or with a plain hand-written fake
+that needs no extra dependency:
+
+```csharp
+internal sealed class FakePaymentService : IPaymentService
+{
+    public CreatePaymentRequest? LastRequest { get; private set; }
+
+    public Task<PaymentResponse> CreateAsync(
+        CreatePaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        LastRequest = request;
+        return Task.FromResult(new PaymentResponse { Status = "success" });
+    }
+
+    // Implement (or throw from) the remaining members your test does not exercise.
+}
+```
+
+```csharp
+ServiceCollection services = new();
+services.AddScoped<IPaymentService>(_ => new FakePaymentService());
+services.AddRozetkaPay(configuration); // does not overwrite the fake
+```
+
+## Direct Client Usage (without DI)
+
+`RozetkaPayClient` creates its own `HttpClient` when you do not supply one, so dispose the client
+when you construct it yourself. `IRozetkaPayClient` derives from `IDisposable` for that reason.
+
+```csharp
+using SYT.RozetkaPay;
+
+using IRozetkaPayClient client = RozetkaPayClient.Create(
     baseUrl: "https://api.rozetkapay.com",
     login: "your_login",
     password: "your_password");

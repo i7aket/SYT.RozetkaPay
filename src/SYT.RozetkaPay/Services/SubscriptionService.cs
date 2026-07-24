@@ -7,7 +7,7 @@ namespace SYT.RozetkaPay.Services;
 /// <summary>
 /// Service for subscription management operations
 /// </summary>
-public class SubscriptionService : BaseService
+public class SubscriptionService : BaseService, ISubscriptionService
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="SubscriptionService"/> class.

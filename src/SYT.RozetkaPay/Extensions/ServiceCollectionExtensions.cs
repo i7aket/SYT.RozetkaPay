@@ -149,6 +149,21 @@ public static class ServiceCollectionExtensions
             return new RozetkaPayClient(config, httpClient, provider.GetService<ILogger<RozetkaPayClient>>());
         });
 
+        // Interface aliases resolve to the concrete registrations above, so a concrete type and its
+        // interface share the same scoped instance. TryAdd is used so that an interface a consumer
+        // registered before AddRozetkaPay (a fake in tests, a decorator in production) is preserved.
+        services.TryAddScoped<IPaymentService>(static provider => provider.GetRequiredService<PaymentService>());
+        services.TryAddScoped<IBatchPaymentService>(static provider => provider.GetRequiredService<BatchPaymentService>());
+        services.TryAddScoped<IPayPartsService>(static provider => provider.GetRequiredService<PayPartsService>());
+        services.TryAddScoped<IPayoutService>(static provider => provider.GetRequiredService<PayoutService>());
+        services.TryAddScoped<ICustomerService>(static provider => provider.GetRequiredService<CustomerService>());
+        services.TryAddScoped<ISubscriptionService>(static provider => provider.GetRequiredService<SubscriptionService>());
+        services.TryAddScoped<IReportService>(static provider => provider.GetRequiredService<ReportService>());
+        services.TryAddScoped<IAlternativePaymentService>(static provider => provider.GetRequiredService<AlternativePaymentService>());
+        services.TryAddScoped<IMerchantService>(static provider => provider.GetRequiredService<MerchantService>());
+        services.TryAddScoped<IFinMonService>(static provider => provider.GetRequiredService<FinMonService>());
+        services.TryAddScoped<IRozetkaPayClient>(static provider => provider.GetRequiredService<RozetkaPayClient>());
+
         return services;
     }
 

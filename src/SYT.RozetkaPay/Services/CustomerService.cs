@@ -7,7 +7,7 @@ namespace SYT.RozetkaPay.Services;
 /// <summary>
 /// Service for customer and wallet operations
 /// </summary>
-public class CustomerService : BaseService
+public class CustomerService : BaseService, ICustomerService
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CustomerService"/> class.

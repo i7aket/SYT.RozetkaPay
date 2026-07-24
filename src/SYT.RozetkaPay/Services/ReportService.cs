@@ -7,7 +7,7 @@ namespace SYT.RozetkaPay.Services;
 /// <summary>
 /// Service for generating reports
 /// </summary>
-public class ReportService : BaseService
+public class ReportService : BaseService, IReportService
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ReportService"/> class.
