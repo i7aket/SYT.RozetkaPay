@@ -15,9 +15,9 @@ It provides typed clients and models for:
 ## Package
 
 - Package ID: `SYT.RozetkaPay`
-- Current channel: `0.1.0-alpha.1`
 - Target frameworks: `net9.0`, `net10.0`
 - Repository: `https://github.com/i7aket/SYT.RozetkaPay`
+- Versioning: release versions are published from SemVer Git tags (`vX.Y.Z[-prerelease]`) via MinVer
 
 ## API Compatibility
 

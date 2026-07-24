@@ -8,7 +8,8 @@
         <Nullable>enable</Nullable>
         <PackageId>SYT.RozetkaPay</PackageId>
         <Title>SYT RozetkaPay SDK</Title>
-        <Version>0.1.0-alpha.2</Version>
+        <MinVerTagPrefix>v</MinVerTagPrefix>
+        <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
         <Authors>Anatoliy Yermakov</Authors>
         <Company>SYT</Company>
         <Description>.NET SDK for RozetkaPay API with typed models, service clients, DI integration, and webhook payload support.</Description>
@@ -19,15 +20,7 @@
         <PackageProjectUrl>https://github.com/i7aket/SYT.RozetkaPay</PackageProjectUrl>
         <RepositoryUrl>https://github.com/i7aket/SYT.RozetkaPay</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageReleaseNotes>
-Alpha preview package for early integration and validation.
-
-Highlights:
-- finalized namespace normalization to SYT.RozetkaPay.*
-- updated README and usage examples for production-style onboarding
-- fixed NuGet README maintainer rendering using markdown and an allowed image host
-- prepared package metadata for public NuGet publication
-        </PackageReleaseNotes>
+        <PackageReleaseNotes>See https://github.com/i7aket/SYT.RozetkaPay/blob/main/CHANGELOG.md for release notes.</PackageReleaseNotes>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -40,6 +33,10 @@ Highlights:
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.5" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MinVer" Version="7.0.0" PrivateAssets="All" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     </ItemGroup>
 
     <ItemGroup>
