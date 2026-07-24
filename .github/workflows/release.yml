@@ -77,7 +77,7 @@ jobs:
           echo "Resolved package version: ${pkg_version} (prerelease=${prerelease})"
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           # Full history and tags are required so MinVer computes the exact
           # version from the pushed tag.
@@ -95,7 +95,7 @@ jobs:
           echo "Verified tagged commit is reachable from origin/main."
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: 10.0.x
 
