@@ -187,7 +187,71 @@ using IRozetkaPayClient client = RozetkaPayClient.Create(
 var paymentInfo = await client.Payments.GetInfoAsync("external-order-id");
 ```
 
+## Webhook Signature Verification
+
+RozetkaPay signs every callback with the merchant password used for the payment operation and sends
+the result in the `X-ROZETKAPAY-SIGNATURE` header. Verify it **before** you deserialize the body or
+touch any order state. See the official
+[callback source verification docs](https://docs.rozetkapay.com/guides/callbacks/).
+
+Inject `IRozetkaPayWebhookSignatureVerifier`; `AddRozetkaPay` registers it as a singleton, and
+`RozetkaPayWebhookSignatureVerifier.SignatureHeaderName` is the header name:
+
+```csharp
+using SYT.RozetkaPay.Security;
+
+app.MapPost("/callbacks/rozetkapay", async (
+    HttpRequest request,
+    IRozetkaPayWebhookSignatureVerifier verifier) =>
+{
+    // Read the body exactly as it arrived, before any JSON parsing.
+    byte[] rawBody;
+    using (MemoryStream buffer = new())
+    {
+        await request.Body.CopyToAsync(buffer);
+        rawBody = buffer.ToArray();
+    }
+
+    string? signature = request.Headers[
+        RozetkaPayWebhookSignatureVerifier.SignatureHeaderName].FirstOrDefault();
+
+    if (!verifier.Verify(rawBody, signature))
+    {
+        return Results.Unauthorized();
+    }
+
+    // Only now is it safe to deserialize rawBody and update the order.
+    return Results.Ok();
+});
+```
+
+Rules that matter:
+
+- **Verify the raw bytes.** The signature covers the exact body RozetkaPay sent. Parsing the JSON and
+  re-serializing it changes whitespace and property order, and the signature will no longer match.
+  Deserialize only after `Verify` has returned `true`, and deserialize from those same bytes.
+- **A missing or malformed header returns `false`, not an exception.** `signature` is nullable on
+  purpose, so you do not need a null check before calling `Verify`. Empty, whitespace, wrongly padded
+  and non-base64url values all fail closed.
+- **The SDK does not touch `HttpRequest`.** Reading and, if your pipeline needs to read it again,
+  rewinding or buffering the request stream (`request.EnableBuffering()`) is the application's job.
+- **The SDK does not dictate an HTTP response.** Map `false` to 401 or 400 according to your own
+  policy. Note that RozetkaPay treats any non-200 response as a delivery failure and will retry.
+- **Never log the body, the signature, or the password.** The verifier takes no logger for exactly
+  this reason.
+- **Both overloads are equivalent** for a body that is already a UTF-8 string:
+  `Verify(string, string?)` encodes it as UTF-8 and forwards to the byte overload. Passing `null` as
+  the string payload throws `ArgumentNullException`.
+
+The verifier is immutable and thread-safe, so the single registered instance can serve every request.
+It reproduces the provider's algorithm, `base64url_encode(sha1(password + base64url_encode(body) +
+password))`, compares digests in constant time, and accepts only the canonical padded base64url form
+of the header.
+
 ## Webhook Payload Handling
+
+Deserialize the payload only after
+[the signature has been verified](#webhook-signature-verification).
 
 ```csharp
 using System.Text.Json;
