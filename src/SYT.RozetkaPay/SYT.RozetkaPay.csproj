@@ -20,11 +20,36 @@
         <PackageProjectUrl>https://github.com/i7aket/SYT.RozetkaPay</PackageProjectUrl>
         <RepositoryUrl>https://github.com/i7aket/SYT.RozetkaPay</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>package-icon.png</PackageIcon>
         <PackageReleaseNotes>See https://github.com/i7aket/SYT.RozetkaPay/blob/main/CHANGELOG.md for release notes.</PackageReleaseNotes>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <IsPackable>true</IsPackable>
+    </PropertyGroup>
+
+    <!--
+        Reproducible builds and Source Link.
+
+        Source Link generation is part of the .NET SDK itself (8.0+), so no
+        Microsoft.SourceLink.* PackageReference is needed - and none is added, to
+        keep the published dependency groups free of build-only packages. These
+        properties only make the behaviour explicit instead of relying on SDK
+        defaults, so a future SDK default change cannot silently drop it.
+    -->
+    <PropertyGroup>
+        <Deterministic>true</Deterministic>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <!--
+            Normalizes compiled source paths to '/_/*' so official CI and release
+            builds never embed the runner or worktree filesystem root in the PDB.
+            Local developer builds keep real paths, which is what a local debugger
+            wants. Both workflows also pass -p:ContinuousIntegrationBuild=true
+            explicitly, so the official build contract is visible in the workflow
+            file and does not depend on this condition alone.
+        -->
+        <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     </PropertyGroup>
 
     <ItemGroup>
@@ -45,6 +70,11 @@
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="/" />
         <None Include="../../LICENSE" Pack="true" PackagePath="/" />
+        <!--
+            PackageIcon requires the bitmap to be packed into the package root.
+            The .svg source stays out of the package: consumers never need it.
+        -->
+        <None Include="../../assets/package-icon.png" Pack="true" PackagePath="/package-icon.png" />
     </ItemGroup>
 
 </Project>

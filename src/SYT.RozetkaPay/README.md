@@ -25,6 +25,19 @@ substitute them in unit tests. See [Interfaces and Testing](#interfaces-and-test
 - Target frameworks: `net9.0`, `net10.0`
 - Repository: `https://github.com/i7aket/SYT.RozetkaPay`
 - Versioning: release versions are published from SemVer Git tags (`vX.Y.Z[-prerelease]`) via MinVer
+- The package ships an embedded icon, and a companion symbol package (`.snupkg`) is published to
+  nuget.org alongside it
+
+### Debugging into the SDK source
+
+The published symbols carry Source Link metadata pinned to the exact repository commit each
+release was built from, so a supported debugger can step from a compiled call straight into the
+SDK source for that release. In Visual Studio, JetBrains Rider or VS Code, enable Source Link and
+the NuGet.org symbol server and turn *Just My Code* off.
+
+This applies to released packages restored from nuget.org. A local build from uncommitted changes
+has no published commit to download source from, so stepping into it relies on your local files
+instead.
 
 ## API Compatibility
 

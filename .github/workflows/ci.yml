@@ -35,11 +35,22 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # Restores the repository-local tool manifest (.config/dotnet-tools.json),
+      # which pins the 'sourcelink' tool used to validate the PDBs.
+      - name: Restore tools
+        run: dotnet tool restore
+
       - name: Restore
         run: dotnet restore SYT.RozetkaPay.sln
 
+      # ContinuousIntegrationBuild=true normalizes embedded source paths to
+      # '/_/*' so no runner filesystem root leaks into the PDBs. The project
+      # already sets it when GITHUB_ACTIONS is true; passing it explicitly keeps
+      # the official build contract visible here and independent of that.
       - name: Build
-        run: dotnet build SYT.RozetkaPay.sln -c Release --no-restore -warnaserror
+        run: |
+          dotnet build SYT.RozetkaPay.sln -c Release --no-restore -warnaserror \
+            -p:ContinuousIntegrationBuild=true
 
       - name: Test
         run: |
@@ -47,31 +58,19 @@ jobs:
             --logger "trx;LogFilePrefix=test-results" \
             --results-directory ./TestResults
 
-      - name: Pack
-        run: dotnet pack src/SYT.RozetkaPay/SYT.RozetkaPay.csproj -c Release --no-build -o ./artifacts
+      # Rebuilds this exact commit in a second, throwaway worktree under a
+      # different filesystem root and requires identical DLL/PDB/XML hashes.
+      - name: Verify deterministic build
+        run: scripts/verify-deterministic-build.sh
 
-      - name: Verify package artifacts
-        shell: bash
+      - name: Pack
         run: |
-          set -euo pipefail
-          shopt -s nullglob
-          nupkgs=(./artifacts/*.nupkg)
-          snupkgs=(./artifacts/*.snupkg)
-          if [ "${#nupkgs[@]}" -ne 1 ]; then
-            echo "::error::Expected exactly one .nupkg, found ${#nupkgs[@]}: ${nupkgs[*]:-none}"
-            exit 1
-          fi
-          if [ "${#snupkgs[@]}" -ne 1 ]; then
-            echo "::error::Expected exactly one .snupkg, found ${#snupkgs[@]}: ${snupkgs[*]:-none}"
-            exit 1
-          fi
-          if [ ! -s "${nupkgs[0]}" ]; then
-            echo "::error::Package is empty: ${nupkgs[0]}"
-            exit 1
-          fi
-          if [ ! -s "${snupkgs[0]}" ]; then
-            echo "::error::Symbol package is empty: ${snupkgs[0]}"
-            exit 1
-          fi
-          echo "Verified package: ${nupkgs[0]}"
-          echo "Verified symbols: ${snupkgs[0]}"
+          dotnet pack src/SYT.RozetkaPay/SYT.RozetkaPay.csproj -c Release --no-build \
+            -p:ContinuousIntegrationBuild=true -o ./artifacts
+
+      # The same verifier the tag release runs, so a release can never pass
+      # weaker artifact checks than a pull request. The expected commit comes
+      # from the exact checkout that was built, never from a branch or tag name.
+      # The remote Source Link check is deliberately not skipped here.
+      - name: Verify package artifacts
+        run: scripts/verify-package-artifacts.sh ./artifacts "$(git rev-parse HEAD)"

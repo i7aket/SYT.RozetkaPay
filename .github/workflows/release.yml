@@ -99,11 +99,20 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # Restores the repository-local tool manifest (.config/dotnet-tools.json),
+      # which pins the 'sourcelink' tool used to validate the PDBs.
+      - name: Restore tools
+        run: dotnet tool restore
+
       - name: Restore
         run: dotnet restore SYT.RozetkaPay.sln
 
+      # ContinuousIntegrationBuild=true normalizes embedded source paths to
+      # '/_/*' so no runner filesystem root leaks into the published symbols.
       - name: Build
-        run: dotnet build SYT.RozetkaPay.sln -c Release --no-restore -warnaserror
+        run: |
+          dotnet build SYT.RozetkaPay.sln -c Release --no-restore -warnaserror \
+            -p:ContinuousIntegrationBuild=true
 
       - name: Test
         run: |
@@ -111,8 +120,21 @@ jobs:
             --logger "trx;LogFilePrefix=test-results" \
             --results-directory ./TestResults
 
+      # Rebuilds the tagged commit in a second, throwaway worktree under a
+      # different filesystem root and requires identical DLL/PDB/XML hashes.
+      - name: Verify deterministic build
+        run: scripts/verify-deterministic-build.sh
+
       - name: Pack
-        run: dotnet pack src/SYT.RozetkaPay/SYT.RozetkaPay.csproj -c Release --no-build -o ./artifacts
+        run: |
+          dotnet pack src/SYT.RozetkaPay/SYT.RozetkaPay.csproj -c Release --no-build \
+            -p:ContinuousIntegrationBuild=true -o ./artifacts
+
+      # Identical to the pull-request gate: icon, nuspec, repository commit,
+      # symbol package shape and remote Source Link checksums. Runs before the
+      # tag/version gate and before any publish.
+      - name: Verify package artifacts
+        run: scripts/verify-package-artifacts.sh ./artifacts "$(git rev-parse HEAD)"
 
       - name: Verify package version matches tag
         id: verify
