@@ -86,7 +86,6 @@ public class CriticalFixesTests
             CustomerAuth = "auth-token",
             Timeout = TimeSpan.FromSeconds(77),
             UserAgent = "RozetkaPaySDK.Tests",
-            ValidateSslCertificate = false,
             RetryPolicy = retryPolicy
         };
 
@@ -103,7 +102,6 @@ public class CriticalFixesTests
         Assert.Equal(source.CustomerAuth, resolved.CustomerAuth);
         Assert.Equal(source.Timeout, resolved.Timeout);
         Assert.Equal(source.UserAgent, resolved.UserAgent);
-        Assert.Equal(source.ValidateSslCertificate, resolved.ValidateSslCertificate);
         Assert.Equal(source.RetryPolicy.Enabled, resolved.RetryPolicy.Enabled);
         Assert.Equal(source.RetryPolicy.MaxRetryAttempts, resolved.RetryPolicy.MaxRetryAttempts);
         Assert.Equal(source.RetryPolicy.BaseDelay, resolved.RetryPolicy.BaseDelay);
@@ -123,7 +121,6 @@ public class CriticalFixesTests
             ["RozetkaPay:OnBehalfOf"] = "cfg-child",
             ["RozetkaPay:CustomerAuth"] = "cfg-auth",
             ["RozetkaPay:UserAgent"] = "CfgAgent/1.0",
-            ["RozetkaPay:ValidateSslCertificate"] = "false",
             ["RozetkaPay:Timeout"] = "00:00:45",
             ["RozetkaPay:RetryPolicy:Enabled"] = "true",
             ["RozetkaPay:RetryPolicy:MaxRetryAttempts"] = "3",
@@ -150,7 +147,6 @@ public class CriticalFixesTests
         Assert.Equal("cfg-child", resolved.OnBehalfOf);
         Assert.Equal("cfg-auth", resolved.CustomerAuth);
         Assert.Equal("CfgAgent/1.0", resolved.UserAgent);
-        Assert.False(resolved.ValidateSslCertificate);
         Assert.Equal(TimeSpan.FromSeconds(45), resolved.Timeout);
         Assert.True(resolved.RetryPolicy.Enabled);
         Assert.Equal(3, resolved.RetryPolicy.MaxRetryAttempts);

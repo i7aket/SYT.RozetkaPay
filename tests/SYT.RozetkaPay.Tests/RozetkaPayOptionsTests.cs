@@ -56,7 +56,6 @@ public class RozetkaPayOptionsTests
 
         Assert.Equal(legacy.Timeout, options.Timeout);
         Assert.Equal(legacy.UserAgent, options.UserAgent);
-        Assert.Equal(legacy.ValidateSslCertificate, options.ValidateSslCertificate);
         Assert.NotNull(options.RetryPolicy);
         Assert.Equal(legacy.RetryPolicy.Enabled, options.RetryPolicy.Enabled);
         Assert.Equal(legacy.RetryPolicy.MaxRetryAttempts, options.RetryPolicy.MaxRetryAttempts);
@@ -91,10 +90,9 @@ public class RozetkaPayOptionsTests
 
         Assert.DoesNotContain(properties, property => property.Name is "UseSandbox" or "IsSandbox" or "IsProduction");
 
-        // The only public boolean on the options is the pre-existing SSL switch.
-        Assert.Equal(
-            new[] { "ValidateSslCertificate" },
-            properties.Where(property => property.PropertyType == typeof(bool)).Select(property => property.Name));
+        // The options carry no public boolean at all: the environment is an enum, and the SSL switch that
+        // used to be the one exception was removed because it never controlled the HTTP handler.
+        Assert.DoesNotContain(properties, property => property.PropertyType == typeof(bool));
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -173,7 +171,6 @@ public class RozetkaPayOptionsTests
             ["RozetkaPay:CustomerAuth"] = "cfg-auth",
             ["RozetkaPay:Timeout"] = "00:00:45",
             ["RozetkaPay:UserAgent"] = "CfgAgent/1.0",
-            ["RozetkaPay:ValidateSslCertificate"] = "false",
             ["RozetkaPay:RetryPolicy:Enabled"] = "true",
             ["RozetkaPay:RetryPolicy:MaxRetryAttempts"] = "4",
             ["RozetkaPay:RetryPolicy:BaseDelay"] = "00:00:02",
@@ -195,7 +192,6 @@ public class RozetkaPayOptionsTests
         Assert.Equal("cfg-auth", options.CustomerAuth);
         Assert.Equal(TimeSpan.FromSeconds(45), options.Timeout);
         Assert.Equal("CfgAgent/1.0", options.UserAgent);
-        Assert.False(options.ValidateSslCertificate);
         Assert.True(options.RetryPolicy.Enabled);
         Assert.Equal(4, options.RetryPolicy.MaxRetryAttempts);
         Assert.Equal(TimeSpan.FromSeconds(2), options.RetryPolicy.BaseDelay);
@@ -796,7 +792,6 @@ public class RozetkaPayOptionsTests
             CustomerAuth = "auth",
             Timeout = TimeSpan.FromSeconds(77),
             UserAgent = "Legacy/1.0",
-            ValidateSslCertificate = false,
             RetryPolicy = policy
         };
 
@@ -825,7 +820,6 @@ public class RozetkaPayOptionsTests
         Assert.Equal("auth", resolved.CustomerAuth);
         Assert.Equal(TimeSpan.FromSeconds(77), resolved.Timeout);
         Assert.Equal("Legacy/1.0", resolved.UserAgent);
-        Assert.False(resolved.ValidateSslCertificate);
         Assert.True(resolved.RetryPolicy.Enabled);
         Assert.Equal(5, resolved.RetryPolicy.MaxRetryAttempts);
         Assert.Equal(TimeSpan.FromSeconds(2), resolved.RetryPolicy.BaseDelay);
@@ -981,7 +975,6 @@ public class RozetkaPayOptionsTests
             options.CustomerAuth = "auth";
             options.Timeout = TimeSpan.FromSeconds(33);
             options.UserAgent = "Agreement/1.0";
-            options.ValidateSslCertificate = false;
             options.RetryPolicy = RetryPolicy.Standard;
         });
 
@@ -996,7 +989,6 @@ public class RozetkaPayOptionsTests
         Assert.Equal(options.CustomerAuth, snapshot.CustomerAuth);
         Assert.Equal(options.Timeout, snapshot.Timeout);
         Assert.Equal(options.UserAgent, snapshot.UserAgent);
-        Assert.Equal(options.ValidateSslCertificate, snapshot.ValidateSslCertificate);
         Assert.Equal(options.RetryPolicy.Enabled, snapshot.RetryPolicy.Enabled);
         Assert.Equal(options.RetryPolicy.MaxRetryAttempts, snapshot.RetryPolicy.MaxRetryAttempts);
         Assert.Equal(options.RetryPolicy.RetriableStatusCodes, snapshot.RetryPolicy.RetriableStatusCodes);

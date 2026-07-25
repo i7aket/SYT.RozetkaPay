@@ -71,6 +71,36 @@ immediately before tagging a release (see the release process in `README.md`).
   whitespace-only login or password, an inconsistent retry policy — are now rejected while the
   host starts instead of failing on the first request.
 
+### Removed
+- **Breaking (pre-1.0):** `RozetkaPayOptions.ValidateSslCertificate` and
+  `RozetkaPayConfiguration.ValidateSslCertificate` are removed. Both were dead: neither was ever read
+  by a service, by the DI registration, or by any `HttpMessageHandler`, so setting either to `false`
+  changed no TLS behaviour. The switch only ever promised something the SDK did not do, and removing
+  the false promise is the point of this change — no certificate-validation feature was added, and no
+  replacement setting exists. Code that assigned the property now fails to compile; delete the
+  assignment.
+- The removal was chosen over wiring the switch up. Connecting it would have meant putting a
+  certificate-validation bypass into a payment SDK, and it could not have been applied consistently
+  anyway: the SDK is constructed through a DI named `HttpClient`, an internally owned direct client, a
+  caller-supplied `HttpClient`, and direct service construction, and a handler switch cannot reach an
+  `HttpClient` a caller already built. Doing this before the stable 1.0 contract is the right
+  compatibility boundary.
+- TLS certificate validation is unchanged and always follows the platform or caller-supplied
+  `HttpMessageHandler` policy. The SDK installs no certificate callback, never disables platform
+  validation, and does not inspect or replace a caller's handler.
+- `AddRozetkaPay(IConfiguration)` now throws `InvalidOperationException` when the removed
+  `RozetkaPay:ValidateSslCertificate` key is still present, whatever its value, instead of letting the
+  binder ignore it — a silently dropped key would leave an operator believing a TLS policy they
+  configured is still in force. The message names the key, says why it was removed, and never contains
+  its value or any neighbouring setting. **Migration: remove the key from your configuration.** Nothing
+  else needs to change.
+- To trust a certificate the platform does not: install the CA in the operating-system trust store
+  (production), or build the `HttpClient` yourself with a handler narrowed to that one certificate and
+  pass it to the SDK (local or test infrastructure). Production code must never install a trust-all
+  callback such as `DangerousAcceptAnyServerCertificateValidator` or a
+  `ServerCertificateCustomValidationCallback` that returns `true`: it disables authentication of the
+  payment endpoint and exposes credentials and card data to interception.
+
 ### Fixed
 - Every dynamic query value the SDK puts into a request URI is now percent-encoded as an
   individual value. A caller value can no longer add or overwrite a query parameter

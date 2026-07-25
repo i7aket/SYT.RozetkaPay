@@ -15,6 +15,12 @@ namespace SYT.RozetkaPay.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
+    /// Configuration key of the SSL certificate validation switch that used to sit on the options. It never
+    /// reached an <see cref="HttpMessageHandler"/>, so it is rejected rather than bound.
+    /// </summary>
+    private const string RemovedValidateSslCertificateKey = "ValidateSslCertificate";
+
+    /// <summary>
     /// Add RozetkaPay SDK services to the service collection
     /// </summary>
     /// <param name="services">The service collection</param>
@@ -91,7 +97,8 @@ public static class ServiceCollectionExtensions
     /// <paramref name="services"/> or <paramref name="configuration"/> is <see langword="null"/>.
     /// </exception>
     /// <exception cref="InvalidOperationException">
-    /// The section is absent, or does not carry a login and a password.
+    /// The section is absent, does not carry a login and a password, or still carries the removed
+    /// <c>ValidateSslCertificate</c> key.
     /// </exception>
     public static IServiceCollection AddRozetkaPay(
         this IServiceCollection services,
@@ -101,6 +108,23 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(configuration);
 
         IConfigurationSection rozetkaPaySection = configuration.GetSection(RozetkaPayOptions.SectionName);
+
+        // The removed switch is caught before anything is bound. The binder ignores a key with no matching
+        // property, which would leave an operator believing a TLS policy they configured is still in force,
+        // so the key's presence alone is the error.
+        //
+        // Presence is decided by comparing the direct children's key names, not by Exists(): Exists() is
+        // false for a key whose value is null, yet such a key is still configured and GetChildren() still
+        // lists it. Matching is case-insensitive, as configuration key matching is everywhere else. The
+        // value is never read, parsed, interpolated, or logged — there is no value it could still have meant.
+        if (rozetkaPaySection.GetChildren().Any(static child =>
+                string.Equals(child.Key, RemovedValidateSslCertificateKey, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException(
+                $"{RozetkaPayOptions.SectionName}:{RemovedValidateSslCertificateKey} was removed because it " +
+                "never controlled the HTTP handler. TLS certificate validation always follows the platform " +
+                "or caller-supplied HttpMessageHandler policy. Remove this configuration key.");
+        }
 
         // A section that is absent, or that carries no credentials at all, is reported here rather than at
         // startup validation: this is the failure the SDK has always thrown on, and the message points at the
