@@ -11,6 +11,12 @@ namespace SYT.RozetkaPay.Services;
 public class FinMonService : BaseService, IFinMonService
 {
     /// <summary>
+    /// Route of the official pre-limits operation. Also the log label: the real request target carries the
+    /// recipient IPN in the query, which must not be logged.
+    /// </summary>
+    private const string PreLimitsEndpoint = "/api/finmon/v1/p2p-payment/pre-limits";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="FinMonService"/> class.
     /// </summary>
     /// <param name="configuration">SDK configuration.</param>
@@ -33,7 +39,8 @@ public class FinMonService : BaseService, IFinMonService
     {
         string ipn = recipientIpn.ToString(CultureInfo.InvariantCulture);
         return await GetAsync<FinMonP2PPaymentPreLimitsResponse>(
-            $"/api/finmon/v1/p2p-payment/pre-limits?recipient_ipn={Uri.EscapeDataString(ipn)}",
+            $"{PreLimitsEndpoint}?recipient_ipn={Uri.EscapeDataString(ipn)}",
+            PreLimitsEndpoint,
             cancellationToken);
     }
 }

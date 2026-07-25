@@ -134,6 +134,7 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
 
         return await PostAsync<CreatePaymentInstructionsRequest, PaymentInstructionsResult>(
             CreateEndpoint,
+            CreateEndpoint,
             request,
             cancellationToken);
     }

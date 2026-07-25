@@ -10,6 +10,34 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class PayoutService : BaseService, IPayoutService
 {
+    private const string NewEndpoint = "/api/payouts/v1/new";
+
+    private const string RequestPayoutEndpoint = "/api/payouts/v1/request-payout";
+
+    /// <summary>
+    /// Route of the payout-info operation. Also the log label: the real request target carries the
+    /// caller's external ID in the query, which must not be logged.
+    /// </summary>
+    private const string InfoEndpoint = "/api/payouts/v1/info";
+
+    /// <summary>
+    /// Route of the payout-list operation, and its log label. The real target carries the caller's filter
+    /// and pagination values.
+    /// </summary>
+    private const string ListEndpoint = "/api/payouts/v1/list";
+
+    private const string BalanceEndpoint = "/api/payouts/v1/balance";
+
+    /// <summary>
+    /// Route of the account-balance operation, and its log label. The real target carries the merchant
+    /// entity ID.
+    /// </summary>
+    private const string AccountBalanceEndpoint = "/api/payouts/v1/account-balance";
+
+    private const string ResendCallbackEndpoint = "/api/payouts/v1/resend-callback";
+
+    private const string CancelPayoutEndpoint = "/api/payouts/v1/cancel-payout";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="PayoutService"/> class.
     /// </summary>
@@ -30,7 +58,7 @@ public class PayoutService : BaseService, IPayoutService
     /// <returns>Payout response</returns>
     public async Task<PayoutResponse> CreateAsync(CreatePayoutRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreatePayoutRequest, PayoutResponse>("/api/payouts/v1/new", request, cancellationToken);
+        return await PostAsync<CreatePayoutRequest, PayoutResponse>(NewEndpoint, NewEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -42,7 +70,11 @@ public class PayoutService : BaseService, IPayoutService
     /// <returns>Payout transaction result</returns>
     public async Task<PayoutTransactionResult> RequestPayoutAsync(RequestPayoutRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<RequestPayoutRequest, PayoutTransactionResult>("/api/payouts/v1/request-payout", request, cancellationToken);
+        return await PostAsync<RequestPayoutRequest, PayoutTransactionResult>(
+            RequestPayoutEndpoint,
+            RequestPayoutEndpoint,
+            request,
+            cancellationToken);
     }
 
     /// <summary>
@@ -55,7 +87,8 @@ public class PayoutService : BaseService, IPayoutService
     public async Task<PayoutResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
     {
         return await GetAsync<PayoutResponse>(
-            $"/api/payouts/v1/info?external_id={Uri.EscapeDataString(externalId)}",
+            $"{InfoEndpoint}?external_id={Uri.EscapeDataString(externalId)}",
+            InfoEndpoint,
             cancellationToken);
     }
 
@@ -96,7 +129,7 @@ public class PayoutService : BaseService, IPayoutService
         }
 
         string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-        return await GetAsync<PayoutListResponse>($"/api/payouts/v1/list{query}", cancellationToken);
+        return await GetAsync<PayoutListResponse>($"{ListEndpoint}{query}", ListEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -107,7 +140,7 @@ public class PayoutService : BaseService, IPayoutService
     /// <returns>Balance information</returns>
     public async Task<BalanceResponse> GetBalanceAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsync<BalanceResponse>("/api/payouts/v1/balance", cancellationToken);
+        return await GetAsync<BalanceResponse>(BalanceEndpoint, BalanceEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -120,7 +153,8 @@ public class PayoutService : BaseService, IPayoutService
     public async Task<BalanceResponse> GetAccountBalanceAsync(string merchantEntityId, CancellationToken cancellationToken = default)
     {
         return await GetAsync<BalanceResponse>(
-            $"/api/payouts/v1/account-balance?merchant_entity_id={Uri.EscapeDataString(merchantEntityId)}",
+            $"{AccountBalanceEndpoint}?merchant_entity_id={Uri.EscapeDataString(merchantEntityId)}",
+            AccountBalanceEndpoint,
             cancellationToken);
     }
 
@@ -134,7 +168,8 @@ public class PayoutService : BaseService, IPayoutService
     public async Task<PayoutCallbackResendResponse> ResendCallbackAsync(ResendPayoutCallbackRequest request, CancellationToken cancellationToken = default)
     {
         return await PostAsyncWithNoContent<ResendPayoutCallbackRequest, PayoutCallbackResendResponse>(
-            "/api/payouts/v1/resend-callback",
+            ResendCallbackEndpoint,
+            ResendCallbackEndpoint,
             request,
             cancellationToken);
     }
@@ -148,6 +183,10 @@ public class PayoutService : BaseService, IPayoutService
     /// <returns>Payout transaction result</returns>
     public async Task<PayoutTransactionResult> CancelCashPayoutAsync(CancelCashPayoutRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CancelCashPayoutRequest, PayoutTransactionResult>("/api/payouts/v1/cancel-payout", request, cancellationToken);
+        return await PostAsync<CancelCashPayoutRequest, PayoutTransactionResult>(
+            CancelPayoutEndpoint,
+            CancelPayoutEndpoint,
+            request,
+            cancellationToken);
     }
 }

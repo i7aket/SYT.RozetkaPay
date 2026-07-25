@@ -9,6 +9,12 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class BatchPaymentService : BaseService, IBatchPaymentService
 {
+    private const string NewEndpoint = "/api/payments/batch/v1/new";
+
+    private const string ConfirmEndpoint = "/api/payments/batch/v1/confirm";
+
+    private const string CancelEndpoint = "/api/payments/batch/v1/cancel";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchPaymentService"/> class.
     /// </summary>
@@ -29,7 +35,7 @@ public class BatchPaymentService : BaseService, IBatchPaymentService
     /// <returns>Batch payment response</returns>
     public async Task<BatchPaymentResponse> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreateBatchPaymentRequest, BatchPaymentResponse>("/api/payments/batch/v1/new", request, cancellationToken);
+        return await PostAsync<CreateBatchPaymentRequest, BatchPaymentResponse>(NewEndpoint, NewEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -41,7 +47,7 @@ public class BatchPaymentService : BaseService, IBatchPaymentService
     /// <returns>Batch payment response</returns>
     public async Task<BatchPaymentResponse> ConfirmBatchPaymentAsync(ConfirmBatchPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<ConfirmBatchPaymentRequest, BatchPaymentResponse>("/api/payments/batch/v1/confirm", request, cancellationToken);
+        return await PostAsync<ConfirmBatchPaymentRequest, BatchPaymentResponse>(ConfirmEndpoint, ConfirmEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -53,6 +59,6 @@ public class BatchPaymentService : BaseService, IBatchPaymentService
     /// <returns>Batch payment response</returns>
     public async Task<BatchPaymentResponse> CancelBatchPaymentAsync(CancelBatchPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CancelBatchPaymentRequest, BatchPaymentResponse>("/api/payments/batch/v1/cancel", request, cancellationToken);
+        return await PostAsync<CancelBatchPaymentRequest, BatchPaymentResponse>(CancelEndpoint, CancelEndpoint, request, cancellationToken);
     }
-} 
+}

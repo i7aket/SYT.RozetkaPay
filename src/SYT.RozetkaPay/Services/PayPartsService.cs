@@ -10,6 +10,55 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class PayPartsService : BaseService, IPayPartsService
 {
+    private const string OrderCreateEndpoint = "/api/payparts/v1/order/create";
+
+    private const string NewEndpoint = "/api/payparts/v1/new";
+
+    private const string OrderConfirmEndpoint = "/api/payparts/v1/order/confirm";
+
+    private const string LegacyConfirmEndpoint = "/api/payments/v1/payparts/confirm";
+
+    private const string OrderCancelEndpoint = "/api/payparts/v1/order/cancel";
+
+    private const string LegacyCancelEndpoint = "/api/payments/v1/payparts/cancel";
+
+    private const string RefundEndpoint = "/api/payparts/v1/refund";
+
+    private const string LegacyRefundEndpoint = "/api/payments/v1/payparts/refund";
+
+    private const string RetryRefundEndpoint = "/api/payparts/v1/refund/retry";
+
+    private const string CancelRefundEndpoint = "/api/payparts/v1/refund/cancel";
+
+    /// <summary>
+    /// Static route template of the operation-by-ID lookup, used as the log label only. The real request
+    /// target carries the escaped operation identifier, which must not be logged.
+    /// </summary>
+    private const string OperationByIdLogLabel = "/api/payparts/v1/operation/{operation_id}";
+
+    /// <summary>
+    /// Route of the info/operation lookup. Also the log label: the real request target carries the caller's
+    /// external and operation identifiers in the query.
+    /// </summary>
+    private const string InfoOperationEndpoint = "/api/payparts/v1/info/operation";
+
+    /// <summary>
+    /// Route of the info lookup, and its log label. The real target carries the caller's external ID.
+    /// </summary>
+    private const string InfoEndpoint = "/api/payparts/v1/info";
+
+    /// <summary>
+    /// Route of the operations list, and its log label. The real target carries the caller's filter and
+    /// pagination values.
+    /// </summary>
+    private const string OperationsEndpoint = "/api/payparts/v1/operations";
+
+    private const string BanksInfoEndpoint = "/api/payparts/v1/banks/info";
+
+    private const string BanksEndpoint = "/api/payparts/v1/banks";
+
+    private const string ResendCallbackEndpoint = "/api/payparts/v1/callback/resend";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="PayPartsService"/> class.
     /// </summary>
@@ -31,8 +80,10 @@ public class PayPartsService : BaseService, IPayPartsService
     public async Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrderRequest request, CancellationToken cancellationToken = default)
     {
         return await PostAsyncWithFallback<CreatePayPartsOrderRequest, PayPartsOrderResponse>(
-            "/api/payparts/v1/order/create",
-            "/api/payparts/v1/new",
+            OrderCreateEndpoint,
+            OrderCreateEndpoint,
+            NewEndpoint,
+            NewEndpoint,
             request,
             cancellationToken);
     }
@@ -47,8 +98,10 @@ public class PayPartsService : BaseService, IPayPartsService
     public async Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken = default)
     {
         return await PostAsyncWithFallback<ConfirmPayPartsRequest, PayPartsOrderResponse>(
-            "/api/payparts/v1/order/confirm",
-            "/api/payments/v1/payparts/confirm",
+            OrderConfirmEndpoint,
+            OrderConfirmEndpoint,
+            LegacyConfirmEndpoint,
+            LegacyConfirmEndpoint,
             request,
             cancellationToken);
     }
@@ -63,8 +116,10 @@ public class PayPartsService : BaseService, IPayPartsService
     public async Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken = default)
     {
         return await PostAsyncWithFallback<CancelPayPartsRequest, PayPartsOrderResponse>(
-            "/api/payparts/v1/order/cancel",
-            "/api/payments/v1/payparts/cancel",
+            OrderCancelEndpoint,
+            OrderCancelEndpoint,
+            LegacyCancelEndpoint,
+            LegacyCancelEndpoint,
             request,
             cancellationToken);
     }
@@ -79,8 +134,10 @@ public class PayPartsService : BaseService, IPayPartsService
     public async Task<PayPartsRefundResponse> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken = default)
     {
         return await PostAsyncWithFallback<RefundPayPartsOrderRequest, PayPartsRefundResponse>(
-            "/api/payparts/v1/refund",
-            "/api/payments/v1/payparts/refund",
+            RefundEndpoint,
+            RefundEndpoint,
+            LegacyRefundEndpoint,
+            LegacyRefundEndpoint,
             request,
             cancellationToken);
     }
@@ -94,7 +151,11 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts operation result</returns>
     public async Task<PayPartsOperationResult> RetryRefundAsync(RetryRefundPPayRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<RetryRefundPPayRequest, PayPartsOperationResult>("/api/payparts/v1/refund/retry", request, cancellationToken);
+        return await PostAsync<RetryRefundPPayRequest, PayPartsOperationResult>(
+            RetryRefundEndpoint,
+            RetryRefundEndpoint,
+            request,
+            cancellationToken);
     }
 
     /// <summary>
@@ -106,7 +167,11 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts operation result</returns>
     public async Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CancelRefundPPayRequest, PayPartsOperationResult>("/api/payparts/v1/refund/cancel", request, cancellationToken);
+        return await PostAsync<CancelRefundPPayRequest, PayPartsOperationResult>(
+            CancelRefundEndpoint,
+            CancelRefundEndpoint,
+            request,
+            cancellationToken);
     }
 
     /// <summary>
@@ -119,7 +184,10 @@ public class PayPartsService : BaseService, IPayPartsService
     public async Task<PayPartsOperationResponse> GetOperationInfoAsync(string operationId, CancellationToken cancellationToken = default)
     {
         string encodedOperationId = RequestTargetEncoding.EscapePathSegment(operationId, nameof(operationId));
-        return await GetAsync<PayPartsOperationResponse>($"/api/payparts/v1/operation/{encodedOperationId}", cancellationToken);
+        return await GetAsync<PayPartsOperationResponse>(
+            $"/api/payparts/v1/operation/{encodedOperationId}",
+            OperationByIdLogLabel,
+            cancellationToken);
     }
 
     /// <summary>
@@ -133,10 +201,15 @@ public class PayPartsService : BaseService, IPayPartsService
     public async Task<PayPartsOperationResult> GetOperationInfoAsync(string externalId, string operationId, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint =
-            $"/api/payparts/v1/info/operation?external_id={Uri.EscapeDataString(externalId)}&operation_id={Uri.EscapeDataString(operationId)}";
+            $"{InfoOperationEndpoint}?external_id={Uri.EscapeDataString(externalId)}&operation_id={Uri.EscapeDataString(operationId)}";
         string fallbackEndpoint =
             $"/api/payparts/v1/operation/{RequestTargetEncoding.EscapePathSegment(operationId, nameof(operationId))}";
-        return await GetAsyncWithFallback<PayPartsOperationResult>(primaryEndpoint, fallbackEndpoint, cancellationToken);
+        return await GetAsyncWithFallback<PayPartsOperationResult>(
+            primaryEndpoint,
+            InfoOperationEndpoint,
+            fallbackEndpoint,
+            OperationByIdLogLabel,
+            cancellationToken);
     }
 
     /// <summary>
@@ -148,8 +221,8 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts operations result</returns>
     public async Task<PayPartsOperationsResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
     {
-        string endpoint = $"/api/payparts/v1/info?external_id={Uri.EscapeDataString(externalId)}";
-        return await GetAsync<PayPartsOperationsResult>(endpoint, cancellationToken);
+        string endpoint = $"{InfoEndpoint}?external_id={Uri.EscapeDataString(externalId)}";
+        return await GetAsync<PayPartsOperationsResult>(endpoint, InfoEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -191,7 +264,10 @@ public class PayPartsService : BaseService, IPayPartsService
         }
 
         string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-        return await GetAsync<PayPartsOperationsListResponse>($"/api/payparts/v1/operations{query}", cancellationToken);
+        return await GetAsync<PayPartsOperationsListResponse>(
+            $"{OperationsEndpoint}{query}",
+            OperationsEndpoint,
+            cancellationToken);
     }
 
     /// <summary>
@@ -202,7 +278,12 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts banks information</returns>
     public async Task<PayPartsBanksResponse> GetBanksAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsyncWithFallback<PayPartsBanksResponse>("/api/payparts/v1/banks/info", "/api/payparts/v1/banks", cancellationToken);
+        return await GetAsyncWithFallback<PayPartsBanksResponse>(
+            BanksInfoEndpoint,
+            BanksInfoEndpoint,
+            BanksEndpoint,
+            BanksEndpoint,
+            cancellationToken);
     }
 
     /// <summary>
@@ -214,6 +295,10 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>Callback resend response</returns>
     public async Task<PayPartsResendCallbackResponse> ResendCallbackAsync(PayPartsResendCallbackRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<PayPartsResendCallbackRequest, PayPartsResendCallbackResponse>("/api/payparts/v1/callback/resend", request, cancellationToken);
+        return await PostAsync<PayPartsResendCallbackRequest, PayPartsResendCallbackResponse>(
+            ResendCallbackEndpoint,
+            ResendCallbackEndpoint,
+            request,
+            cancellationToken);
     }
 }

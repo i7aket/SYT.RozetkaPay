@@ -206,6 +206,8 @@ immediately before tagging a release (see the release process in `README.md`).
   and the shared retry warning includes the transport exception message when retries are enabled. See the
   Logging section of the package README for the exact scope. Applications that need request-level HTTP
   telemetry should add their own `DelegatingHandler` or `IHttpClientLogger` that logs a redacted target.
+  *(That legacy gap was subsequently closed by EXP-359 — see **Fixed**. The retry warning's exception message
+  was removed by EXP-356.)*
 - `DeletePaymentFromWalletAsync`, `GetCustomerSubscriptionsAsync` and `CancelAsync` are now
   `[Obsolete]` on both the interfaces and the implementations, each naming its canonical replacement.
   This is a compile-time warning only: their route, HTTP verb, request body and response type are
@@ -272,6 +274,62 @@ immediately before tagging a release (see the release process in `README.md`).
   payment endpoint and exposes credentials and card data to interception.
 
 ### Fixed
+- **The SDK's own service logging no longer contains any caller value from the request target** (EXP-359).
+  This closes the legacy gap that the EXP-354 entry under **Changed** correctly described as out of its scope:
+  most pre-existing operations logged their **real** request target, so any identifier the caller put in a path
+  or a query reached a sink at Information level — in the rendered message *and* in the structured `Endpoint` /
+  `FallbackEndpoint` properties. Concretely, and measured on the base commit:
+  `/api/customers/v1/<customerId>/cards/<cardId>`,
+  `/api/alternative-payments/v1/operation/<externalId>`, `/api/payparts/v1/operation/<operationId>`,
+  `/api/subscriptions/v1/subscriptions/<subscriptionId>[/payments|/cancel]`,
+  `/api/subscriptions/v1/plans/<planId>`, and the full query string of every info, list and lookup operation.
+  What changed:
+  - **the no-label `BaseService` overloads fail closed.** Every transport overload that takes no separate log
+    label now logs the constant `[redacted]` instead of the target it was given, and delegates to its
+    label-aware counterpart. That covers `GetAsync`, `PostAsync`, `PostAsyncWithNoContent`, `PatchAsync`,
+    `DeleteAsync` and the three `404` fallback wrappers. It protects **externally derived** services too: a
+    dynamic target passed to a no-label helper can no longer become a log entry. A label is deliberately never
+    derived from the target — a static route segment and a caller identifier are indistinguishable in an
+    arbitrary path, so normalizing one would be a guess, and a wrong guess is the leak;
+  - **additive label-aware overloads** complete the set: `PostAsync`, `PostAsyncWithNoContent`,
+    `GetAsyncWithFallback`, `PostAsyncWithFallback` and `PostAsyncWithNoContentWithFallback` now each have a
+    form taking an explicit static label. The fallback forms take one label per side, ordered
+    *primary target, primary label, fallback target, fallback label*, so a label cannot drift onto the wrong
+    request. No existing signature changed, nothing became obsolete, and the existing label-aware `GetAsync`,
+    `PatchAsync`, `PostWithoutBodyAsync` and `DeleteAsync` overloads are untouched;
+  - **every internal callsite passes a compile-time static route template** — all `91` transport-helper
+    callsites across the 13 service implementation files, static routes included, so the fail-closed change
+    could not silently downgrade a route that was already safe to log. A route carrying a caller identifier
+    logs the template with the parameter name, e.g.
+    `/api/subscriptions/v1/subscriptions/{subscription_id}/payments`; a route carrying query values logs the
+    path with no query. No label is built by interpolation, concatenation, `Uri.EscapeDataString`,
+    `RequestTargetEncoding.EscapePathSegment`, or from a request DTO;
+  - **`PaymentService.ConfirmP2PAsync` no longer logs the external ID and the amount.** That statement was the
+    one place a service logged a request-body value directly; it is removed, with no substitute message, since
+    the transport helper already writes the safe route label. Both values are still sent in the body unchanged;
+  - a fallback entry now reads `Primary endpoint <label> returned 404. Falling back to <label>.` and names no
+    real target, still written after the cancellation guard.
+  Coverage: `LegacyLoggingRedactionTests` plus
+  `TestInfrastructure/LoggingRedactionTestInfrastructure.cs` — `64` tests on each of `net9.0` and `net10.0`,
+  driving the real helpers through a test-only derived probe and the real services through an intercepting
+  transport. They assert the rendered message, the structured state, the category **and** the scopes of every
+  captured entry, against hostile markers in both raw and percent-encoded spelling; that each dynamic callsite
+  still sends the expected value at the correct insertion point; that no SDK operation emits `[redacted]`; and
+  that credentials, request bodies, success response bodies, provider error text,
+  `RozetkaPayApiError.RawBody` and the decline `Location` are absent while the thrown exception keeps its
+  mapped type and its raw body. No mocking package was added, no test opens a socket or resolves a name, and
+  the SDK opens no logging scope.
+  Unchanged: the public API (no interface, existing signature, overload resolution, cancellation-token default,
+  DTO, exception constructor or DI registration was altered — the new overloads are additive); the wire (verb,
+  request target, query order and escaping, request body, content type, response deserialization); the retry
+  policy, repeat count and `Retry-After` handling; cancellation semantics, including the first-line
+  pre-dispatch guard of `ExecuteWithRetryAsync` and the `ThrowIfCancellationRequested()` that opens each
+  fallback `catch`; the exception hierarchy and error mapping, including `RozetkaPayApiError.RawBody`;
+  request, response and content disposal; the `DeclineAsync` redirect semantics; the EXP-354
+  `RemoveAllLoggers()` factory suppression; and the package dependencies and target frameworks. The retry
+  warning and the API error log are separate, already-protected surfaces and were not touched — the error log
+  deliberately keeps `StatusCode`, `ApiCode` and `RequestId`. Full per-operation audit:
+  `src/SYT.RozetkaPay/docs/LOGGING_AUDIT.md`.
 - **An already-cancelled `CancellationToken` now stops every HTTP helper before it does anything**
   (EXP-357). The two DELETE paths and the payment-instruction decline carried an explicit pre-dispatch
   guard; every other helper entered the shared retry executor and left the outcome to the runtime's own

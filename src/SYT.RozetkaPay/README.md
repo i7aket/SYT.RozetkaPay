@@ -940,9 +940,9 @@ construction rather than silently stripped, and a client you supplied is never d
 
 ## Logging
 
-Two things produce HTTP log output when the SDK is registered through `AddRozetkaPay`: the SDK's own service
-logging, and the built-in `IHttpClientFactory` handler logging. They have different guarantees, and the
-difference matters — so read this section as scoped, not as a blanket claim.
+Two things could produce HTTP log output when the SDK is registered through `AddRozetkaPay`: the SDK's own
+service logging, and the built-in `IHttpClientFactory` handler logging. The second is removed outright; the
+first writes static route templates only. Both statements hold for **every** operation.
 
 ### The built-in factory logging is removed — for every operation
 
@@ -961,12 +961,13 @@ outright.
 
 ### What the SDK's own service logging contains
 
-There is no SDK-wide guarantee here, and none is claimed. The service logging was audited for the ten
-operations of the OpenAPI 59/67 sync only.
+**This is an SDK-wide contract now.** Every service operation logs a **static route template** and the
+response status — never the real request target. The full per-operation audit is
+[`docs/LOGGING_AUDIT.md`](docs/LOGGING_AUDIT.md).
 
-**For those ten operations**, the logging captured by their tests contains the static route template and the
-response status, and no caller identifier, credential, request body, response body, card number, encrypted
-track 2 value, `RozetkaPayApiError.RawBody`, or — for the decline operation — the `Location` it returns:
+A request has two targets, and they are deliberately different things. The **real request target** carries
+your values, percent-encoded once each, and goes on the wire verbatim. The **log label** is a static route
+template the SDK chose at compile time, and it is the only one a log sink ever sees:
 
 ```text
 info: SYT.RozetkaPay.Services.SubscriptionService
@@ -975,37 +976,65 @@ dbug: SYT.RozetkaPay.Services.SubscriptionService
       Response status: OK
 ```
 
-The identifiers covered are the subscription `subscription_id`, the in-store `external_id`, the partner
-query identifiers, the payment-instruction payer and order values, and the decline `project_id` and
-`payment_instruction_id`. Those operations are listed in `docs/API_COMPATIBILITY.md` under
-**New Operations**.
+The `{subscription_id}` above is literal text, not your identifier. Where a route carries a value in the
+**query**, the label is the path with no query at all.
 
-The guarantee is exactly what the tests measure, under the default disabled retry policy: a per-operation
-leak test in each service suite — `SubscriptionPaymentMethodUpdateTests`, `InStorePaymentServiceTests`,
-`PartnerServiceTests` and `PaymentInstructionServiceTests`, which between them cover all ten operations —
-plus `Exp354FactoryLoggingTests`, which drives a real `AddRozetkaPay` through a capturing
-`ILoggerProvider` and checks the whole logging pipeline rather than the service statements alone.
+None of the following is logged by any SDK service, on any code path: a caller identifier (external,
+customer, card, plan, subscription, operation, payment, project, instruction or merchant), in either raw or
+percent-encoded spelling; a credential, whether the configured login and password, the derived `Basic` value,
+`X-CUSTOMER-AUTH`, `X-ON-BEHALF-OF`, or any other header; a request body, including a card number or an
+encrypted track 2 value; a success response body; the parsed provider error message or
+`RozetkaPayApiError.RawBody`; an exception object or its message; the `Location` that `DeclineAsync` returns.
+The SDK also opens **no logging scope**.
 
-**Every other SDK operation logs whatever it logged before this change, and that is not audited or claimed
-to be identifier- or content-safe.** Concretely, in the current code:
+`IPaymentService.ConfirmP2PAsync` used to log the external ID and the amount directly. That statement is
+gone, and no substitute replaced it — the route label is the whole log entry, and both values are still sent
+in the request body unchanged.
 
-- most operations log their **real request target**, and several routes embed a caller identifier in it —
-  `ICustomerService.DeletePaymentFromWalletAsync` logs `/api/customers/v1/<customerId>/cards/<cardId>`,
-  `IAlternativePaymentService.GetOperationAsync` logs
-  `/api/alternative-payments/v1/operation/<externalId>`, `IPayPartsService` operation lookups log
-  `/api/payparts/v1/operation/<operationId>`, and list operations log their query string;
-- some operations log **method-specific values**. `IPaymentService.ConfirmP2PAsync` logs the external ID and
-  the amount it is about to send.
+#### If you derive your own service from `BaseService`
 
-Changing any of that would mean touching operations outside the scope of this change, so it was left alone.
-Treat SDK log output as potentially containing identifiers and values unless the operation is one of the ten
-listed above.
+The transport helpers that take no separate log label **fail closed**: they log the constant `[redacted]`
+instead of the target they were given.
 
-The **shared retry warning is audited**, and it is the same statement for every operation. It reports the retry
-number, the configured budget, the failure category (an exception type name), the HTTP status when the failure
-came from a response, and the computed delay in milliseconds — and nothing else. It does not render the
-exception message, and it carries no response body, no provider text, no request target, and no credential.
-Earlier SDK versions interpolated the failure's message into it; they no longer do.
+```text
+info: MyCompany.Services.MyRozetkaPayService
+      Making GET request to [redacted]
+```
+
+That is on purpose. A safe label cannot be derived from a target — `/api/payparts/v1/operation/info` and
+`/api/payparts/v1/operation/12345` have the same shape, so any normalization would be guessing, and a wrong
+guess is the leak. To keep route-level observability, pass your own static route template to the label-aware
+overload:
+
+```csharp
+// Fails closed: logs "[redacted]".
+return await GetAsync<MyResponse>($"/api/things/v1/{escapedId}", cancellationToken);
+
+// Logs the template. The identifier still reaches the wire.
+private const string ThingLogLabel = "/api/things/v1/{thing_id}";
+
+return await GetAsync<MyResponse>($"/api/things/v1/{escapedId}", ThingLogLabel, cancellationToken);
+```
+
+The label must be a compile-time constant or literal. Never build one by interpolating an identifier,
+concatenating a caller value, or reading a request DTO — that reintroduces exactly the leak the overload
+exists to prevent. Every helper family has a label-aware form: `GetAsync`, `PostAsync`,
+`PostAsyncWithNoContent`, `PatchAsync`, `PostWithoutBodyAsync`, `DeleteAsync` (with and without a body), and
+all three `404` fallback wrappers, which take a label per side so the fallback entry names two templates and
+no real target.
+
+#### The retry and error logs
+
+The **shared retry warning** is the same statement for every operation. It reports the retry number, the
+configured budget, the failure category (an exception type name), the HTTP status when the failure came from
+a response, and the computed delay in milliseconds — and nothing else. It does not render the exception
+message, and carries no request target, no response body, no provider text, and no credential.
+
+The **API error log** deliberately keeps three safe fields — `StatusCode`, `ApiCode` and `RequestId` — because
+they are what support correspondence needs and none of them is caller content. The provider message and the
+raw body are not logged; you still get both from the thrown exception.
+
+Both surfaces predate this contract and are unchanged by it, as is the removal of the factory logging above.
 
 ### Adding your own HTTP telemetry
 
