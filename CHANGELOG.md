@@ -11,6 +11,39 @@ immediately before tagging a release (see the release process in `README.md`).
 ## [Unreleased]
 
 ### Added
+- Executable contract coverage for **all `67` operations** of the pinned OpenAPI snapshot (EXP-337).
+  `tests/SYT.RozetkaPay.Tests/TestInfrastructure/OpenApiOperationManifest.cs` holds one hand-written
+  canonical row per published operation; `OpenApiOperationContractTests` compares that table with
+  `docs/openapi.json` as exact sets on `(HTTP method, path template, operationId)` — so an operation
+  added, removed, renamed, duplicated, or moved to another verb fails the build — and then invokes every
+  row's canonical SDK method and asserts the request it produced. Per row: exact verb and concrete
+  request target against a literal, single-pass percent-encoding of hostile caller values, body policy
+  cross-checked against the document's `requestBody`, content type asserted on the wire, and authentication
+  policy cross-checked against the document's operation-level `security`; `Basic` is decoded and compared as UTF-8
+  `login:password`, optional headers present only when configured, and the caller's cancellation token
+  observed at the transport. The suite cannot reach the network: the base address is in the reserved
+  `.invalid` TLD and the transport never forwards. Rows call canonical members only — the `25` legacy
+  compatibility routes are not counted as coverage. Test-only; no production code changed.
+- Real HTTP-boundary coverage against ASP.NET Core / Kestrel on loopback (EXP-337), through a test-only
+  `Microsoft.AspNetCore.App` framework reference — no new NuGet dependency, and no change to the
+  package's published dependency set. `HttpBoundaryIntegrationTests` proves what an endpoint actually
+  receives: `Basic` decoding as UTF-8 to exactly the configured non-ASCII placeholders with one
+  separating colon, `X-ON-BEHALF-OF` / `X-CUSTOMER-AUTH` / user agent arriving verbatim, no credential
+  anywhere in the request target, and — for `declinePaymentInstruction` — no credential-bearing header at
+  all, a returned `Location`, and a reachable redirect target that records zero requests.
+  `WebhookHttpBoundaryTests` drives the documented callback pipeline over real HTTP: raw bytes verified
+  before deserialization or any side effect, and fail-closed `400` for a missing, malformed, mismatched,
+  or duplicated signature header, a one-byte body mutation, and a semantically identical re-serialization.
+  Expected signatures come from the independent reference vectors already pinned by
+  `WebhookSignatureVerifierTests`, never from the verifier under test.
+- Opt-in live sandbox smoke test (EXP-337): `SandboxSmokeTests` calls only `validateMerchantKeys`
+  (`GET /api/merchants/v1/me`) through the supported DI/options route with
+  `Environment = RozetkaPayEnvironment.Sandbox`, a bounded timeout, no retry, and no fallback to
+  production. `SandboxFactAttribute` skips it unless both `ROZETKAPAY_SANDBOX_LOGIN` and
+  `ROZETKAPAY_SANDBOX_PASSWORD` are set, with a reason that names the variables, states that no network
+  call was made, and reveals neither which variable is missing nor any value. Absent credentials are
+  never a silent pass and never fail an ordinary build. No mutating operation is ever called live, no
+  scheduled workflow was added, and no CI secret was configured.
 - Typed coverage for the ten operations the refreshed OpenAPI snapshot publishes and the previous one
   did not. All additive: no existing signature, route, verb, body, or response type changed.
 - `ISubscriptionService.UpdatePaymentMethodAsync(subscriptionId, request, ct)` — official
@@ -117,6 +150,15 @@ immediately before tagging a release (see the release process in `README.md`).
 - Tag-triggered NuGet publishing and GitHub Releases (`Release NuGet` workflow).
 
 ### Changed
+- The documented webhook receiver now requires **exactly one** `X-ROZETKAPAY-SIGNATURE` header value
+  before verifying (EXP-337). The previous snippet used `FirstOrDefault()`, which silently picks one of
+  several values and lets a sender append a header to choose which value is checked. `Verify` takes a
+  single value and cannot see that a second one arrived, so this is the caller's check to make; the
+  behaviour is now pinned by `WebhookHttpBoundaryTests`. Documentation only — no API change.
+- README and `docs/API_COMPATIBILITY.md` now state precisely what is deterministic, what runs against a
+  real local HTTP boundary, and what is live: `67/67` means 67 SDK operations produce the 67 requests the
+  pinned document declares, verified without a network. The live sandbox check is one read-only merchant
+  identity call, is opt-in, and is reported as skipped in CI because no sandbox secret is configured.
 - The pinned OpenAPI snapshot `docs/openapi.json` is refreshed to the official document observed on
   `2026-07-25` — SHA-256 `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a`, `59` paths,
   `67` operations, up from `49` paths and `57` operations. `OpenApi59OperationTests` hashes the committed
