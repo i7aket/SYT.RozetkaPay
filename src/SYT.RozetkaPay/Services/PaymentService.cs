@@ -11,6 +11,43 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class PaymentService : BaseService, IPaymentService
 {
+    private const string NewEndpoint = "/api/payments/v1/new";
+
+    private const string RecurrentEndpoint = "/api/payments/v1/recurrent";
+
+    private const string ConfirmEndpoint = "/api/payments/v1/confirm";
+
+    private const string CancelEndpoint = "/api/payments/v1/cancel";
+
+    private const string RefundEndpoint = "/api/payments/v1/refund";
+
+    private const string RetryRefundEndpoint = "/api/payments/v1/refund/retry";
+
+    private const string CancelRefundEndpoint = "/api/payments/v1/refund/cancel";
+
+    private const string LookupEndpoint = "/api/payments/v1/lookup";
+
+    private const string ResendCallbackEndpoint = "/api/payments/v1/callback/resend";
+
+    private const string ConfirmP2PEndpoint = "/api/payments/v1/p2p/confirm";
+
+    /// <summary>
+    /// Route of the payment-info operation. Also the log label: the real request target carries the
+    /// caller's external ID in the query, which must not be logged.
+    /// </summary>
+    private const string InfoEndpoint = "/api/payments/v1/info";
+
+    /// <summary>
+    /// Route of the payment-list operation, and its log label. The real target carries the caller's
+    /// filter and pagination values.
+    /// </summary>
+    private const string ListEndpoint = "/api/payments/v1/list";
+
+    /// <summary>
+    /// Route of the receipt operation, and its log label. The real target carries the caller's external ID.
+    /// </summary>
+    private const string ReceiptEndpoint = "/api/payments/v1/receipt";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="PaymentService"/> class.
     /// </summary>
@@ -31,7 +68,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment response</returns>
     public async Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreatePaymentRequest, PaymentResponse>("/api/payments/v1/new", request, cancellationToken);
+        return await PostAsync<CreatePaymentRequest, PaymentResponse>(NewEndpoint, NewEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -43,7 +80,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment response</returns>
     public async Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreateRecurrentPaymentRequest, PaymentResponse>("/api/payments/v1/recurrent", request, cancellationToken);
+        return await PostAsync<CreateRecurrentPaymentRequest, PaymentResponse>(RecurrentEndpoint, RecurrentEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -55,7 +92,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment response</returns>
     public async Task<PaymentResponse> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<ConfirmPaymentRequest, PaymentResponse>("/api/payments/v1/confirm", request, cancellationToken);
+        return await PostAsync<ConfirmPaymentRequest, PaymentResponse>(ConfirmEndpoint, ConfirmEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -67,7 +104,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment response</returns>
     public async Task<PaymentResponse> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CancelPaymentRequest, PaymentResponse>("/api/payments/v1/cancel", request, cancellationToken);
+        return await PostAsync<CancelPaymentRequest, PaymentResponse>(CancelEndpoint, CancelEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -79,7 +116,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment response</returns>
     public async Task<PaymentResponse> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<RefundPaymentRequest, PaymentResponse>("/api/payments/v1/refund", request, cancellationToken);
+        return await PostAsync<RefundPaymentRequest, PaymentResponse>(RefundEndpoint, RefundEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -91,7 +128,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment operation result</returns>
     public async Task<PaymentOperationResult> RetryRefundAsync(RetryRefundRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<RetryRefundRequest, PaymentOperationResult>("/api/payments/v1/refund/retry", request, cancellationToken);
+        return await PostAsync<RetryRefundRequest, PaymentOperationResult>(RetryRefundEndpoint, RetryRefundEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -103,7 +140,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment operation result</returns>
     public async Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CancelRefundRequest, PaymentOperationResult>("/api/payments/v1/refund/cancel", request, cancellationToken);
+        return await PostAsync<CancelRefundRequest, PaymentOperationResult>(CancelRefundEndpoint, CancelRefundEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -116,7 +153,8 @@ public class PaymentService : BaseService, IPaymentService
     public async Task<PaymentResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
     {
         return await GetAsync<PaymentResponse>(
-            $"/api/payments/v1/info?external_id={Uri.EscapeDataString(externalId)}",
+            $"{InfoEndpoint}?external_id={Uri.EscapeDataString(externalId)}",
+            InfoEndpoint,
             cancellationToken);
     }
 
@@ -159,7 +197,7 @@ public class PaymentService : BaseService, IPaymentService
         }
 
         string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-        return await GetAsync<PaymentListResponse>($"/api/payments/v1/list{query}", cancellationToken);
+        return await GetAsync<PaymentListResponse>($"{ListEndpoint}{query}", ListEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -172,7 +210,8 @@ public class PaymentService : BaseService, IPaymentService
     public async Task<PaymentReceiptResponse> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default)
     {
         return await GetAsync<PaymentReceiptResponse>(
-            $"/api/payments/v1/receipt?external_id={Uri.EscapeDataString(externalId)}",
+            $"{ReceiptEndpoint}?external_id={Uri.EscapeDataString(externalId)}",
+            ReceiptEndpoint,
             cancellationToken);
     }
 
@@ -185,7 +224,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Card lookup response</returns>
     public async Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CardLookupRequest, CardLookupResponse>("/api/payments/v1/lookup", request, cancellationToken);
+        return await PostAsync<CardLookupRequest, CardLookupResponse>(LookupEndpoint, LookupEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -197,7 +236,11 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Callback resend response</returns>
     public async Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsyncWithNoContent<ResendCallbackRequest, CallbackResendResponse>("/api/payments/v1/callback/resend", request, cancellationToken);
+        return await PostAsyncWithNoContent<ResendCallbackRequest, CallbackResendResponse>(
+            ResendCallbackEndpoint,
+            ResendCallbackEndpoint,
+            request,
+            cancellationToken);
     }
 
     /// <summary>
@@ -223,15 +266,17 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment response</returns>
     public async Task<PaymentResponse> ConfirmP2PAsync(string externalId, decimal? amount = null, CancellationToken cancellationToken = default)
     {
-        Logger?.LogInformation("Confirming P2P payment {ExternalId} with amount {Amount}", externalId, amount);
-
         P2PConfirmationRequest request = new P2PConfirmationRequest
         {
             ExternalId = externalId,
             Amount = amount ?? 0 // Default to 0 if not specified, API will handle validation
         };
 
-        return await PostAsync<P2PConfirmationRequest, PaymentResponse>("/api/payments/v1/p2p/confirm", request, cancellationToken);
+        return await PostAsync<P2PConfirmationRequest, PaymentResponse>(
+            ConfirmP2PEndpoint,
+            ConfirmP2PEndpoint,
+            request,
+            cancellationToken);
     }
 
     /// <summary>

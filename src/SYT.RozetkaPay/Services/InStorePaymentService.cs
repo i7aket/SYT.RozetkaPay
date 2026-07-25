@@ -52,6 +52,7 @@ public class InStorePaymentService : BaseService, IInStorePaymentService
 
         return await PostAsync<InStorePaymentCreateRequest, InStorePaymentCreateResponse>(
             CreateEndpoint,
+            CreateEndpoint,
             request,
             cancellationToken);
     }
@@ -72,6 +73,7 @@ public class InStorePaymentService : BaseService, IInStorePaymentService
 
         return await PostAsync<InStorePaymentConfirmRequest, InStorePaymentConfirmResponse>(
             ConfirmEndpoint,
+            ConfirmEndpoint,
             request,
             cancellationToken);
     }
@@ -91,6 +93,7 @@ public class InStorePaymentService : BaseService, IInStorePaymentService
         ArgumentNullException.ThrowIfNull(request);
 
         return await PostAsync<InStorePaymentRefundRequest, InStorePaymentRefundResponse>(
+            RefundEndpoint,
             RefundEndpoint,
             request,
             cancellationToken);

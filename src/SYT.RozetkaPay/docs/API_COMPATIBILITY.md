@@ -132,6 +132,13 @@ tests assert the handler-observed `PathAndQuery` rather than the string the serv
 
 ### Logging scope: what EXP-354 does and does not change
 
+> **Superseded for the service-logging half.** The two subsections below describe EXP-354's own scope and are
+> kept as the historical record of that ticket. The legacy gap they document — pre-existing operations logging
+> their real request target, and `PaymentService.ConfirmP2PAsync` logging the external ID and the amount — was
+> subsequently closed by **EXP-359**, which made the static-label contract SDK-wide and made the no-label
+> `BaseService` overloads fail closed to `[redacted]`. For current behaviour see
+> [`LOGGING_AUDIT.md`](LOGGING_AUDIT.md). The factory-logging removal described here is unchanged.
+
 Two separate mechanisms produce HTTP log output, and only one of them is changed SDK-wide.
 
 **Changed for every operation.** `AddRozetkaPay` now calls `RemoveAllLoggers()` on both named clients, so the
@@ -178,7 +185,8 @@ pipeline re-introduces a leak. With those in place:
   body, and **no** `RozetkaPayApiError.RawBody`;
 - the decline operation additionally does not log the `Location` it returns.
 
-Nothing beyond those ten operations is asserted.
+Nothing beyond those ten operations is asserted **by EXP-354**. EXP-359 later extended the same guarantee to
+every operation and added `LegacyLoggingRedactionTests`; see [`LOGGING_AUDIT.md`](LOGGING_AUDIT.md).
 
 ### Historical partner DTOs are left intact
 

@@ -9,6 +9,10 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class ReportService : BaseService, IReportService
 {
+    private const string PaymentsEndpoint = "/api/reports/v1/payments";
+
+    private const string TransactionsEndpoint = "/api/reports/v1/transactions";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ReportService"/> class.
     /// </summary>
@@ -29,7 +33,7 @@ public class ReportService : BaseService, IReportService
     /// <returns>Payments report response</returns>
     public async Task<PaymentsReportResponse> GetPaymentsReportAsync(PaymentsReportRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<PaymentsReportRequest, PaymentsReportResponse>("/api/reports/v1/payments", request, cancellationToken);
+        return await PostAsync<PaymentsReportRequest, PaymentsReportResponse>(PaymentsEndpoint, PaymentsEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -41,6 +45,10 @@ public class ReportService : BaseService, IReportService
     /// <returns>Transactions report response</returns>
     public async Task<TransactionsReportResponse> GetTransactionsReportAsync(TransactionsReportRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<TransactionsReportRequest, TransactionsReportResponse>("/api/reports/v1/transactions", request, cancellationToken);
+        return await PostAsync<TransactionsReportRequest, TransactionsReportResponse>(
+            TransactionsEndpoint,
+            TransactionsEndpoint,
+            request,
+            cancellationToken);
     }
-} 
+}

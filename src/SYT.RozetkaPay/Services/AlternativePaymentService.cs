@@ -10,6 +10,46 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class AlternativePaymentService : BaseService, IAlternativePaymentService
 {
+    private const string CreateEndpoint = "/api/alternative-payments/v1/create";
+
+    private const string NewEndpoint = "/api/alternative-payments/v1/new";
+
+    private const string RefundEndpoint = "/api/alternative-payments/v1/refund";
+
+    private const string ResendCallbackEndpoint = "/api/alternative-payments/v1/callback/resend";
+
+    private const string MethodsEndpoint = "/api/alternative-payments/v1/methods";
+
+    /// <summary>
+    /// Static route template of the operation-by-external-ID lookup, used as the log label only. The real
+    /// request target carries the escaped external identifier, which must not be logged.
+    /// </summary>
+    private const string OperationByExternalIdLogLabel =
+        "/api/alternative-payments/v1/operation/{external_id}";
+
+    /// <summary>
+    /// Route of the info/operation lookup. Also the log label: the real request target carries the caller's
+    /// external and operation identifiers in the query.
+    /// </summary>
+    private const string InfoOperationEndpoint = "/api/alternative-payments/v1/info/operation";
+
+    /// <summary>
+    /// Route of the info lookup, and its log label. The real target carries the caller's external ID.
+    /// </summary>
+    private const string InfoEndpoint = "/api/alternative-payments/v1/info";
+
+    /// <summary>
+    /// Route of the operations list, and its log label. The real target carries the caller's filter and
+    /// pagination values.
+    /// </summary>
+    private const string OperationsEndpoint = "/api/alternative-payments/v1/operations";
+
+    /// <summary>
+    /// Static route template of the status lookup, used as the log label only. The real request target
+    /// carries the escaped payment identifier.
+    /// </summary>
+    private const string StatusLogLabel = "/api/alternative-payments/v1/{payment_id}/status";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="AlternativePaymentService"/> class.
     /// </summary>
@@ -31,8 +71,10 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     public async Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePaymentRequest request, CancellationToken cancellationToken = default)
     {
         return await PostAsyncWithFallback<CreateAlternativePaymentRequest, AlternativePaymentResponse>(
-            "/api/alternative-payments/v1/create",
-            "/api/alternative-payments/v1/new",
+            CreateEndpoint,
+            CreateEndpoint,
+            NewEndpoint,
+            NewEndpoint,
             request,
             cancellationToken);
     }
@@ -47,8 +89,10 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     public async Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePaymentRequest request, CancellationToken cancellationToken = default)
     {
         return await PostAsyncWithFallback<CreateAlternativePaymentRequest, AlternativePaymentOperationResult>(
-            "/api/alternative-payments/v1/create",
-            "/api/alternative-payments/v1/new",
+            CreateEndpoint,
+            CreateEndpoint,
+            NewEndpoint,
+            NewEndpoint,
             request,
             cancellationToken);
     }
@@ -62,7 +106,11 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <returns>Alternative payment refund response</returns>
     public async Task<AlternativePaymentResponse> RefundAsync(RefundAlternativePaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<RefundAlternativePaymentRequest, AlternativePaymentResponse>("/api/alternative-payments/v1/refund", request, cancellationToken);
+        return await PostAsync<RefundAlternativePaymentRequest, AlternativePaymentResponse>(
+            RefundEndpoint,
+            RefundEndpoint,
+            request,
+            cancellationToken);
     }
 
     /// <summary>
@@ -75,7 +123,8 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     public async Task<AlternativePaymentCallbackResendResponse> ResendCallbackAsync(ResendAlternativePaymentCallbackRequest request, CancellationToken cancellationToken = default)
     {
         return await PostAsyncWithNoContent<ResendAlternativePaymentCallbackRequest, AlternativePaymentCallbackResendResponse>(
-            "/api/alternative-payments/v1/callback/resend",
+            ResendCallbackEndpoint,
+            ResendCallbackEndpoint,
             request,
             cancellationToken);
     }
@@ -90,7 +139,10 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     public async Task<AlternativePaymentOperationResponse> GetOperationInfoAsync(string externalId, CancellationToken cancellationToken = default)
     {
         string encodedExternalId = RequestTargetEncoding.EscapePathSegment(externalId, nameof(externalId));
-        return await GetAsync<AlternativePaymentOperationResponse>($"/api/alternative-payments/v1/operation/{encodedExternalId}", cancellationToken);
+        return await GetAsync<AlternativePaymentOperationResponse>(
+            $"/api/alternative-payments/v1/operation/{encodedExternalId}",
+            OperationByExternalIdLogLabel,
+            cancellationToken);
     }
 
     /// <summary>
@@ -107,10 +159,15 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
         CancellationToken cancellationToken = default)
     {
         string primaryEndpoint =
-            $"/api/alternative-payments/v1/info/operation?external_id={Uri.EscapeDataString(externalId)}&operation_id={Uri.EscapeDataString(operationId)}";
+            $"{InfoOperationEndpoint}?external_id={Uri.EscapeDataString(externalId)}&operation_id={Uri.EscapeDataString(operationId)}";
         string fallbackEndpoint =
             $"/api/alternative-payments/v1/operation/{RequestTargetEncoding.EscapePathSegment(externalId, nameof(externalId))}";
-        return await GetAsyncWithFallback<AlternativePaymentOperationResult>(primaryEndpoint, fallbackEndpoint, cancellationToken);
+        return await GetAsyncWithFallback<AlternativePaymentOperationResult>(
+            primaryEndpoint,
+            InfoOperationEndpoint,
+            fallbackEndpoint,
+            OperationByExternalIdLogLabel,
+            cancellationToken);
     }
 
     /// <summary>
@@ -150,7 +207,10 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
         }
 
         string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-        return await GetAsync<AlternativePaymentOperationsResponse>($"/api/alternative-payments/v1/operations{query}", cancellationToken);
+        return await GetAsync<AlternativePaymentOperationsResponse>(
+            $"{OperationsEndpoint}{query}",
+            OperationsEndpoint,
+            cancellationToken);
     }
 
     /// <summary>
@@ -162,8 +222,8 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <returns>Alternative payment operations result</returns>
     public async Task<AlternativePaymentOperationsResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
     {
-        string endpoint = $"/api/alternative-payments/v1/info?external_id={Uri.EscapeDataString(externalId)}";
-        return await GetAsync<AlternativePaymentOperationsResult>(endpoint, cancellationToken);
+        string endpoint = $"{InfoEndpoint}?external_id={Uri.EscapeDataString(externalId)}";
+        return await GetAsync<AlternativePaymentOperationsResult>(endpoint, InfoEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -174,7 +234,7 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <returns>Available payment methods</returns>
     public async Task<AlternativePaymentMethodsResponse> GetAvailableMethodsAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsync<AlternativePaymentMethodsResponse>("/api/alternative-payments/v1/methods", cancellationToken);
+        return await GetAsync<AlternativePaymentMethodsResponse>(MethodsEndpoint, MethodsEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -187,6 +247,9 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     public async Task<AlternativePaymentStatusResponse> GetStatusAsync(string paymentId, CancellationToken cancellationToken = default)
     {
         string encodedPaymentId = RequestTargetEncoding.EscapePathSegment(paymentId, nameof(paymentId));
-        return await GetAsync<AlternativePaymentStatusResponse>($"/api/alternative-payments/v1/{encodedPaymentId}/status", cancellationToken);
+        return await GetAsync<AlternativePaymentStatusResponse>(
+            $"/api/alternative-payments/v1/{encodedPaymentId}/status",
+            StatusLogLabel,
+            cancellationToken);
     }
 }

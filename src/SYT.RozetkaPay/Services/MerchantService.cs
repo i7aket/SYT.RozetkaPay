@@ -9,6 +9,16 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class MerchantService : BaseService, IMerchantService
 {
+    private const string MeEndpoint = "/api/merchants/v1/me";
+
+    /// <summary>
+    /// Route of both merchant-settings operations - the GET that reads them and the POST that replaces
+    /// them - and their log label.
+    /// </summary>
+    private const string SettingsEndpoint = "/api/merchant/v1/settings";
+
+    private const string CommissionRatesEndpoint = "/api/merchant/v1/commission-rates";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MerchantService"/> class.
     /// </summary>
@@ -29,7 +39,7 @@ public class MerchantService : BaseService, IMerchantService
     /// <returns>Merchant validation response</returns>
     public async Task<MerchantValidationResponse> GetInfoAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsync<MerchantValidationResponse>("/api/merchants/v1/me", cancellationToken);
+        return await GetAsync<MerchantValidationResponse>(MeEndpoint, MeEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -40,7 +50,7 @@ public class MerchantService : BaseService, IMerchantService
     /// <returns>Merchant settings</returns>
     public async Task<MerchantSettingsResponse> GetSettingsAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsync<MerchantSettingsResponse>("/api/merchant/v1/settings", cancellationToken);
+        return await GetAsync<MerchantSettingsResponse>(SettingsEndpoint, SettingsEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -52,7 +62,11 @@ public class MerchantService : BaseService, IMerchantService
     /// <returns>Updated merchant settings</returns>
     public async Task<MerchantSettingsResponse> UpdateSettingsAsync(UpdateMerchantSettingsRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<UpdateMerchantSettingsRequest, MerchantSettingsResponse>("/api/merchant/v1/settings", request, cancellationToken);
+        return await PostAsync<UpdateMerchantSettingsRequest, MerchantSettingsResponse>(
+            SettingsEndpoint,
+            SettingsEndpoint,
+            request,
+            cancellationToken);
     }
 
     /// <summary>
@@ -63,6 +77,6 @@ public class MerchantService : BaseService, IMerchantService
     /// <returns>Commission rates information</returns>
     public async Task<CommissionRatesResponse> GetCommissionRatesAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsync<CommissionRatesResponse>("/api/merchant/v1/commission-rates", cancellationToken);
+        return await GetAsync<CommissionRatesResponse>(CommissionRatesEndpoint, CommissionRatesEndpoint, cancellationToken);
     }
-} 
+}

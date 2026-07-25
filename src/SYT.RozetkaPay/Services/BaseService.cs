@@ -27,6 +27,26 @@ public abstract class BaseService
     private const string LegacyRequestIdHeaderName = "Request-Id";
 
     /// <summary>
+    /// What a transport helper logs when the caller did not supply a static log label.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The real request target and the value written to a log are two different things: the target has to go
+    /// on the wire verbatim, while a log sink writes whatever it is handed. Every overload that takes no
+    /// separate label therefore fails closed to this constant instead of logging the target. That protects
+    /// the services in this assembly and, just as importantly, any externally derived service: a dynamic
+    /// target passed to a no-label helper can never become a log entry.
+    /// </para>
+    /// <para>
+    /// A safe label is never derived from the target. Given an arbitrary path there is no reliable way to
+    /// tell a static route segment from a caller identifier, so normalizing or pattern-matching the target
+    /// would guess - and a wrong guess is exactly the leak. Without an explicit label the answer is this
+    /// constant.
+    /// </para>
+    /// </remarks>
+    private const string RedactedEndpointLogLabel = "[redacted]";
+
+    /// <summary>
     /// SDK configuration used by service requests.
     /// </summary>
     protected readonly RozetkaPayConfiguration Configuration;
@@ -69,11 +89,17 @@ public abstract class BaseService
     }
 
     /// <summary>
-    /// Make a GET request to the specified endpoint with retry support
+    /// Make a GET request to the specified endpoint with retry support. The real request target is not
+    /// logged: with no explicit label this logs <c>[redacted]</c>.
     /// </summary>
+    /// <remarks>
+    /// See <see cref="RedactedEndpointLogLabel"/> for why a label is never derived from the target. Pass
+    /// <see cref="GetAsync{TResponse}(string, string, CancellationToken)"/> a static route template to keep
+    /// route-level observability.
+    /// </remarks>
     protected Task<TResponse> GetAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default)
     {
-        return GetAsync<TResponse>(endpoint, endpoint, cancellationToken);
+        return GetAsync<TResponse>(endpoint, RedactedEndpointLogLabel, cancellationToken);
     }
 
     /// <summary>
@@ -116,7 +142,25 @@ public abstract class BaseService
     }
 
     /// <summary>
-    /// Make a GET request to the primary endpoint and fallback to secondary endpoint on 404.
+    /// Make a GET request to the primary endpoint and fallback to secondary endpoint on 404. Neither real
+    /// request target is logged: with no explicit labels both log as <c>[redacted]</c>.
+    /// </summary>
+    protected Task<TResponse> GetAsyncWithFallback<TResponse>(
+        string endpoint,
+        string fallbackEndpoint,
+        CancellationToken cancellationToken = default)
+    {
+        return GetAsyncWithFallback<TResponse>(
+            endpoint,
+            RedactedEndpointLogLabel,
+            fallbackEndpoint,
+            RedactedEndpointLogLabel,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a GET request to the primary endpoint and fallback to secondary endpoint on 404, logging the
+    /// supplied static labels instead of either real request target.
     /// </summary>
     /// <remarks>
     /// A caller who cancelled while the primary request was in flight gets no fallback at all: the check is
@@ -124,33 +168,65 @@ public abstract class BaseService
     /// before a second request is built. Only <see cref="RozetkaPayNotFoundException"/> is caught, so an
     /// <see cref="OperationCanceledException"/> from the primary attempt leaves this method unchanged.
     /// </remarks>
+    /// <param name="endpoint">Primary request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">Static route template of the primary target.</param>
+    /// <param name="fallbackEndpoint">Fallback request target actually sent.</param>
+    /// <param name="fallbackEndpointForLogging">Static route template of the fallback target.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     protected async Task<TResponse> GetAsyncWithFallback<TResponse>(
         string endpoint,
+        string endpointForLogging,
         string fallbackEndpoint,
+        string fallbackEndpointForLogging,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            return await GetAsync<TResponse>(endpoint, cancellationToken).ConfigureAwait(false);
+            return await GetAsync<TResponse>(endpoint, endpointForLogging, cancellationToken).ConfigureAwait(false);
         }
         catch (RozetkaPayNotFoundException)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Logger?.LogInformation("Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.", endpoint, fallbackEndpoint);
-            return await GetAsync<TResponse>(fallbackEndpoint, cancellationToken).ConfigureAwait(false);
+            Logger?.LogInformation(
+                "Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.",
+                endpointForLogging,
+                fallbackEndpointForLogging);
+            return await GetAsync<TResponse>(fallbackEndpoint, fallbackEndpointForLogging, cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 
     /// <summary>
-    /// Make a POST request to the specified endpoint with JSON body and retry support
+    /// Make a POST request to the specified endpoint with JSON body and retry support. The real request
+    /// target is not logged: with no explicit label this logs <c>[redacted]</c>.
     /// </summary>
-    protected async Task<TResponse> PostAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+    protected Task<TResponse> PostAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+    {
+        return PostAsync<TRequest, TResponse>(endpoint, RedactedEndpointLogLabel, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a POST request carrying a JSON body, logging <paramref name="endpointForLogging"/> instead of
+    /// the real request target.
+    /// </summary>
+    /// <param name="endpoint">Request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">
+    /// Static route template written by the SDK. Callers pass this when the request target carries a
+    /// caller identifier, so that the identifier never reaches a log sink.
+    /// </param>
+    /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected async Task<TResponse> PostAsync<TRequest, TResponse>(
+        string endpoint,
+        string endpointForLogging,
+        TRequest request,
+        CancellationToken cancellationToken = default)
     {
         return await ExecuteWithRetryAsync(async () =>
         {
             string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
-            Logger?.LogInformation("Making POST request to {Endpoint}", endpoint);
+            Logger?.LogInformation("Making POST request to {Endpoint}", endpointForLogging);
 
             // Body and request are built inside the attempt and owned by it: disposing the request disposes
             // the content, and a retry always sends a freshly built request rather than a spent one.
@@ -176,41 +252,104 @@ public abstract class BaseService
     }
 
     /// <summary>
-    /// Make a POST request to the primary endpoint and fallback to secondary endpoint on 404.
+    /// Make a POST request to the primary endpoint and fallback to secondary endpoint on 404. Neither real
+    /// request target is logged: with no explicit labels both log as <c>[redacted]</c>.
     /// </summary>
-    /// <remarks>
-    /// Same cancellation boundary as <see cref="GetAsyncWithFallback"/>: a cancelled caller never reaches the
-    /// fallback log, the second serialization of the body, or the fallback request.
-    /// </remarks>
-    protected async Task<TResponse> PostAsyncWithFallback<TRequest, TResponse>(
+    protected Task<TResponse> PostAsyncWithFallback<TRequest, TResponse>(
         string endpoint,
         string fallbackEndpoint,
         TRequest request,
         CancellationToken cancellationToken = default)
     {
+        return PostAsyncWithFallback<TRequest, TResponse>(
+            endpoint,
+            RedactedEndpointLogLabel,
+            fallbackEndpoint,
+            RedactedEndpointLogLabel,
+            request,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a POST request to the primary endpoint and fallback to secondary endpoint on 404, logging the
+    /// supplied static labels instead of either real request target.
+    /// </summary>
+    /// <remarks>
+    /// Same cancellation boundary as <see cref="GetAsyncWithFallback{TResponse}(string, string, CancellationToken)"/>:
+    /// a cancelled caller never reaches the fallback log, the second serialization of the body, or the
+    /// fallback request.
+    /// </remarks>
+    /// <param name="endpoint">Primary request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">Static route template of the primary target.</param>
+    /// <param name="fallbackEndpoint">Fallback request target actually sent.</param>
+    /// <param name="fallbackEndpointForLogging">Static route template of the fallback target.</param>
+    /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected async Task<TResponse> PostAsyncWithFallback<TRequest, TResponse>(
+        string endpoint,
+        string endpointForLogging,
+        string fallbackEndpoint,
+        string fallbackEndpointForLogging,
+        TRequest request,
+        CancellationToken cancellationToken = default)
+    {
         try
         {
-            return await PostAsync<TRequest, TResponse>(endpoint, request, cancellationToken).ConfigureAwait(false);
+            return await PostAsync<TRequest, TResponse>(endpoint, endpointForLogging, request, cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (RozetkaPayNotFoundException)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Logger?.LogInformation("Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.", endpoint, fallbackEndpoint);
-            return await PostAsync<TRequest, TResponse>(fallbackEndpoint, request, cancellationToken).ConfigureAwait(false);
+            Logger?.LogInformation(
+                "Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.",
+                endpointForLogging,
+                fallbackEndpointForLogging);
+            return await PostAsync<TRequest, TResponse>(
+                fallbackEndpoint,
+                fallbackEndpointForLogging,
+                request,
+                cancellationToken).ConfigureAwait(false);
         }
     }
 
     /// <summary>
-    /// Make a POST request that can handle both JSON responses and 204 No Content responses
+    /// Make a POST request that can handle both JSON responses and 204 No Content responses. The real
+    /// request target is not logged: with no explicit label this logs <c>[redacted]</c>.
     /// </summary>
-    protected async Task<TResponse> PostAsyncWithNoContent<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+    protected Task<TResponse> PostAsyncWithNoContent<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+        where TResponse : new()
+    {
+        return PostAsyncWithNoContent<TRequest, TResponse>(
+            endpoint,
+            RedactedEndpointLogLabel,
+            request,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a POST request that can handle both JSON responses and 204 No Content responses, logging
+    /// <paramref name="endpointForLogging"/> instead of the real request target.
+    /// </summary>
+    /// <param name="endpoint">Request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">
+    /// Static route template written by the SDK. Callers pass this when the request target carries a
+    /// caller identifier, so that the identifier never reaches a log sink.
+    /// </param>
+    /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected async Task<TResponse> PostAsyncWithNoContent<TRequest, TResponse>(
+        string endpoint,
+        string endpointForLogging,
+        TRequest request,
+        CancellationToken cancellationToken = default)
         where TResponse : new()
     {
         return await ExecuteWithRetryAsync(async () =>
         {
             string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
-            Logger?.LogInformation("Making POST request to {Endpoint}", endpoint);
+            Logger?.LogInformation("Making POST request to {Endpoint}", endpointForLogging);
 
             // Same per-attempt ownership as the plain POST helper.
             using HttpRequestMessage message = new(HttpMethod.Post, endpoint)
@@ -242,37 +381,78 @@ public abstract class BaseService
     }
 
     /// <summary>
-    /// Make a POST request with 204 support to the primary endpoint and fallback to secondary endpoint on 404.
+    /// Make a POST request with 204 support to the primary endpoint and fallback to secondary endpoint on
+    /// 404. Neither real request target is logged: with no explicit labels both log as <c>[redacted]</c>.
     /// </summary>
-    /// <remarks>
-    /// Same cancellation boundary as <see cref="GetAsyncWithFallback"/>.
-    /// </remarks>
-    protected async Task<TResponse> PostAsyncWithNoContentWithFallback<TRequest, TResponse>(
+    protected Task<TResponse> PostAsyncWithNoContentWithFallback<TRequest, TResponse>(
         string endpoint,
         string fallbackEndpoint,
         TRequest request,
         CancellationToken cancellationToken = default)
         where TResponse : new()
     {
+        return PostAsyncWithNoContentWithFallback<TRequest, TResponse>(
+            endpoint,
+            RedactedEndpointLogLabel,
+            fallbackEndpoint,
+            RedactedEndpointLogLabel,
+            request,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a POST request with 204 support to the primary endpoint and fallback to secondary endpoint on
+    /// 404, logging the supplied static labels instead of either real request target.
+    /// </summary>
+    /// <remarks>
+    /// Same cancellation boundary as <see cref="GetAsyncWithFallback{TResponse}(string, string, CancellationToken)"/>.
+    /// </remarks>
+    /// <param name="endpoint">Primary request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">Static route template of the primary target.</param>
+    /// <param name="fallbackEndpoint">Fallback request target actually sent.</param>
+    /// <param name="fallbackEndpointForLogging">Static route template of the fallback target.</param>
+    /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected async Task<TResponse> PostAsyncWithNoContentWithFallback<TRequest, TResponse>(
+        string endpoint,
+        string endpointForLogging,
+        string fallbackEndpoint,
+        string fallbackEndpointForLogging,
+        TRequest request,
+        CancellationToken cancellationToken = default)
+        where TResponse : new()
+    {
         try
         {
-            return await PostAsyncWithNoContent<TRequest, TResponse>(endpoint, request, cancellationToken).ConfigureAwait(false);
+            return await PostAsyncWithNoContent<TRequest, TResponse>(
+                endpoint,
+                endpointForLogging,
+                request,
+                cancellationToken).ConfigureAwait(false);
         }
         catch (RozetkaPayNotFoundException)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Logger?.LogInformation("Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.", endpoint, fallbackEndpoint);
-            return await PostAsyncWithNoContent<TRequest, TResponse>(fallbackEndpoint, request, cancellationToken).ConfigureAwait(false);
+            Logger?.LogInformation(
+                "Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.",
+                endpointForLogging,
+                fallbackEndpointForLogging);
+            return await PostAsyncWithNoContent<TRequest, TResponse>(
+                fallbackEndpoint,
+                fallbackEndpointForLogging,
+                request,
+                cancellationToken).ConfigureAwait(false);
         }
     }
 
     /// <summary>
-    /// Make a PATCH request to the specified endpoint with JSON body and retry support
+    /// Make a PATCH request to the specified endpoint with JSON body and retry support. The real request
+    /// target is not logged: with no explicit label this logs <c>[redacted]</c>.
     /// </summary>
     protected Task<TResponse> PatchAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
     {
-        return PatchAsync<TRequest, TResponse>(endpoint, endpoint, request, cancellationToken);
+        return PatchAsync<TRequest, TResponse>(endpoint, RedactedEndpointLogLabel, request, cancellationToken);
     }
 
     /// <summary>
@@ -361,11 +541,12 @@ public abstract class BaseService
     }
 
     /// <summary>
-    /// Make a DELETE request to the specified endpoint with retry support
+    /// Make a DELETE request to the specified endpoint with retry support. The real request target is not
+    /// logged: with no explicit label this logs <c>[redacted]</c>.
     /// </summary>
     protected Task<TResponse> DeleteAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default)
     {
-        return DeleteAsync<TResponse>(endpoint, endpoint, cancellationToken);
+        return DeleteAsync<TResponse>(endpoint, RedactedEndpointLogLabel, cancellationToken);
     }
 
     /// <summary>
