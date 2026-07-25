@@ -34,8 +34,19 @@ a singleton. The concrete types stay public and unchanged, so existing code cont
 compile. Details and testing examples are in the package README.
 
 The SDK is pinned to the official OpenAPI document observed on `2026-07-25` — `59` paths and
-`67` operations — and exposes a typed method for each of those operations. That is a statement
-about the pinned document, not a claim that a live sandbox answered all 67; see
+`67` operations — and exposes a typed method for each of those operations.
+
+Every one of those `67` operations is covered by an executable contract test: the SDK method is
+invoked and the request it produces is asserted against the pinned document, which is compared
+with the test manifest as an exact set. Outbound authentication, the anonymous decline redirect,
+and the inbound webhook signature pipeline are additionally proven against a real Kestrel server
+on loopback. All of that runs in ordinary CI on both target frameworks and needs no network.
+
+That is a statement about the pinned document and about what the SDK puts on the wire — **not** a
+claim that a live RozetkaPay environment answered all 67. Most published operations move real
+money and are never called live. The single live check is an opt-in, read-only merchant identity
+call that is skipped unless `ROZETKAPAY_SANDBOX_LOGIN` and `ROZETKAPAY_SANDBOX_PASSWORD` are both
+set; no sandbox credentials are configured in CI, so it does not run there. See
 [API compatibility](src/SYT.RozetkaPay/docs/API_COMPATIBILITY.md).
 
 `declinePaymentInstruction` is the one unauthenticated operation. The SDK sends it over a
@@ -74,6 +85,17 @@ Every pull request targeting `main`, and every push to `main`, runs the
 1. Restores and builds the solution in `Release` with warnings treated as errors.
 2. Runs the full test suite on `net9.0` and `net10.0`.
 3. Packs the NuGet package and verifies the produced `.nupkg`/`.snupkg`.
+
+The suite includes the `67`-operation contract coverage and the loopback HTTP-boundary
+tests, and it makes no outbound network request: the contract transport targets a reserved
+`.invalid` host and the boundary tests bind `127.0.0.1` on an ephemeral port. CI therefore
+does not depend on RozetkaPay being reachable.
+
+The live sandbox smoke test is reported as **skipped** in CI, because no sandbox credentials
+are configured as repository secrets. That is deliberate: a workflow that went green merely
+because a secret was absent would be claiming live verification it never performed. Run it
+manually instead — see
+[API compatibility](src/SYT.RozetkaPay/docs/API_COMPATIBILITY.md).
 
 This workflow is read-only: it uses no repository secrets and never publishes.
 A merge to `main` builds and tests the default branch but **does not** publish a

@@ -38,11 +38,13 @@ exactly the document above.
 
 The claim is about the **pinned document**: for every operation it declares, the SDK has a typed method
 that sends the declared verb, request target, and body shape, and deserializes the declared response.
-That is proven by the wire-level tests listed under each section below.
+That is proven by the wire-level tests listed under each section below, and — since EXP-337 — by an
+executable row per operation (see [Deterministic 67/67 Coverage](#deterministic-6767-coverage-exp-337)).
 
-It is **not** a claim that a live sandbox has answered all `67` operations. End-to-end
-sandbox/authentication/webhook validation is **EXP-337**, and no such validation was performed here. This
-SDK therefore does **not** claim live, provider-verified `67/67` parity.
+It is **not** a claim that a live sandbox has answered all `67` operations, and it never will be: most
+published operations create, confirm, cancel, refund, or pay out real money. Calling all of them against
+a shared environment would leave provider-side financial state behind, so the SDK deliberately does not
+do it. This SDK therefore does **not** claim live, provider-verified `67/67` parity.
 
 ## New Operations (EXP-354)
 
@@ -235,20 +237,112 @@ wrapper; writes always emit the official root array. Null and empty stay distinc
 yields an empty list, a wrapper carrying `"subscriptions": null` yields `null`, and an absent list is
 normalized to `[]` when serializing, because the official schema has no spelling for "no array at all".
 
+## Deterministic 67/67 Coverage (EXP-337)
+
+EXP-337 adds an executable contract row for **every one of the `67` operations**, plus real HTTP-boundary
+tests for outbound authentication and inbound webhook handling. Nothing in this section requires the
+network, and all of it runs in ordinary CI on both `net9.0` and `net10.0`.
+
+Read "67/67" precisely: **67 SDK operations produce exactly the 67 requests the pinned document
+declares.** It is not, and does not become, a statement that RozetkaPay answered 67 calls.
+
+### Layer A — operation contract, always in CI
+
+`tests/SYT.RozetkaPay.Tests/TestInfrastructure/OpenApiOperationManifest.cs` is a hand-written table with
+one canonical row per published operation. `OpenApiOperationContractTests` compares that table against the
+pinned `openapi.json` as exact sets on `(HTTP method, path template, operationId)`, then invokes every row's
+canonical SDK method over a recording transport and asserts the request it produced.
+
+| Property | How it is proven |
+|---|---|
+| No operation missing, added, renamed, duplicated, or moved to another verb | Both sets compared on the full identity; the guard has its own drift meta-tests, so a comparison that silently matched the manifest against itself would fail |
+| Correct verb and concrete request target | Literal expectation per row; expected values are never produced by the production URL helper |
+| Percent-encoding applied exactly once, at the right insertion point | Caller values carry `space + / & = ? # %` and Cyrillic text; the encoded form is a separate literal |
+| Correct body policy | Cross-checked against `requestBody` in the pinned document, then asserted on the wire: `application/json; charset=utf-8`, or no content object at all |
+| Correct authentication policy | Cross-checked against operation-level `security` in the document; `Basic` decoded and compared as UTF-8 `login:password` |
+| The one anonymous operation stays anonymous | `declinePaymentInstruction` carries no `Authorization`, `Proxy-Authorization`, `X-ON-BEHALF-OF`, or `X-CUSTOMER-AUTH`, sends no content, and returns the `302` `Location` without fetching it |
+| Optional headers sent only when configured | Every row re-run with `OnBehalfOf` and `CustomerAuth` unset |
+| Cancellation reaches the transport | Every row cancelled mid-flight from inside the handler |
+| No call can reach the network | Base address is in the reserved `.invalid` TLD and the transport never forwards; every row asserts the host it observed |
+
+The controlled transport answers a deterministic `400`. That exercises the SDK error path without
+duplicating 67 success schemas and — unlike a `404` — never triggers the legacy-route fallbacks several
+services still carry, so "exactly one request per operation" stays a real assertion.
+
+Rows call the **canonical** member, never a legacy one: `DeleteCustomerPaymentAsync`,
+`GetSubscriptionsAsync`, `CancelCustomerSubscriptionAsync`, `RequestPayoutAsync`, and the two-argument
+`GetOperationInfoAsync` overloads. The `25` legacy compatibility routes are not counted as coverage.
+
+### Layer B — real HTTP boundaries, always in CI
+
+`HttpBoundaryIntegrationTests` and `WebhookHttpBoundaryTests` run the SDK against a real ASP.NET Core /
+Kestrel server over a real socket, bound to `127.0.0.1` on an ephemeral port. They prove what a stubbed
+handler cannot: what actually goes on the wire, and what an endpoint actually receives.
+
+- Outbound: `Basic` decodes as UTF-8 to exactly the configured non-ASCII placeholders with exactly one
+  separating colon; `X-ON-BEHALF-OF`, `X-CUSTOMER-AUTH`, and the user agent arrive verbatim; no credential
+  appears anywhere in the request target; a typed response comes back.
+- Anonymous decline: no credential-bearing header arrives, query values are escaped once, the `Location`
+  of a `302` is returned, and a **reachable** redirect target records zero requests.
+- Ownership: the self-owning `PaymentInstructionService` constructor really releases its decline client on
+  disposal, and never touches a caller-supplied one.
+- Inbound webhook: raw bytes read once and verified **before** deserialization or any side effect; a
+  missing, malformed, mismatched, or duplicated signature header fails closed with `400` and a static
+  reason; a one-byte mutation and a semantically identical re-serialization are both rejected.
+
+Expected webhook signatures come from the independent Python reference vectors already pinned by
+`WebhookSignatureVerifierTests`, never from the verifier under test.
+
+### Layer C — live sandbox smoke, opt-in only
+
+One test, read-only, off by default: `SandboxSmokeTests.ValidateMerchantKeys_ShouldAnswerOverTheLiveSandbox`
+calls only `validateMerchantKeys` (`GET /api/merchants/v1/me`), the operation that exists to be called this
+way. It resolves the SDK through the supported DI/options route with
+`Environment = RozetkaPayEnvironment.Sandbox`, asserts the base URL is the official sandbox constant, uses a
+bounded timeout, and never retries or falls back to production.
+
+Without **both** environment variables it is skipped with the reason
+`Requires ROZETKAPAY_SANDBOX_LOGIN and ROZETKAPAY_SANDBOX_PASSWORD. No network call was made.` and makes no
+network call. Absent credentials are never a pass and never fail an ordinary build; the reason never says
+which variable is missing and never contains a value.
+
+```bash
+# Opt in explicitly. Values are placeholders - never commit real ones, and never paste them into CI logs.
+ROZETKAPAY_SANDBOX_LOGIN='<login>' \
+ROZETKAPAY_SANDBOX_PASSWORD='<password>' \
+dotnet test tests/SYT.RozetkaPay.Tests/SYT.RozetkaPay.Tests.csproj -c Release --filter 'Category=Sandbox'
+
+# Everything deterministic, explicitly excluding the live check.
+dotnet test tests/SYT.RozetkaPay.Tests/SYT.RozetkaPay.Tests.csproj -c Release --filter 'Category!=Sandbox'
+```
+
+There is no scheduled workflow and no CI secret for the sandbox. A workflow that reported green because
+secrets were absent would be a false claim of live verification, so it does not exist.
+
 ## Last Verification
 
 - Date: `2026-07-25`
-- Result: pinned snapshot refreshed to the live official document; ten new operations covered by typed
-  SDK methods across three new service contracts plus one new subscription operation; both callback
-  operationIds now unique.
-- Snapshot SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a`
+- Result: deterministic contract coverage for all `67` pinned operations, executed per operation on both
+  target frameworks; real Kestrel HTTP-boundary coverage for outbound authentication, the anonymous
+  decline/redirect, and the inbound webhook signature pipeline; one opt-in read-only live sandbox smoke
+  test, skipped in this run.
+- Snapshot SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a` (unchanged; EXP-337
+  does not touch `docs/openapi.json`)
 - Snapshot path count: `59`; snapshot operation count: `67`
 - SDK service coverage for snapshot OpenAPI paths: `59/59`
-- Verified by: `OpenApi59OperationTests`, `OperationParityTests`,
+- Deterministic operation contract coverage: `67/67`, asserted as an exact set against the pinned document
+- Test result: `net9.0` — `1175` passed, `1` skipped, `0` failed; `net10.0` — `1175` passed, `1` skipped,
+  `0` failed. The single skip is the live sandbox smoke test, skipped because no sandbox credentials were
+  supplied.
+- Verified by: `OpenApiOperationContractTests`, `HttpBoundaryIntegrationTests`, `WebhookHttpBoundaryTests`,
+  `SandboxSkipBehaviorTests`, `OpenApi59OperationTests`, `OperationParityTests`,
   `SubscriptionPaymentMethodUpdateTests`, `InStorePaymentServiceTests`, `PartnerServiceTests`,
   `PaymentInstructionServiceTests`, `PathSegmentEncodingTests`, `QueryParameterEscapingTests`,
-  `PublicInterfacesTests`, `PublicInterfaceRegistrationTests`, `Exp354DisposalTests`
-- Not verified here: live sandbox behaviour for any operation. That remains **EXP-337**.
+  `WebhookSignatureVerifierTests`, `PublicInterfacesTests`, `PublicInterfaceRegistrationTests`,
+  `Exp354DisposalTests`
+- **Not** verified: that a live RozetkaPay environment answers all `67` operations. No mutating operation
+  was called against any live environment, and none will be. The live check is exactly one read-only
+  merchant identity call, and it did not run here.
 
 ## Known Runtime Inconsistency (Observed in Integrations)
 

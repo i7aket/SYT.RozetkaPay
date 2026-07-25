@@ -40,10 +40,18 @@ SDK calls the right operation. The pinned snapshot now holds `59` paths and `67`
 official document as observed on `2026-07-25` — and the SDK covers `59/59` paths with a typed method
 for each of those `67` operations.
 
-That is a statement about the **pinned document**, verified by
-`tests/SYT.RozetkaPay.Tests/OpenApi59OperationTests.cs` and by the per-operation wire tests. It is
-**not** a claim that a live sandbox has answered all 67 operations; end-to-end sandbox, authentication
-and webhook coverage is tracked separately. See `docs/API_COMPATIBILITY.md`.
+Every one of those `67` operations has an executable contract row: the SDK method is invoked for real and
+the request it produces — verb, concrete request target, percent-encoding, body policy, and authentication
+headers — is asserted against the pinned document. The manifest and the document are compared as exact
+sets, so an operation that is added, removed, renamed, duplicated, or moved to another verb fails the
+build. Outbound authentication and the inbound webhook signature pipeline are additionally proven against
+a real Kestrel server over a real socket. All of it runs in ordinary CI, on `net9.0` and `net10.0`, with
+no network access.
+
+That remains a statement about the **pinned document**. It is **not** a claim that a live RozetkaPay
+environment has answered all `67` operations — most of them move real money, so the SDK does not call them
+against a live environment. The only live check is one opt-in, read-only merchant identity call; see
+[Live sandbox smoke test](#live-sandbox-smoke-test) and `docs/API_COMPATIBILITY.md`.
 
 ## Known API Response Inconsistency
 
@@ -170,6 +178,33 @@ sandbox credentials — production credentials will not authenticate there.
 
 `Environment` defaults to `Production`, so an application that never sets it keeps talking to the endpoint
 it always has.
+
+### Live sandbox smoke test
+
+The repository ships one test that talks to a real RozetkaPay environment, and it is off by default. It
+calls only `validateMerchantKeys` (`GET /api/merchants/v1/me`) — a read-only identity check that changes
+nothing — and it is skipped unless **both** environment variables are present:
+
+```bash
+ROZETKAPAY_SANDBOX_LOGIN='<your sandbox login>' \
+ROZETKAPAY_SANDBOX_PASSWORD='<your sandbox password>' \
+dotnet test tests/SYT.RozetkaPay.Tests/SYT.RozetkaPay.Tests.csproj -c Release --filter 'Category=Sandbox'
+```
+
+Everything else is deterministic and needs no credentials and no network:
+
+```bash
+dotnet test tests/SYT.RozetkaPay.Tests/SYT.RozetkaPay.Tests.csproj -c Release --filter 'Category!=Sandbox'
+```
+
+Without the variables the test reports
+`Requires ROZETKAPAY_SANDBOX_LOGIN and ROZETKAPAY_SANDBOX_PASSWORD. No network call was made.` and makes
+no request. Missing credentials are never a silent pass and never break an ordinary build.
+
+No mutating operation — create, confirm, cancel, refund, payout, subscription, callback resend, report
+generation, or payment instruction — is ever called against a live environment by this repository's tests.
+Use sandbox credentials only, never production ones, and keep both out of source control, shell history,
+and CI logs.
 
 ### BaseUrl override
 
@@ -829,6 +864,7 @@ Inject `IRozetkaPayWebhookSignatureVerifier`; `AddRozetkaPay` registers it as a 
 `RozetkaPayWebhookSignatureVerifier.SignatureHeaderName` is the header name:
 
 ```csharp
+using Microsoft.Extensions.Primitives;
 using SYT.RozetkaPay.Security;
 
 app.MapPost("/callbacks/rozetkapay", async (
@@ -843,10 +879,12 @@ app.MapPost("/callbacks/rozetkapay", async (
         rawBody = buffer.ToArray();
     }
 
-    string? signature = request.Headers[
-        RozetkaPayWebhookSignatureVerifier.SignatureHeaderName].FirstOrDefault();
+    // Exactly one header value. Zero is unauthenticated; more than one is ambiguous, and picking one of
+    // them would let the sender choose which body is treated as authentic.
+    StringValues header = request.Headers[
+        RozetkaPayWebhookSignatureVerifier.SignatureHeaderName];
 
-    if (!verifier.Verify(rawBody, signature))
+    if (header.Count != 1 || !verifier.Verify(rawBody, header[0]))
     {
         return Results.Unauthorized();
     }
@@ -861,9 +899,12 @@ Rules that matter:
 - **Verify the raw bytes.** The signature covers the exact body RozetkaPay sent. Parsing the JSON and
   re-serializing it changes whitespace and property order, and the signature will no longer match.
   Deserialize only after `Verify` has returned `true`, and deserialize from those same bytes.
-- **A missing or malformed header returns `false`, not an exception.** `signature` is nullable on
+- **A missing or malformed header returns `false`, not an exception.** The parameter is nullable on
   purpose, so you do not need a null check before calling `Verify`. Empty, whitespace, wrongly padded
   and non-base64url values all fail closed.
+- **Reject more than one signature header value yourself.** `Verify` takes a single value and cannot see
+  that a second one arrived. `FirstOrDefault()` — or any other "pick one" — lets a sender append a header
+  and choose which value is checked. Require `header.Count == 1` before verifying, as above.
 - **The SDK does not touch `HttpRequest`.** Reading and, if your pipeline needs to read it again,
   rewinding or buffering the request stream (`request.EnableBuffering()`) is the application's job.
 - **The SDK does not dictate an HTTP response.** Map `false` to 401 or 400 according to your own
