@@ -29,8 +29,15 @@ substitute them in unit tests. See [Interfaces and Testing](#interfaces-and-test
 - OpenAPI schema version: `3.0.3`
 - Local spec snapshot: `docs/openapi.json`
 - Official docs/source of truth: `https://cdn.rozetkapay.com/public-docs/index.html`
-- Last checked against official public docs: `2026-02-28`
+- Last checked against official public docs: `2026-07-25`
 - Detailed compatibility notes: `docs/API_COMPATIBILITY.md`
+
+Path coverage and operation parity are reported separately: calling the right path does not prove the
+SDK calls the right operation. The pinned snapshot holds `49` paths and `57` operations, and the SDK
+covers `49/49` paths and reaches operation parity for those `57` operations. The live official document
+observed on `2026-07-25` publishes `59` paths and `67` operations; refreshing the snapshot to that set
+is tracked separately, and this SDK does **not** claim live `67/67` parity. See
+`docs/API_COMPATIBILITY.md`.
 
 ## Known API Response Inconsistency
 
@@ -391,6 +398,113 @@ They are rejected rather than encoded because `.` is an RFC 3986 unreserved char
 percent-encoding leaves unchanged, and `System.Uri` removes exact dot segments while building the
 request. Sending them would silently address a different endpoint than the one you asked for. Every
 other identifier is preserved. This rule does not change any endpoint name or HTTP method.
+
+## Canonical Wallet and Subscription Operations
+
+Three published operations were previously reachable only through a legacy verb, path, body or
+response shape. The canonical members below call the documented operation; the legacy members are
+`[Obsolete]` and keep their old behaviour byte-for-byte, so existing code keeps compiling and keeps
+sending the same requests.
+
+| operationId | Official request | Canonical method |
+|---|---|---|
+| `deleteCustomerPayment` | `DELETE /api/customers/v1/wallet` + JSON body | `ICustomerService.DeleteCustomerPaymentAsync` |
+| `getSubscriptions` | `GET /api/subscriptions/v1/subscriptions` | `ISubscriptionService.GetSubscriptionsAsync` |
+| `CancelCustomerSubscription` | `DELETE /api/subscriptions/v1/subscriptions/{subscription_id}/cancel`, no body | `ISubscriptionService.CancelCustomerSubscriptionAsync` |
+
+### Delete a payment method from the wallet
+
+```csharp
+using SYT.RozetkaPay.Models.Customers;
+using SYT.RozetkaPay.Services;
+
+ICustomerService customers = serviceProvider.GetRequiredService<ICustomerService>();
+
+DeleteCustomerPaymentRequest request = new()
+{
+    OptionId = "b1f0c1d2-0000-4000-8000-000000000000",
+    Type = "card"
+};
+
+// Identify the customer by external ID.
+DeleteCustomerPaymentResult byExternalId =
+    await customers.DeleteCustomerPaymentAsync("customer-42", request, cancellationToken);
+
+// Or rely on the configured CustomerAuth (X-CUSTOMER-AUTH) and send no external_id at all.
+DeleteCustomerPaymentResult byCustomerAuth =
+    await customers.DeleteCustomerPaymentAsync(request, cancellationToken);
+
+bool removed = byExternalId.Delete;
+```
+
+### List customer subscriptions
+
+```csharp
+using SYT.RozetkaPay.Models.Subscriptions;
+using SYT.RozetkaPay.Services;
+
+ISubscriptionService subscriptions = serviceProvider.GetRequiredService<ISubscriptionService>();
+
+SubscriptionList byExternalId =
+    await subscriptions.GetSubscriptionsAsync("customer-42", cancellationToken);
+
+// Or rely on the configured CustomerAuth (X-CUSTOMER-AUTH).
+SubscriptionList byCustomerAuth = await subscriptions.GetSubscriptionsAsync(cancellationToken);
+
+foreach (Subscription subscription in byExternalId.Subscriptions ?? [])
+{
+    Console.WriteLine($"{subscription.Id}: {subscription.State}");
+}
+```
+
+The official response is a **root JSON array**. `SubscriptionList` keeps its existing public shape and
+an internal converter maps that array onto `Subscriptions`, so the type is unchanged for source and
+binary compatibility. The historical `{ "subscriptions": [...] }` wrapper is still read; an official
+`[]` gives an empty list while a wrapper carrying `"subscriptions": null` gives `null`.
+
+### Cancel a subscription
+
+```csharp
+using SYT.RozetkaPay.Models.Common;
+using SYT.RozetkaPay.Models.Subscriptions;
+
+// With explicit query options.
+DefaultResponse cancelled = await subscriptions.CancelCustomerSubscriptionAsync(
+    "1d85591b-891b-4b10-9d60-2078940d8e74",
+    new CancelCustomerSubscriptionOptions { ExternalId = "customer-42", Refund = true },
+    cancellationToken);
+// DELETE /api/subscriptions/v1/subscriptions/1d85591b-.../cancel?external_id=customer-42&refund=true
+
+// Or without options, letting the provider apply its default refund handling.
+DefaultResponse cancelledDefault = await subscriptions.CancelCustomerSubscriptionAsync(
+    "1d85591b-891b-4b10-9d60-2078940d8e74",
+    cancellationToken);
+// DELETE /api/subscriptions/v1/subscriptions/1d85591b-.../cancel
+```
+
+Rules that matter:
+
+- **Pass raw identifiers.** `externalId` and `CancelCustomerSubscriptionOptions.ExternalId` are
+  encoded exactly once as query values; `subscriptionId` is encoded exactly once as one path segment.
+  See [Request Encoding](#request-encoding) and
+  [Request Identifier Encoding](#request-identifier-encoding).
+- **`CancelCustomerSubscriptionOptions` is not a request body.** The cancel operation sends **no body
+  at all**; both members are rendered as query parameters, always in the order `external_id`, then
+  `refund`, and `refund` is rendered lowercase (`true`/`false`).
+- **`null` omits, empty does not.** A `null` option is left out of the request target. An empty
+  `ExternalId` is sent as `external_id=` and validated by the provider.
+- **A canonical operation never switches to a legacy route or verb.** A canonical `404` makes exactly
+  one HTTP request and throws `RozetkaPayNotFoundException`, because the request and response shapes
+  differ and a silent fallback would hide a parity error.
+- **Retries repeat the same target, never a different one.** The default `RetryPolicy` is disabled, so
+  a canonical call is a single request out of the box. With a retry policy enabled, the SDK may repeat
+  the **same** canonical request target for the conditions it already supports — transport-level
+  failures and `429`. A repeat is always the same operation against the same target, never a different
+  route, verb or body, and `404` is not a retriable condition.
+- **The legacy members still work.** `DeletePaymentFromWalletAsync`, `GetCustomerSubscriptionsAsync`
+  and `CancelAsync` are obsolete warnings only, and their route, verb, body and response type are
+  unchanged. `CancelAsync` still sends `external_id`, `reason` and `immediate`, none of which maps
+  onto the official `refund` option — which is exactly why it was not redirected.
 
 ## Webhook Signature Verification
 

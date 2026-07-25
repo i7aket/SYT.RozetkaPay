@@ -131,8 +131,10 @@ public class PublicInterfacesTests
             [nameof(IBatchPaymentService)] = 3,
             [nameof(IPayPartsService)] = 12,
             [nameof(IPayoutService)] = 8,
-            [nameof(ICustomerService)] = 7,
-            [nameof(ISubscriptionService)] = 13,
+            // EXP-355 added two canonical wallet members and four canonical subscription members
+            // alongside the preserved legacy ones.
+            [nameof(ICustomerService)] = 9,
+            [nameof(ISubscriptionService)] = 17,
             [nameof(IReportService)] = 2,
             [nameof(IAlternativePaymentService)] = 10,
             [nameof(IMerchantService)] = 4,

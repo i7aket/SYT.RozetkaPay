@@ -11,6 +11,26 @@ immediately before tagging a release (see the release process in `README.md`).
 ## [Unreleased]
 
 ### Added
+- Canonical members for three published operations that the SDK previously reached only through a
+  legacy verb, path, body or response shape:
+  - `ICustomerService.DeleteCustomerPaymentAsync(request, ct)` and
+    `(externalId, request, ct)` — official `deleteCustomerPayment`:
+    `DELETE /api/customers/v1/wallet` with an optional `external_id` query value, a JSON request body,
+    and a typed `DeleteCustomerPaymentResult` response.
+  - `ISubscriptionService.GetSubscriptionsAsync(ct)` and `(externalId, ct)` — official
+    `getSubscriptions`: `GET /api/subscriptions/v1/subscriptions` with an optional `external_id` query
+    value, reading the official root JSON array.
+  - `ISubscriptionService.CancelCustomerSubscriptionAsync(subscriptionId, ct)` and
+    `(subscriptionId, options, ct)` — official `CancelCustomerSubscription`:
+    `DELETE /api/subscriptions/v1/subscriptions/{subscription_id}/cancel` with no request body and a
+    typed `DefaultResponse`.
+  The token-only overloads identify the customer through the configured `X-CUSTOMER-AUTH` header.
+  Distinct names, not overloads of the old members, so no existing call becomes ambiguous.
+- `CancelCustomerSubscriptionOptions` in `SYT.RozetkaPay.Models.Subscriptions`: the optional
+  `external_id` and `refund` **query** parameters of the cancel operation. It is never serialized —
+  the operation sends no body. `null` omits a parameter, an empty `ExternalId` is sent as
+  `external_id=` for the provider to validate, `refund` is rendered lowercase and invariantly, and the
+  query order is always `external_id` then `refund`.
 - `RozetkaPayApiError` in `SYT.RozetkaPay.Exceptions` and `RozetkaPayException.ApiError`: structured
   details of a failed API call — HTTP status (`HttpStatusCode`), provider error code, request
   identifier, and the raw response body. Every exception raised from a non-success HTTP response
@@ -51,6 +71,19 @@ immediately before tagging a release (see the release process in `README.md`).
 - Tag-triggered NuGet publishing and GitHub Releases (`Release NuGet` workflow).
 
 ### Changed
+- `DeletePaymentFromWalletAsync`, `GetCustomerSubscriptionsAsync` and `CancelAsync` are now
+  `[Obsolete]` on both the interfaces and the implementations, each naming its canonical replacement.
+  This is a compile-time warning only: their route, HTTP verb, request body and response type are
+  unchanged on the wire, and every pre-existing signature stays binary compatible.
+- `SubscriptionList` keeps its public class, `Subscriptions` property, property type and base type; an
+  internal `JsonConverter<SubscriptionList>` now maps the official root JSON array onto it. Reads
+  accept both the official array and the historical `{ "subscriptions": [...] }` wrapper; writes emit
+  the official root array. An official `[]` yields an empty list, a wrapper carrying
+  `"subscriptions": null` yields `null`, and an absent list is normalized to `[]` when serializing.
+- Every DELETE request now rejects an already-cancelled `CancellationToken` before the retry loop and
+  before `HttpClient` is invoked, so no DELETE reaches an `HttpMessageHandler` after the caller has
+  cancelled. This previously depended on a `HttpClient` pre-dispatch check that behaves differently on
+  `net9.0` and `net10.0`.
 - The exception hierarchy and every pre-existing public exception constructor are unchanged:
   `RozetkaPayException`, `RozetkaPayAuthorizationException`, `RozetkaPayValidationException`,
   `RozetkaPayRateLimitException`, and `RozetkaPayNotFoundException` keep their parameterless,
@@ -102,6 +135,26 @@ immediately before tagging a release (see the release process in `README.md`).
   payment endpoint and exposes credentials and card data to interception.
 
 ### Fixed
+- Operation-level parity defects against the pinned OpenAPI snapshot
+  (`docs/openapi.json`, SHA-256 `309e61bf2185706c137f2d270d767b31777f7a4d09f2f2e0fb900fe36601cc44`,
+  `49` paths / `57` operations):
+  - `deleteCustomerPayment` was called as `DELETE /api/customers/v1/{customerId}/cards/{cardId}` with
+    no request body and deserialized into `DeleteCardFromWalletResponse` instead of
+    `DeleteCustomerPaymentResult`.
+  - `getSubscriptions` was called as
+    `GET /api/subscriptions/v1/subscriptions/customer/{customerId}` and deserialized into the
+    `CustomerSubscriptionsResponse` wrapper instead of the official root array.
+  - `CancelCustomerSubscription` was sent as a `POST` with an `external_id`/`reason`/`immediate` JSON
+    body and returned no typed response, instead of a bodiless `DELETE` with optional `external_id`
+    and `refund` query parameters returning `DefaultResponse`.
+  No canonical call ever falls back to the legacy path or verb, on `404` or on any other failure: the
+  request and response shapes genuinely differ, and `reason` and `immediate` have no honest mapping onto
+  `refund`, so a fallback would conceal a parity error. A canonical `404` makes exactly one HTTP request.
+  Retry behaviour is unchanged by this release: with a retry policy enabled, the SDK may repeat the
+  **same** canonical request target for the conditions it already supports — transport-level failures and
+  `429` — always as the same operation against the same target, and never as a different route or verb.
+- `docs/API_COMPATIBILITY.md` no longer implies that path presence equals operation parity, and now
+  reports the pinned snapshot and the live official document as two separate views.
 - Every dynamic query value the SDK puts into a request URI is now percent-encoded as an
   individual value. A caller value can no longer add or overwrite a query parameter
   (`external_id=pay&status=success` stays one `external_id`), start a fragment (`#`), smuggle a

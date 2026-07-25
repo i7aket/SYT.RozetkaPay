@@ -363,7 +363,9 @@ public class ServicesCoverageExpansionTests
         StubHttpMessageHandler handler = new(async (_, _) => Json("{}"));
         CustomerService service = new(CreateConfiguration(), CreateHttpClient(handler));
 
+#pragma warning disable CS0618 // Deliberate legacy regression call.
         await service.DeletePaymentFromWalletAsync("customer-1", "card-1");
+#pragma warning restore CS0618
         Assert.Equal("/api/customers/v1/customer-1/cards/card-1", handler.LastRequest!.RequestUri!.PathAndQuery);
 
         await service.GetCustomerCardsAsync("customer-1");
@@ -472,12 +474,16 @@ public class ServicesCoverageExpansionTests
 
         await service.CreateAsync(null!);
         await service.GiftAsync(null!);
+#pragma warning disable CS0618 // Deliberate legacy regression call.
         await service.GetCustomerSubscriptionsAsync("customer-1");
+#pragma warning restore CS0618
         await service.DeactivateAsync("sub-1");
         await service.GetAsync("sub-1");
         await service.UpdateAsync("sub-1", null!);
         await service.GetPaymentsAsync("sub-1");
+#pragma warning disable CS0618 // Deliberate legacy regression call.
         await service.CancelAsync("sub-1", null!);
+#pragma warning restore CS0618
 
         Assert.Contains("GET /api/subscriptions/v1/plans", calls);
         Assert.Contains("POST /api/subscriptions/v1/plans", calls);

@@ -10,6 +10,12 @@ namespace SYT.RozetkaPay.Services;
 public class CustomerService : BaseService, ICustomerService
 {
     /// <summary>
+    /// Route of the official wallet operations. Used both as the request target and as the static log
+    /// label, so a caller identifier carried in the query never reaches a log sink.
+    /// </summary>
+    private const string WalletEndpoint = "/api/customers/v1/wallet";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CustomerService"/> class.
     /// </summary>
     /// <param name="configuration">SDK configuration.</param>
@@ -52,6 +58,47 @@ public class CustomerService : BaseService, ICustomerService
     }
 
     /// <summary>
+    /// Delete a customer payment method from the wallet, identifying the customer through the
+    /// configured <c>X-CUSTOMER-AUTH</c> header.
+    /// DELETE /api/customers/v1/wallet
+    /// </summary>
+    /// <param name="request">Payment method to delete. Sent as the JSON request body.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Deletion result reported by the provider</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="request"/> is null.</exception>
+    public async Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(DeleteCustomerPaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await DeleteAsync<DeleteCustomerPaymentRequest, DeleteCustomerPaymentResult>(
+            WalletEndpoint,
+            WalletEndpoint,
+            request,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Delete a customer payment method from the wallet, identifying the customer by external ID.
+    /// DELETE /api/customers/v1/wallet?external_id={externalId}
+    /// </summary>
+    /// <param name="externalId">Customer ID in the caller's system. Passed raw and escaped once.</param>
+    /// <param name="request">Payment method to delete. Sent as the JSON request body.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Deletion result reported by the provider</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="externalId"/> or <paramref name="request"/> is null.</exception>
+    public async Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(string externalId, DeleteCustomerPaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(externalId);
+        ArgumentNullException.ThrowIfNull(request);
+
+        return await DeleteAsync<DeleteCustomerPaymentRequest, DeleteCustomerPaymentResult>(
+            $"{WalletEndpoint}?external_id={Uri.EscapeDataString(externalId)}",
+            WalletEndpoint,
+            request,
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Delete customer payment from wallet
     /// DELETE /api/customers/v1/{customerId}/cards/{cardId}
     /// </summary>
@@ -59,6 +106,7 @@ public class CustomerService : BaseService, ICustomerService
     /// <param name="cardId">Card ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Card deletion response</returns>
+    [Obsolete("Use DeleteCustomerPaymentAsync(...). This member calls the legacy /api/customers/v1/{customerId}/cards/{cardId} route.")]
     public async Task<DeleteCardFromWalletResponse> DeletePaymentFromWalletAsync(string customerId, string cardId, CancellationToken cancellationToken = default)
     {
         string encodedCustomerId = RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId));

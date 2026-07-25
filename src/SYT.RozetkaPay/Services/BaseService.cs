@@ -70,11 +70,26 @@ public abstract class BaseService
     /// <summary>
     /// Make a GET request to the specified endpoint with retry support
     /// </summary>
-    protected async Task<TResponse> GetAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default)
+    protected Task<TResponse> GetAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default)
+    {
+        return GetAsync<TResponse>(endpoint, endpoint, cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a GET request to the specified endpoint, logging <paramref name="endpointForLogging"/>
+    /// instead of the real request target.
+    /// </summary>
+    /// <param name="endpoint">Request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">
+    /// Static route template written by the SDK. Callers pass this when the request target carries a
+    /// caller identifier, so that the identifier never reaches a log sink.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected async Task<TResponse> GetAsync<TResponse>(string endpoint, string endpointForLogging, CancellationToken cancellationToken = default)
     {
         return await ExecuteWithRetryAsync(async () =>
         {
-            Logger?.LogInformation("Making GET request to {Endpoint}", endpoint);
+            Logger?.LogInformation("Making GET request to {Endpoint}", endpointForLogging);
 
             HttpResponseMessage response = await HttpClient.GetAsync(endpoint, cancellationToken).ConfigureAwait(false);
             string content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -236,23 +251,89 @@ public abstract class BaseService
     /// <summary>
     /// Make a DELETE request to the specified endpoint with retry support
     /// </summary>
-    protected async Task<TResponse> DeleteAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default)
+    protected Task<TResponse> DeleteAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default)
     {
+        return DeleteAsync<TResponse>(endpoint, endpoint, cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a DELETE request without a body, logging <paramref name="endpointForLogging"/> instead of
+    /// the real request target.
+    /// </summary>
+    /// <param name="endpoint">Request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">
+    /// Static route template written by the SDK. Callers pass this when the request target carries a
+    /// caller identifier, so that the identifier never reaches a log sink.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected Task<TResponse> DeleteAsync<TResponse>(string endpoint, string endpointForLogging, CancellationToken cancellationToken = default)
+    {
+        return SendDeleteAsync<TResponse>(endpoint, endpointForLogging, content: null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a DELETE request carrying a JSON body, logging <paramref name="endpointForLogging"/>
+    /// instead of the real request target.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="HttpClient.DeleteAsync(string, CancellationToken)"/> cannot carry a body, so the
+    /// request is built explicitly. The verb is never downgraded to POST: an official DELETE stays a
+    /// DELETE. The serialized body is never logged.
+    /// </remarks>
+    /// <param name="endpoint">Request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">Static route template written by the SDK.</param>
+    /// <param name="request">Body serialized with the SDK serializer options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected Task<TResponse> DeleteAsync<TRequest, TResponse>(
+        string endpoint,
+        string endpointForLogging,
+        TRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
+        return SendDeleteAsync<TResponse>(endpoint, endpointForLogging, json, cancellationToken);
+    }
+
+    /// <summary>
+    /// Shared DELETE transport. <paramref name="content"/> is the serialized body, or null for the
+    /// bodiless form.
+    /// </summary>
+    /// <remarks>
+    /// An already-cancelled token is rejected here, before the retry loop and before
+    /// <see cref="HttpClient"/> is touched, so no DELETE - with or without a body - can reach a
+    /// handler after the caller has cancelled. The pre-dispatch check inside
+    /// <see cref="HttpClient.SendAsync(HttpRequestMessage, CancellationToken)"/> is a runtime
+    /// implementation detail that differs between target frameworks and is not relied on.
+    /// </remarks>
+    private async Task<TResponse> SendDeleteAsync<TResponse>(
+        string endpoint,
+        string endpointForLogging,
+        string? content,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
         return await ExecuteWithRetryAsync(async () =>
         {
-            Logger?.LogInformation("Making DELETE request to {Endpoint}", endpoint);
+            Logger?.LogInformation("Making DELETE request to {Endpoint}", endpointForLogging);
 
-            HttpResponseMessage response = await HttpClient.DeleteAsync(endpoint, cancellationToken).ConfigureAwait(false);
-            string content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            using HttpRequestMessage request = new(HttpMethod.Delete, endpoint);
+            if (content is not null)
+            {
+                request.Content = new StringContent(content, Encoding.UTF8, "application/json");
+            }
+
+            HttpResponseMessage response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
 
             if (!response.IsSuccessStatusCode)
             {
-                HandleErrorResponse(response, content);
+                HandleErrorResponse(response, responseContent);
             }
 
-            return DeserializeResponse<TResponse>(content, response.StatusCode);
+            return DeserializeResponse<TResponse>(responseContent, response.StatusCode);
         }, cancellationToken).ConfigureAwait(false);
     }
 

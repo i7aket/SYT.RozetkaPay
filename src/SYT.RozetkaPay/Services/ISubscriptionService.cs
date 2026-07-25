@@ -1,3 +1,4 @@
+using SYT.RozetkaPay.Models.Common;
 using SYT.RozetkaPay.Models.Subscriptions;
 
 namespace SYT.RozetkaPay.Services;
@@ -65,11 +66,34 @@ public interface ISubscriptionService
     Task<CreateSubscriptionResponse> GiftAsync(GiftSubscriptionRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// List customer subscriptions, identifying the customer through the configured
+    /// <c>X-CUSTOMER-AUTH</c> header. Official operation <c>getSubscriptions</c>:
+    /// <c>GET /api/subscriptions/v1/subscriptions</c>.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The official root JSON array of subscriptions</returns>
+    Task<SubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// List customer subscriptions, identifying the customer by external ID. Official operation
+    /// <c>getSubscriptions</c>: <c>GET /api/subscriptions/v1/subscriptions</c>.
+    /// </summary>
+    /// <param name="externalId">
+    /// User ID in the caller's system. Pass the raw value: it is percent-encoded exactly once as the
+    /// <c>external_id</c> query value.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The official root JSON array of subscriptions</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="externalId"/> is null.</exception>
+    Task<SubscriptionList> GetSubscriptionsAsync(string externalId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Get customer subscriptions
     /// </summary>
     /// <param name="customerId">Customer ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Customer subscriptions response</returns>
+    [Obsolete("Use GetSubscriptionsAsync(...). This member calls the legacy /api/subscriptions/v1/subscriptions/customer/{customerId} route and returns the legacy wrapper model.")]
     Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(string customerId, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -106,11 +130,45 @@ public interface ISubscriptionService
     Task<SubscriptionPaymentsResponse> GetPaymentsAsync(string subscriptionId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Cancel a subscription with the provider default refund handling. Official operation
+    /// <c>CancelCustomerSubscription</c>:
+    /// <c>DELETE /api/subscriptions/v1/subscriptions/{subscription_id}/cancel</c>. The operation
+    /// sends no request body.
+    /// </summary>
+    /// <param name="subscriptionId">
+    /// Subscription ID. Pass the raw value: it is percent-encoded exactly once as a single path
+    /// segment.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Default provider response</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="subscriptionId"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="subscriptionId"/> is exactly "." or "..".</exception>
+    Task<DefaultResponse> CancelCustomerSubscriptionAsync(string subscriptionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cancel a subscription with explicit query options. Official operation
+    /// <c>CancelCustomerSubscription</c>:
+    /// <c>DELETE /api/subscriptions/v1/subscriptions/{subscription_id}/cancel</c>. The operation
+    /// sends no request body; <paramref name="options"/> is rendered as query parameters only.
+    /// </summary>
+    /// <param name="subscriptionId">
+    /// Subscription ID. Pass the raw value: it is percent-encoded exactly once as a single path
+    /// segment.
+    /// </param>
+    /// <param name="options">Optional <c>external_id</c> and <c>refund</c> query parameters.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Default provider response</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="subscriptionId"/> or <paramref name="options"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="subscriptionId"/> is exactly "." or "..".</exception>
+    Task<DefaultResponse> CancelCustomerSubscriptionAsync(string subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Cancel subscription
     /// </summary>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="request">Cancel subscription request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>A task that completes when the subscription is cancelled</returns>
+    [Obsolete("Use CancelCustomerSubscriptionAsync(...). The legacy Reason and Immediate fields cannot be mapped safely to the official refund query option.")]
     Task CancelAsync(string subscriptionId, CancelSubscriptionRequest request, CancellationToken cancellationToken = default);
 }
