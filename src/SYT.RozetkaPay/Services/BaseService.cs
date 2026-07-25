@@ -118,6 +118,12 @@ public abstract class BaseService
     /// <summary>
     /// Make a GET request to the primary endpoint and fallback to secondary endpoint on 404.
     /// </summary>
+    /// <remarks>
+    /// A caller who cancelled while the primary request was in flight gets no fallback at all: the check is
+    /// the first statement of the catch, so the fallback path is abandoned before it announces itself and
+    /// before a second request is built. Only <see cref="RozetkaPayNotFoundException"/> is caught, so an
+    /// <see cref="OperationCanceledException"/> from the primary attempt leaves this method unchanged.
+    /// </remarks>
     protected async Task<TResponse> GetAsyncWithFallback<TResponse>(
         string endpoint,
         string fallbackEndpoint,
@@ -129,6 +135,8 @@ public abstract class BaseService
         }
         catch (RozetkaPayNotFoundException)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             Logger?.LogInformation("Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.", endpoint, fallbackEndpoint);
             return await GetAsync<TResponse>(fallbackEndpoint, cancellationToken).ConfigureAwait(false);
         }
@@ -170,6 +178,10 @@ public abstract class BaseService
     /// <summary>
     /// Make a POST request to the primary endpoint and fallback to secondary endpoint on 404.
     /// </summary>
+    /// <remarks>
+    /// Same cancellation boundary as <see cref="GetAsyncWithFallback"/>: a cancelled caller never reaches the
+    /// fallback log, the second serialization of the body, or the fallback request.
+    /// </remarks>
     protected async Task<TResponse> PostAsyncWithFallback<TRequest, TResponse>(
         string endpoint,
         string fallbackEndpoint,
@@ -182,6 +194,8 @@ public abstract class BaseService
         }
         catch (RozetkaPayNotFoundException)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             Logger?.LogInformation("Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.", endpoint, fallbackEndpoint);
             return await PostAsync<TRequest, TResponse>(fallbackEndpoint, request, cancellationToken).ConfigureAwait(false);
         }
@@ -230,6 +244,9 @@ public abstract class BaseService
     /// <summary>
     /// Make a POST request with 204 support to the primary endpoint and fallback to secondary endpoint on 404.
     /// </summary>
+    /// <remarks>
+    /// Same cancellation boundary as <see cref="GetAsyncWithFallback"/>.
+    /// </remarks>
     protected async Task<TResponse> PostAsyncWithNoContentWithFallback<TRequest, TResponse>(
         string endpoint,
         string fallbackEndpoint,
@@ -243,6 +260,8 @@ public abstract class BaseService
         }
         catch (RozetkaPayNotFoundException)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             Logger?.LogInformation("Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.", endpoint, fallbackEndpoint);
             return await PostAsyncWithNoContent<TRequest, TResponse>(fallbackEndpoint, request, cancellationToken).ConfigureAwait(false);
         }
@@ -383,6 +402,10 @@ public abstract class BaseService
         TRequest request,
         CancellationToken cancellationToken = default)
     {
+        // This is the one helper that serializes outside the attempt, so it needs its own guard: the shared
+        // one below would run after the caller's body had already been serialized.
+        cancellationToken.ThrowIfCancellationRequested();
+
         string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
         return SendDeleteAsync<TResponse>(endpoint, endpointForLogging, json, cancellationToken);
     }
@@ -394,8 +417,10 @@ public abstract class BaseService
     /// <remarks>
     /// An already-cancelled token is rejected here, before the retry loop and before
     /// <see cref="HttpClient"/> is touched, so no DELETE - with or without a body - can reach a
-    /// handler after the caller has cancelled. The pre-dispatch check inside
-    /// <see cref="HttpClient.SendAsync(HttpRequestMessage, CancellationToken)"/> is a runtime
+    /// handler after the caller has cancelled. Since EXP-357 every verb has that guarantee from
+    /// <see cref="ExecuteWithRetryAsync"/>; this check stays because it is the direct contract of the
+    /// bodiless DELETE path and holds for any internal caller of this method. The pre-dispatch check
+    /// inside <see cref="HttpClient.SendAsync(HttpRequestMessage, CancellationToken)"/> is a runtime
     /// implementation detail that differs between target frameworks and is not relied on.
     /// </remarks>
     private async Task<TResponse> SendDeleteAsync<TResponse>(
@@ -457,6 +482,16 @@ public abstract class BaseService
     /// <param name="cancellationToken">Cancellation token.</param>
     protected async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
     {
+        // The single pre-dispatch cancellation contract of the SDK, and deliberately the first thing this
+        // method does: before the retry policy is read, before any counter exists, and before the attempt
+        // delegate runs. Because every helper passes its complete attempt through here, that one line is also
+        // before helper logging, body serialization, request allocation, and any HttpClient or handler call.
+        // The pre-dispatch check inside HttpClient is not relied on: it is a runtime implementation detail
+        // that differs between target frameworks and between verbs, so basing the SDK's own guarantee on it
+        // would make cancellation mean different things on net9.0 and net10.0. ThrowIfCancellationRequested
+        // rather than a hand-built exception, so the caller's own token reaches the caller unchanged.
+        cancellationToken.ThrowIfCancellationRequested();
+
         RetryPolicy retryPolicy = Configuration.RetryPolicy;
 
         // Retries after the first attempt, so the total is exactly 1 + MaxRetryAttempts.
@@ -464,6 +499,13 @@ public abstract class BaseService
 
         while (true)
         {
+            // The same contract at every later attempt boundary: a token cancelled while the previous attempt
+            // ran, or during a retry delay short enough not to be awaited at all, must not enter the next
+            // attempt either. Complementary to - not a replacement for - the cancellation check in
+            // ShouldRetryFailure, which is what stops a cancelled failure from scheduling a delay or buying a
+            // repeat in the first place.
+            cancellationToken.ThrowIfCancellationRequested();
+
             try
             {
                 return await operation().ConfigureAwait(false);

@@ -258,7 +258,7 @@ meaning, and every public exception constructor is unchanged. The default policy
 | Custom set | Honoured as configured, additions and removals alike; an empty set retries no status. |
 | Transport failures | `HttpRequestException`, `SocketException`, and timeout-like `TaskCanceledException` — exactly the categories `RetryPolicy.ShouldRetry(Exception)` publishes. The only wrapper unwrapped is the SDK's own: a `RozetkaPayException` over one of those categories. An exception the SDK did not raise is never made retriable by its inner exception. |
 | Repeat shape | Same verb, target, body bytes, content type, and authentication mode; a fresh request object per attempt. |
-| Caller cancellation | Never retried; no delay is scheduled and the `OperationCanceledException` propagates unwrapped. |
+| Caller cancellation | Never retried; no delay is scheduled and the `OperationCanceledException` propagates unwrapped. A token cancelled **before** the call is rejected before anything is dispatched at all — see [Pre-Dispatch Cancellation Contract (EXP-357)](#pre-dispatch-cancellation-contract-exp-357). |
 | `429` `Retry-After` | Delta-seconds or HTTP-date replaces the backoff, zero/past means immediate, positive values are capped by `MaxDelay`, absent or unparseable falls back to the configured backoff. Ignored on other statuses. |
 | Exhaustion | The last attempt's own exception, with its `RozetkaPayApiError` (final status, code, request identifier, raw body). No wrapper, and no merged evidence from earlier attempts. |
 | Resources | Every attempt disposes its own request, request body, response, and response content — on success, on a retried failure, on exhaustion, and on cancellation. |
@@ -282,6 +282,55 @@ per-attempt disposal, and log-leak assertions with hostile markers. The suite ne
 base address is in the reserved `.invalid` TLD and the transport never forwards — and it contains no sleep and
 no timing-threshold assertion: every wait-sensitive case is settled by cancelling from the retry-warning
 callback, immediately before the delay is awaited.
+
+## Pre-Dispatch Cancellation Contract (EXP-357)
+
+An already-cancelled `CancellationToken` is now rejected by the SDK itself, in one place, for every transport
+helper — before helper logging, before JSON serialization of the caller's body, before any retry bookkeeping,
+before an `HttpRequestMessage` is allocated, and before `HttpClient` or an `HttpMessageHandler` is invoked.
+
+Before EXP-357 only the two DELETE paths and the payment-instruction decline carried an explicit guard. Every
+other helper entered the shared retry executor and left the outcome to the runtime's own pre-dispatch check,
+which is not a contract: it fires at different points on `net9.0` and `net10.0` and differs per verb. Measured
+on this repository's exact base commit, an already-cancelled token produced these outcomes:
+
+| Helper | `net9.0` before | `net10.0` before |
+|---|---|---|
+| `GET`, `GET` fallback, bodiless `POST` | request dispatched, call **succeeded** | request dispatched, call **succeeded** |
+| `POST` (JSON), `POST` accepting `204`, `PATCH`, `POST`/`POST`-`204` fallbacks | cancelled, but only **after** the request log was written | request dispatched, call **succeeded** |
+| `DELETE` with a JSON body | cancelled, but only **after** the caller's body was serialized | cancelled, but only **after** the caller's body was serialized |
+| Bodiless `DELETE`, decline | correct (explicit guard since EXP-355 / EXP-354) | correct |
+| Shared retry executor, called directly | attempt delegate invoked | attempt delegate invoked |
+
+**No public API changed.** No interface, method, overload, optional cancellation-token default, DTO, exception
+type or constructor, `RetryPolicy` member, or DI registration was touched, and no route, verb, body, content
+type, response mapping, or redirect behaviour changed for a token that is not cancelled.
+
+| Contract | Behaviour |
+|---|---|
+| Where the check lives | First executable line of `BaseService.ExecuteWithRetryAsync`, before `Configuration.RetryPolicy` is read and before any retry counter exists; plus the top of every later loop iteration, before the attempt delegate |
+| Coverage | Authenticated `GET`, JSON `POST`, `POST` accepting `204`/empty, JSON `PATCH`, bodiless `POST`, bodiless `DELETE`, JSON-body `DELETE`, the three `404` fallback wrappers, and the unauthenticated non-redirecting decline |
+| Handler invocations | Exactly `0`, on both target frameworks |
+| Helper logging | None. A pre-cancelled call writes no log entry at all, so it cannot leak a target, a body, or a credential it never used |
+| Serialization | None. The eager serialization in the JSON-body `DELETE` happens outside the attempt, so that helper carries its own guard **before** `JsonSerializer.Serialize` |
+| Token identity | `ThrowIfCancellationRequested`, so the `OperationCanceledException` carries the caller's exact token. Never a hand-built exception and never a tokenless one |
+| Throw timing | The public methods stay `async`; the exception surfaces on `await`. Synchronous throw timing is **not** claimed and was not changed |
+| Fallback wrappers | The check is the first statement of each `catch (RozetkaPayNotFoundException)`, so cancellation after a primary `404` prevents the fallback request **and** the "falling back" log. `OperationCanceledException` is never caught |
+| Decline | Keeps its own guard after argument validation and before the request URI is built, because it does work before reaching the executor |
+| Retry policy | Enabled and disabled produce identical semantics; the check precedes the policy read |
+| Mid-flight cancellation | Unchanged: one attempt, no retry, no fallback, caller's token preserved, and the attempt still disposes its request, body, response, and content |
+| Timeouts | Unchanged: a timeout-like `TaskCanceledException` with a live caller token is still a retriable transport failure and is never reported as caller cancellation |
+
+Verified by `PreDispatchCancellationContractTests` (`75` cases per target framework). Because a handler counter
+alone cannot prove the contract — a framework that rejects the token inside `HttpClient` would mask a helper
+that had already logged and serialized — every pre-cancelled case asserts four independent tripwires: handler
+invocations, captured log entries, a request body whose property getter counts serializer accesses, and, for the
+shared executor, the attempt delegate itself. All must read zero. The matrix runs every helper row with the
+retry policy disabled and enabled, and each row is also run with a **live** token, so a broken tripwire fails
+the suite instead of silently passing it. The suite never touches a socket — its base address is in the reserved
+`.invalid` TLD and the transport never forwards — and contains no sleep and no timing-threshold assertion: the
+"cancelled after the primary `404`" cases are settled by cancelling from the API-error log callback, and the
+mid-flight cases by cancelling from inside the handler.
 
 ## Deterministic 67/67 Coverage (EXP-337)
 
@@ -370,11 +419,12 @@ secrets were absent would be a false claim of live verification, so it does not 
 - Date: `2026-07-25`
 - Result: deterministic contract coverage for all `67` pinned operations, executed per operation on both
   target frameworks; real Kestrel HTTP-boundary coverage for outbound authentication, the anonymous
-  decline/redirect, and the inbound webhook signature pipeline; the full retry contract of EXP-356 executed
-  against the production retry loop over a non-forwarding transport; one opt-in read-only live sandbox smoke
+  decline/redirect, and the inbound webhook signature pipeline; the full retry contract of EXP-356 and the
+  full pre-dispatch cancellation contract of EXP-357 executed against the production retry loop and the
+  production transport helpers over a non-forwarding transport; one opt-in read-only live sandbox smoke
   test, skipped in this run.
-- Snapshot SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a` (unchanged; neither
-  EXP-337 nor EXP-356 touches `docs/openapi.json`)
+- Snapshot SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a` (unchanged; none of
+  EXP-337, EXP-356, or EXP-357 touches `docs/openapi.json`)
 - Snapshot path count: `59`; snapshot operation count: `67`
 - SDK service coverage for snapshot OpenAPI paths: `59/59`
 - Deterministic operation contract coverage: `67/67`, asserted as an exact set against the pinned document
@@ -382,7 +432,12 @@ secrets were absent would be a false claim of live verification, so it does not 
   the anonymous decline redirect, attempt-count arithmetic, disabled and custom sets, exhaustion evidence,
   transport compatibility including the arbitrary-wrapper negative case, caller cancellation, the
   `Retry-After` matrix, per-attempt disposal, and log-leak assertions
-- Test result: `net9.0` — `1319` passed, `1` skipped, `0` failed; `net10.0` — `1319` passed, `1` skipped,
+- Pre-dispatch cancellation coverage: `75` cases per target framework — ten transport-helper rows (seven
+  direct helpers plus the three `404` fallback wrappers) run with the retry policy disabled and enabled, the
+  shared retry executor asserted directly, the unauthenticated decline path, cancellation after a primary
+  `404`, mid-flight cancellation per direct helper, the timeout-with-a-live-token negative case, and
+  live-token controls proving every tripwire can fire
+- Test result: `net9.0` — `1394` passed, `1` skipped, `0` failed; `net10.0` — `1394` passed, `1` skipped,
   `0` failed. The single skip is the live sandbox smoke test, skipped because no sandbox credentials were
   supplied.
 - Build: `Release` with `-warnaserror` — `0` warnings, `0` errors
@@ -391,7 +446,7 @@ secrets were absent would be a false claim of live verification, so it does not 
   `SubscriptionPaymentMethodUpdateTests`, `InStorePaymentServiceTests`, `PartnerServiceTests`,
   `PaymentInstructionServiceTests`, `PathSegmentEncodingTests`, `QueryParameterEscapingTests`,
   `WebhookSignatureVerifierTests`, `PublicInterfacesTests`, `PublicInterfaceRegistrationTests`,
-  `Exp354DisposalTests`, `RetryStatusCodeContractTests`
+  `Exp354DisposalTests`, `RetryStatusCodeContractTests`, `PreDispatchCancellationContractTests`
 - **Not** verified: that a live RozetkaPay environment answers all `67` operations. No mutating operation
   was called against any live environment, and none will be. The live check is exactly one read-only
   merchant identity call, and it did not run here.
