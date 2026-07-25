@@ -1,4 +1,5 @@
 using SYT.RozetkaPay.Configuration;
+using SYT.RozetkaPay.Models.Common;
 using SYT.RozetkaPay.Models.Subscriptions;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +10,19 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class SubscriptionService : BaseService, ISubscriptionService
 {
+    /// <summary>
+    /// Route of the official subscription-list operation. Used both as the request target and as the
+    /// static log label, so a caller identifier carried in the query never reaches a log sink.
+    /// </summary>
+    private const string SubscriptionsEndpoint = "/api/subscriptions/v1/subscriptions";
+
+    /// <summary>
+    /// Static route template of the official cancel operation, used as the log label only. The real
+    /// request target carries the escaped subscription identifier, which must not be logged.
+    /// </summary>
+    private const string CancelSubscriptionLogLabel =
+        "/api/subscriptions/v1/subscriptions/{subscription_id}/cancel";
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SubscriptionService"/> class.
     /// </summary>
@@ -111,12 +125,43 @@ public class SubscriptionService : BaseService, ISubscriptionService
     }
 
     /// <summary>
+    /// List customer subscriptions, identifying the customer through the configured
+    /// <c>X-CUSTOMER-AUTH</c> header.
+    /// GET /api/subscriptions/v1/subscriptions
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The official root JSON array of subscriptions</returns>
+    public async Task<SubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken = default)
+    {
+        return await GetAsync<SubscriptionList>(SubscriptionsEndpoint, SubscriptionsEndpoint, cancellationToken);
+    }
+
+    /// <summary>
+    /// List customer subscriptions, identifying the customer by external ID.
+    /// GET /api/subscriptions/v1/subscriptions?external_id={externalId}
+    /// </summary>
+    /// <param name="externalId">User ID in the caller's system. Passed raw and escaped once.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The official root JSON array of subscriptions</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="externalId"/> is null.</exception>
+    public async Task<SubscriptionList> GetSubscriptionsAsync(string externalId, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(externalId);
+
+        return await GetAsync<SubscriptionList>(
+            $"{SubscriptionsEndpoint}?external_id={Uri.EscapeDataString(externalId)}",
+            SubscriptionsEndpoint,
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Get customer subscriptions
     /// GET /api/subscriptions/v1/subscriptions/customer/{customerId}
     /// </summary>
     /// <param name="customerId">Customer ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Customer subscriptions response</returns>
+    [Obsolete("Use GetSubscriptionsAsync(...). This member calls the legacy /api/subscriptions/v1/subscriptions/customer/{customerId} route and returns the legacy wrapper model.")]
     public async Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(string customerId, CancellationToken cancellationToken = default)
     {
         string encodedCustomerId = RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId));
@@ -176,12 +221,70 @@ public class SubscriptionService : BaseService, ISubscriptionService
     }
 
     /// <summary>
+    /// Cancel a subscription with the provider default refund handling. Sends no request body.
+    /// DELETE /api/subscriptions/v1/subscriptions/{subscriptionId}/cancel
+    /// </summary>
+    /// <param name="subscriptionId">Subscription ID. Passed raw and escaped once as one path segment.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Default provider response</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="subscriptionId"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="subscriptionId"/> is exactly "." or "..".</exception>
+    public async Task<DefaultResponse> CancelCustomerSubscriptionAsync(string subscriptionId, CancellationToken cancellationToken = default)
+    {
+        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
+
+        return await DeleteAsync<DefaultResponse>(
+            $"{SubscriptionsEndpoint}/{encodedSubscriptionId}/cancel",
+            CancelSubscriptionLogLabel,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Cancel a subscription with explicit query options. Sends no request body.
+    /// DELETE /api/subscriptions/v1/subscriptions/{subscriptionId}/cancel?external_id={externalId}&amp;refund={refund}
+    /// </summary>
+    /// <param name="subscriptionId">Subscription ID. Passed raw and escaped once as one path segment.</param>
+    /// <param name="options">Optional <c>external_id</c> and <c>refund</c> query parameters.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Default provider response</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="subscriptionId"/> or <paramref name="options"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="subscriptionId"/> is exactly "." or "..".</exception>
+    public async Task<DefaultResponse> CancelCustomerSubscriptionAsync(string subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
+
+        // Deterministic order, and null means "omit". An empty external ID is not null: it is sent as
+        // an empty value so the provider - which owns non-empty validation - can reject it.
+        List<string> query = new(2);
+        if (options.ExternalId is not null)
+        {
+            query.Add($"external_id={Uri.EscapeDataString(options.ExternalId)}");
+        }
+
+        if (options.Refund is { } refund)
+        {
+            query.Add(refund ? "refund=true" : "refund=false");
+        }
+
+        string endpoint = $"{SubscriptionsEndpoint}/{encodedSubscriptionId}/cancel";
+        if (query.Count > 0)
+        {
+            endpoint += $"?{string.Join('&', query)}";
+        }
+
+        return await DeleteAsync<DefaultResponse>(endpoint, CancelSubscriptionLogLabel, cancellationToken);
+    }
+
+    /// <summary>
     /// Cancel subscription
     /// DELETE /api/subscriptions/v1/subscriptions/{subscriptionId}/cancel
     /// </summary>
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="request">Cancel subscription request</param>
     /// <param name="cancellationToken">Cancellation token</param>
+    [Obsolete("Use CancelCustomerSubscriptionAsync(...). The legacy Reason and Immediate fields cannot be mapped safely to the official refund query option.")]
     public async Task CancelAsync(string subscriptionId, CancelSubscriptionRequest request, CancellationToken cancellationToken = default)
     {
         string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));

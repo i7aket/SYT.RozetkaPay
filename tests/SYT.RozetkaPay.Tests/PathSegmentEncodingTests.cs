@@ -70,7 +70,9 @@ public class PathSegmentEncodingTests
         ("SubscriptionService.GetAsync", "subscriptionId"),
         ("SubscriptionService.UpdateAsync", "subscriptionId"),
         ("SubscriptionService.GetPaymentsAsync", "subscriptionId"),
-        ("SubscriptionService.CancelAsync", "subscriptionId")
+        ("SubscriptionService.CancelAsync", "subscriptionId"),
+        ("SubscriptionService.CancelCustomerSubscriptionAsync", "subscriptionId"),
+        ("SubscriptionService.CancelCustomerSubscriptionAsync/options", "subscriptionId")
     };
 
     // ===================== Hostile input matrix: every affected method =====================
@@ -116,8 +118,10 @@ public class PathSegmentEncodingTests
     {
         RequestRecordingHandler handler = new();
 
+#pragma warning disable CS0618 // Deliberate legacy regression call.
         await PathEncodingTestContext.Customers(handler)
             .DeletePaymentFromWalletAsync(HostileCustomerRawId, HostileCardRawId);
+#pragma warning restore CS0618
 
         RecordedRequest recorded = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Delete, recorded.Method);
@@ -184,7 +188,9 @@ public class PathSegmentEncodingTests
     {
         RequestRecordingHandler handler = new();
 
+#pragma warning disable CS0618 // Deliberate legacy regression call.
         await PathEncodingTestContext.Subscriptions(handler).GetCustomerSubscriptionsAsync(HostileRawId);
+#pragma warning restore CS0618
 
         RecordedRequest recorded = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Get, recorded.Method);
@@ -252,7 +258,9 @@ public class PathSegmentEncodingTests
             Immediate = true
         };
 
+#pragma warning disable CS0618 // Deliberate legacy regression call.
         await PathEncodingTestContext.Subscriptions(handler).CancelAsync(HostileRawId, request);
+#pragma warning restore CS0618
 
         RecordedRequest recorded = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Post, recorded.Method);
@@ -346,8 +354,10 @@ public class PathSegmentEncodingTests
     {
         RequestRecordingHandler handler = new();
 
+#pragma warning disable CS0618 // Deliberate legacy regression call.
         await PathEncodingTestContext.Customers(handler)
             .DeletePaymentFromWalletAsync(LooksEncodedRawId, LooksEncodedRawId);
+#pragma warning restore CS0618
 
         RecordedRequest recorded = Assert.Single(handler.Requests);
         AssertRequestTarget(
@@ -383,8 +393,10 @@ public class PathSegmentEncodingTests
     {
         RequestRecordingHandler handler = new();
 
+#pragma warning disable CS0618 // Deliberate legacy regression call.
         await PathEncodingTestContext.Customers(handler)
             .DeletePaymentFromWalletAsync("cust-1", "card-2");
+#pragma warning restore CS0618
 
         RecordedRequest recorded = Assert.Single(handler.Requests);
         AssertRequestTarget(recorded, "/api/customers/v1/cust-1/cards/card-2");
@@ -537,10 +549,12 @@ public class PathSegmentEncodingTests
         Assert.Empty(shortened);
 
         // A refactor that silently stops constructing services would otherwise leave this test green
-        // while auditing nothing. The 15 known path insertions are the floor.
+        // while auditing nothing. Every known path insertion is the floor; deriving it from the table
+        // keeps the guard honest when a new insertion is added instead of pinning a stale literal.
         Assert.True(
-            compared >= 15,
-            $"Audit only compared {compared} identifier positions. Skipped: {string.Join(", ", skipped)}");
+            compared >= PathInsertionMethods.Length,
+            $"Audit only compared {compared} identifier positions, expected at least "
+            + $"{PathInsertionMethods.Length}. Skipped: {string.Join(", ", skipped)}");
     }
 
     // ===================== Data and helpers =====================
@@ -595,9 +609,9 @@ public class PathSegmentEncodingTests
             "PayPartsService.GetOperationInfoAsync" =>
                 PathEncodingTestContext.PayParts(handler).GetOperationInfoAsync(value),
             "CustomerService.DeletePaymentFromWalletAsync/customerId" =>
-                PathEncodingTestContext.Customers(handler).DeletePaymentFromWalletAsync(value, Other),
+                InvokeLegacyWalletDelete(handler, value, Other),
             "CustomerService.DeletePaymentFromWalletAsync/cardId" =>
-                PathEncodingTestContext.Customers(handler).DeletePaymentFromWalletAsync(Other, value),
+                InvokeLegacyWalletDelete(handler, Other, value),
             "CustomerService.GetCustomerCardsAsync" =>
                 PathEncodingTestContext.Customers(handler).GetCustomerCardsAsync(value),
             "SubscriptionService.DeactivatePlanAsync" =>
@@ -608,7 +622,7 @@ public class PathSegmentEncodingTests
                 PathEncodingTestContext.Subscriptions(handler)
                     .UpdatePlanAsync(value, new UpdateSubscriptionPlanRequest()),
             "SubscriptionService.GetCustomerSubscriptionsAsync" =>
-                PathEncodingTestContext.Subscriptions(handler).GetCustomerSubscriptionsAsync(value),
+                InvokeLegacyCustomerSubscriptions(handler, value),
             "SubscriptionService.DeactivateAsync" =>
                 PathEncodingTestContext.Subscriptions(handler).DeactivateAsync(value),
             "SubscriptionService.GetAsync" =>
@@ -619,13 +633,40 @@ public class PathSegmentEncodingTests
             "SubscriptionService.GetPaymentsAsync" =>
                 PathEncodingTestContext.Subscriptions(handler).GetPaymentsAsync(value),
             "SubscriptionService.CancelAsync" =>
-                PathEncodingTestContext.Subscriptions(handler)
-                    .CancelAsync(value, new CancelSubscriptionRequest { ExternalId = Other }),
+                InvokeLegacyCancel(handler, value, Other),
+            "SubscriptionService.CancelCustomerSubscriptionAsync" =>
+                PathEncodingTestContext.Subscriptions(handler).CancelCustomerSubscriptionAsync(value),
+            "SubscriptionService.CancelCustomerSubscriptionAsync/options" =>
+                PathEncodingTestContext.Subscriptions(handler).CancelCustomerSubscriptionAsync(
+                    value,
+                    new CancelCustomerSubscriptionOptions { ExternalId = Other }),
             _ => throw new ArgumentOutOfRangeException(nameof(methodKey), methodKey, "Unmapped method key.")
         };
 
         return invocation;
     }
+
+    // The three members below stayed on their legacy route, verb and body in EXP-355 and are
+    // exercised here on purpose. The suppression is scoped to the single call each helper makes so
+    // that an accidental obsolete call anywhere else still fails the build.
+
+#pragma warning disable CS0618 // Deliberate legacy regression call.
+    private static Task InvokeLegacyWalletDelete(RequestRecordingHandler handler, string customerId, string cardId)
+    {
+        return PathEncodingTestContext.Customers(handler).DeletePaymentFromWalletAsync(customerId, cardId);
+    }
+
+    private static Task InvokeLegacyCustomerSubscriptions(RequestRecordingHandler handler, string customerId)
+    {
+        return PathEncodingTestContext.Subscriptions(handler).GetCustomerSubscriptionsAsync(customerId);
+    }
+
+    private static Task InvokeLegacyCancel(RequestRecordingHandler handler, string subscriptionId, string externalId)
+    {
+        return PathEncodingTestContext.Subscriptions(handler)
+            .CancelAsync(subscriptionId, new CancelSubscriptionRequest { ExternalId = externalId });
+    }
+#pragma warning restore CS0618
 }
 
 /// <summary>

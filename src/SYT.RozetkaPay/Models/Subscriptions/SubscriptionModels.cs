@@ -14,31 +14,31 @@ public enum SubscriptionState
     /// </summary>
     [JsonPropertyName("init")]
     Init,
-    
+
     /// <summary>
     /// Subscription is processing
     /// </summary>
     [JsonPropertyName("processing")]
     Processing,
-    
+
     /// <summary>
     /// Subscription is pending
     /// </summary>
     [JsonPropertyName("pending")]
     Pending,
-    
+
     /// <summary>
     /// Subscription is active
     /// </summary>
     [JsonPropertyName("active")]
     Active,
-    
+
     /// <summary>
     /// Subscription is paused
     /// </summary>
     [JsonPropertyName("paused")]
     Paused,
-    
+
     /// <summary>
     /// Subscription is inactive
     /// </summary>
@@ -56,19 +56,19 @@ public enum SubscriptionPaymentState
     /// </summary>
     [JsonPropertyName("unprocessed")]
     Unprocessed,
-    
+
     /// <summary>
     /// Payment is processing
     /// </summary>
     [JsonPropertyName("processing")]
     Processing,
-    
+
     /// <summary>
     /// Payment is processed
     /// </summary>
     [JsonPropertyName("processed")]
     Processed,
-    
+
     /// <summary>
     /// Payment failed
     /// </summary>
@@ -86,13 +86,13 @@ public enum SubscriptionCallbackType
     /// </summary>
     [JsonPropertyName("payment")]
     Payment,
-    
+
     /// <summary>
     /// Subscription status change
     /// </summary>
     [JsonPropertyName("status_change")]
     StatusChange,
-    
+
     /// <summary>
     /// Subscription expiry
     /// </summary>
@@ -110,7 +110,7 @@ public enum PlanState
     /// </summary>
     [JsonPropertyName("active")]
     Active,
-    
+
     /// <summary>
     /// Plan is inactive
     /// </summary>
@@ -646,6 +646,39 @@ public class CancelSubscriptionRequest
     /// </summary>
     [JsonPropertyName("immediate")]
     public bool Immediate { get; set; } = false;
+}
+
+/// <summary>
+/// Optional query parameters of the official <c>CancelCustomerSubscription</c> operation
+/// (<c>DELETE /api/subscriptions/v1/subscriptions/{subscription_id}/cancel</c>).
+/// </summary>
+/// <remarks>
+/// <para>
+/// This object is never serialized. Both members are rendered as URL query parameters, which is why
+/// they carry no <c>JsonPropertyName</c> annotation: the operation sends no request body at all.
+/// </para>
+/// <para>
+/// A <see langword="null"/> member is omitted from the request target; a non-null member is always
+/// sent. An empty <see cref="ExternalId"/> is therefore not the same as an absent one - it is sent
+/// as <c>external_id=</c> and validated by the provider.
+/// </para>
+/// </remarks>
+public class CancelCustomerSubscriptionOptions
+{
+    /// <summary>
+    /// Customer identifier in the caller's system, sent as the <c>external_id</c> query parameter.
+    /// Pass the raw value: the SDK percent-encodes it exactly once. Leave <see langword="null"/> to
+    /// omit the parameter and identify the customer through the <c>X-CUSTOMER-AUTH</c> header instead.
+    /// </summary>
+    public string? ExternalId { get; set; }
+
+    /// <summary>
+    /// Refund option of the cancellation command, sent as the <c>refund</c> query parameter in the
+    /// lowercase spelling the provider documents. This is a transient instruction carried by this one
+    /// request, not a stored fact about the subscription. Leave <see langword="null"/> to omit the
+    /// parameter and let the provider apply its default.
+    /// </summary>
+    public bool? Refund { get; set; }
 }
 
 /// <summary>
@@ -1225,8 +1258,15 @@ public class PlanList
 }
 
 /// <summary>
-/// Subscription list response (OpenAPI schema)
+/// Subscription list response (OpenAPI schema).
 /// </summary>
+/// <remarks>
+/// The official <c>getSubscriptions</c> response is a root JSON array, not a wrapper object.
+/// <see cref="SubscriptionListJsonConverter"/> maps that array onto <see cref="Subscriptions"/> while
+/// still accepting the historical wrapper spelling, so this public shape stays source and binary
+/// compatible.
+/// </remarks>
+[JsonConverter(typeof(SubscriptionListJsonConverter))]
 public class SubscriptionList
 {
     /// <summary>
@@ -1331,4 +1371,4 @@ public class UpdatePlanRequest
     /// </summary>
     [JsonPropertyName("name")]
     public string? Name { get; set; }
-} 
+}
