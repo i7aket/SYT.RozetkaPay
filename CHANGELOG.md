@@ -270,6 +270,66 @@ immediately before tagging a release (see the release process in `README.md`).
   payment endpoint and exposes credentials and card data to interception.
 
 ### Fixed
+- **Configured retriable HTTP statuses are now actually retried** (EXP-356). `RetryPolicy` has always
+  published `RetriableStatusCodes`, defaulting to `500`, `502`, `503`, `504`, `429`, `408`, and
+  `RetryPolicy.ShouldRetry(HttpStatusCode)` has always reported those values correctly — but the retry loop
+  only ever had a status-specific branch for `429`. Every other configured status escaped on the **first**
+  attempt, and editing the set changed nothing for any status except `429`. A caller who enabled retries to
+  survive a gateway blip got a single attempt and no indication that the setting was inert.
+  The loop is now one decision instead of a chain of type-specific catches, and it reads the HTTP status from
+  the response the SDK received (`RozetkaPayException.ApiError.StatusCode`) rather than from an exception type,
+  message, or provider code:
+  - all six default statuses repeat, and a custom set is honoured exactly as configured — additions
+    (a `409`, or a `400`) and removals alike; an empty set retries no status at all, while transport failures
+    still do;
+  - an SDK exception carrying no `ApiError` never came from a response, so its class name alone no longer makes
+    it retriable;
+  - `MaxRetryAttempts` keeps its meaning — retries **after** the initial call — for exactly `1 + MaxRetryAttempts`
+    requests; `Enabled = false` or `MaxRetryAttempts = 0` sends one;
+  - a repeat is the same request: same verb, target, body bytes, content type, and authentication mode;
+  - transport failures stay retriable — `HttpRequestException`, `SocketException`, and timeout-like
+    `TaskCanceledException`, including one already wrapped in a `RozetkaPayException`. A `SocketException`
+    raised directly by a handler is now retried too, which is what `RetryPolicy.ShouldRetry(Exception)` has
+    always published.
+- **Caller cancellation no longer buys another attempt** (EXP-356). A `TaskCanceledException` raised after the
+  caller's token was cancelled was previously treated as a retriable timeout, so a cancelled operation could
+  issue further requests. Cancellation is now checked before any retry decision: no delay is scheduled, no
+  further attempt is made, and the `OperationCanceledException` propagates unwrapped. Cancelling **during** a
+  retry delay aborts the wait without sending the next request. A timeout-like `TaskCanceledException` while
+  the caller's token is still live remains retriable.
+- **Exhausting the retry budget no longer erases the failure** (EXP-356). The loop used to end with
+  `RozetkaPayException("Request failed after N attempts: …")`, discarding the status-specific exception type and
+  the `RozetkaPayApiError` — status, provider code, request identifier, and raw body — that a caller needs for
+  support correspondence. The final exception is now the one the last attempt produced, unchanged: an exhausted
+  `429` is still `RozetkaPayRateLimitException`, an exhausted `500` still carries `Internal server error`, and
+  the attached evidence is the **final** response's, with nothing merged in from earlier attempts.
+- **`Retry-After` on a `429` now affects the wait** (EXP-356). The header was read only to compose the exception
+  message and was ignored by the delay calculation. It is now parsed while the response is still open and drives
+  the delay: delta-seconds as given, an HTTP-date converted to a relative delay, zero or a past date meaning
+  retry immediately, and a positive value **capped by `MaxDelay`** so a mistaken or hostile header cannot park a
+  request for hours. An absent or unparseable header is treated as no hint and uses the configured backoff —
+  an invalid header never replaces `RozetkaPayRateLimitException` with a parser error. `Retry-After` is ignored
+  on other statuses, and the exception message keeps the delta-seconds form and the historical `60` fallback it
+  has always reported. The parsed value is carried internally; no public member was added.
+- **The retry warning no longer renders the failure's message** (EXP-356). It interpolated
+  `exception.Message`, whose content comes from the runtime or the provider and can carry provider text or a raw
+  body. It now reports the retry number, the configured budget, the failure category as an exception type name,
+  the HTTP status when the failure came from a response, and the computed delay in milliseconds — and the
+  exception object is not passed to the logger at all, so a sink cannot expand it. The per-attempt error log
+  already carried the safe identifiers and is unchanged.
+- **Every retry attempt now owns and releases its own request and response** (EXP-356). `GetAsync`, `PostAsync`,
+  and `PostAsyncWithNoContent` left the `HttpResponseMessage` — and on a real handler the connection behind it —
+  to the finalizer, and built their request through the convenience `HttpClient` methods; the JSON-body
+  `DeleteAsync` disposed its request but not its response. All four now build an explicit
+  `HttpRequestMessage` inside the attempt and dispose request, request body, response, and response content on
+  every path: success, a retried failure, exhaustion, a throwing body read, and cancellation. `PatchAsync`,
+  `PostWithoutBodyAsync`, and the payment-instruction decline already did this and are unchanged. Wire
+  behaviour is identical — same verb, target, body, content type, and headers.
+- No public API changed for any of the above: `RetryPolicy` keeps every property and factory, the exception
+  hierarchy and all public exception constructors are untouched, and the default policy is still **disabled**.
+  Enabling retries repeats real requests, so a mutating financial operation can result in a second
+  provider-side operation; the SDK does not claim exactly-once delivery. See **Retry policy** in the package
+  `README.md` for the idempotency requirement.
 - Operation-level parity defects against the pinned OpenAPI snapshot
   (`docs/openapi.json`, SHA-256 `309e61bf2185706c137f2d270d767b31777f7a4d09f2f2e0fb900fe36601cc44`,
   `49` paths / `57` operations):
@@ -285,9 +345,9 @@ immediately before tagging a release (see the release process in `README.md`).
   No canonical call ever falls back to the legacy path or verb, on `404` or on any other failure: the
   request and response shapes genuinely differ, and `reason` and `immediate` have no honest mapping onto
   `refund`, so a fallback would conceal a parity error. A canonical `404` makes exactly one HTTP request.
-  Retry behaviour is unchanged by this release: with a retry policy enabled, the SDK may repeat the
-  **same** canonical request target for the conditions it already supports — transport-level failures and
-  `429` — always as the same operation against the same target, and never as a different route or verb.
+  Retry behaviour was not changed by the parity work: with a retry policy enabled, the SDK may repeat the
+  **same** canonical request target for the conditions its policy declares — corrected in the EXP-356 entry
+  above — always as the same operation against the same target, and never as a different route or verb.
 - `docs/API_COMPATIBILITY.md` no longer implies that path presence equals operation parity, and now
   reports the pinned snapshot and the live official document as two separate views.
 - Every dynamic query value the SDK puts into a request URI is now percent-encoded as an

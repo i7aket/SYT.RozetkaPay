@@ -153,7 +153,7 @@ The SDK binds the `RozetkaPay` configuration section to `RozetkaPayOptions`
 | `CustomerAuth` | `string?` | *unset* | `X-CUSTOMER-AUTH` header (customer wallet access). |
 | `Timeout` | `TimeSpan` | `00:00:30` | Must be greater than zero. |
 | `UserAgent` | `string` | `RozetkaPaySDK/.NET` | |
-| `RetryPolicy` | object | disabled | `Enabled`, `MaxRetryAttempts`, `BaseDelay`, `MaxDelay`, `BackoffStrategy`, `RetriableStatusCodes`. |
+| `RetryPolicy` | object | disabled | `Enabled`, `MaxRetryAttempts`, `BaseDelay`, `MaxDelay`, `BackoffStrategy`, `RetriableStatusCodes`. See [Retry policy](#retry-policy). |
 
 ### Environments
 
@@ -243,6 +243,130 @@ Validated rules: `Login` and `Password` are present and not whitespace; `Environ
 (there is no silent fallback to production); an explicit `BaseUrl` is an absolute `http`/`https` URL;
 `Timeout` is greater than zero; and the retry policy is internally consistent (no negative attempts or
 delays, and when retries are enabled, at least one attempt with `MaxDelay` no smaller than `BaseDelay`).
+
+### Retry policy
+
+**Retries are disabled by default.** Out of the box every operation is exactly one HTTP request; `RetryPolicy`
+has to be turned on deliberately.
+
+```csharp
+services.AddRozetkaPay(options =>
+{
+    options.Login = login;
+    options.Password = password;
+    options.RetryPolicy = new RetryPolicy
+    {
+        Enabled = true,
+        MaxRetryAttempts = 3,                            // 3 retries -> at most 4 total attempts
+        BaseDelay = TimeSpan.FromSeconds(1),
+        MaxDelay = TimeSpan.FromSeconds(30),
+        BackoffStrategy = BackoffStrategy.ExponentialWithJitter
+    };
+});
+```
+
+`RetryPolicy.Standard` is the same thing preconfigured; `RetryPolicy.None` and `RetryPolicy.Default` are
+disabled.
+
+#### How many attempts
+
+`MaxRetryAttempts` counts the retries **after** the initial call, so the total number of requests is exactly
+`1 + MaxRetryAttempts`: `0` means one attempt, `1` means at most two, `3` means at most four. With
+`Enabled = false` the budget is ignored entirely and one request is sent.
+
+#### Which failures are repeated
+
+A failure is repeated only when **all** of these hold: the policy is enabled, the budget still has room, the
+caller's `CancellationToken` has not been cancelled, and the failure is one of:
+
+- **an HTTP response whose status is in `RetriableStatusCodes`.** The decision reads the status of the response
+  the SDK actually received — `RozetkaPayException.ApiError.StatusCode` — never an exception type or message.
+  The default set is exactly:
+
+  | Status | |
+  |---|---|
+  | `408` | `RequestTimeout` |
+  | `429` | `TooManyRequests` |
+  | `500` | `InternalServerError` |
+  | `502` | `BadGateway` |
+  | `503` | `ServiceUnavailable` |
+  | `504` | `GatewayTimeout` |
+
+- **a transport failure:** `HttpRequestException`, `SocketException`, or a `TaskCanceledException` that
+  represents a timeout while the caller's own token is still live. These are the categories
+  `RetryPolicy.ShouldRetry(Exception)` publishes, and the runtime honours exactly them.
+
+`RetriableStatusCodes` is a plain `HashSet<HttpStatusCode>` and is honoured as configured — no status is
+hard-coded on top of it. Remove `503` and a `503` is no longer repeated; add `409` and a `409` is; set it to
+an empty collection and no status is ever repeated, while transport failures still are. A status outside the
+default set keeps its usual exception type when it is retried, so a retried `400` still ends as
+`RozetkaPayValidationException`.
+
+Anything else — a validation failure the caller made, a response the SDK could not deserialize, an SDK
+exception you constructed yourself — is not retried. An exception carrying no `ApiError` never came from an
+HTTP response, so its class name alone does not make it retriable.
+
+#### What a repeat sends
+
+A repeat is the **same** request: same verb, same concrete request target including query values, same body
+bytes, same content type, same authentication mode. The SDK never changes route, verb, or body between
+attempts, and never follows a redirect it was told to return. Each attempt builds and releases its own
+`HttpRequestMessage` and `HttpResponseMessage`, so nothing is carried over from a spent attempt.
+
+#### How long it waits
+
+Non-`429` failures wait `BackoffStrategy` applied to `BaseDelay`, capped by `MaxDelay` for the exponential
+strategies:
+
+| `BackoffStrategy` | Delay before retry *n* |
+|---|---|
+| `Fixed` | `BaseDelay` |
+| `Linear` | `BaseDelay × n` |
+| `Exponential` | `BaseDelay × 2^(n-1)`, capped at `MaxDelay` |
+| `ExponentialWithJitter` (default) | as `Exponential`, ±25 % random jitter |
+
+A `429` is the one case where the provider decides. If the response carries a `Retry-After` header the SDK
+honours it **instead of** the backoff:
+
+- **delta-seconds** (`Retry-After: 5`) is used as given;
+- an **HTTP-date** is converted to a delay when the response is mapped;
+- a value of zero, or a date already in the past, means retry immediately;
+- a positive value is **capped by `MaxDelay`**, so a mistaken or hostile header cannot park a request for
+  hours;
+- an **absent or unparseable** header is treated as no hint at all and the configured backoff applies. An
+  invalid header never replaces `RozetkaPayRateLimitException` with a parser error.
+
+`Retry-After` on any status other than `429` is ignored for delay purposes. The wait observes the caller's
+`CancellationToken`: cancelling during it ends the operation without sending the next request.
+
+#### Cancellation
+
+Caller cancellation is never a reason to retry. Once your token is cancelled the SDK does not schedule a
+delay, does not invoke another attempt, and propagates the `OperationCanceledException` unwrapped. A
+`TaskCanceledException` that comes from a **timeout** while your token is still live is a transport failure and
+stays retriable.
+
+#### When the budget runs out
+
+The exception you catch is the one the last attempt produced — not a wrapper. A retried-then-exhausted `429`
+still throws `RozetkaPayRateLimitException`; an exhausted `500` still throws `RozetkaPayException` with its
+usual message. Its `RozetkaPayApiError` carries the **final** response's status, provider code, request
+identifier, and raw body, so support correspondence quotes the attempt that actually ended the call. Earlier
+attempts' evidence is not merged in and not retained.
+
+Each retry writes one `Warning`: the retry number, the budget, the failure category, the HTTP status when
+there was a response, and the computed delay. It deliberately contains no exception message, no response
+body, no provider text, no request target, and no credential — see [Logging](#logging).
+
+#### Retries and money
+
+> **A retry repeats a real request.** For a mutating financial operation — creating a payment, confirming,
+> refunding — the provider may have already accepted the attempt that appeared to fail, so a repeat can result
+> in a second operation. The SDK cannot make that safe on its own and does not claim exactly-once delivery.
+> Before enabling retries for mutating calls, send a stable `external_id` / idempotency value you generate
+> once per business intent and reuse across attempts, and reconcile by that identifier. If you cannot, keep
+> retries off for those operations, or restrict `RetriableStatusCodes` to conditions your integration can prove
+> are safe to repeat.
 
 ### One snapshot, no hot reload
 
@@ -546,9 +670,11 @@ Rules that matter:
   differ and a silent fallback would hide a parity error.
 - **Retries repeat the same target, never a different one.** The default `RetryPolicy` is disabled, so
   a canonical call is a single request out of the box. With a retry policy enabled, the SDK may repeat
-  the **same** canonical request target for the conditions it already supports — transport-level
-  failures and `429`. A repeat is always the same operation against the same target, never a different
-  route, verb or body, and `404` is not a retriable condition.
+  the **same** canonical request target for the conditions the policy declares — the configured
+  `RetriableStatusCodes` and transport-level failures, described under
+  [Retry policy](#retry-policy). A repeat is always the same operation against the same target, never a
+  different route, verb or body. `404` is not in the default retriable set, and even a caller who adds it
+  gets a repeat of the same canonical request — never a legacy route.
 - **The legacy members still work.** `DeletePaymentFromWalletAsync`, `GetCustomerSubscriptionsAsync`
   and `CancelAsync` are obsolete warnings only, and their route, verb, body and response type are
   unchanged. `CancelAsync` still sends `external_id`, `reason` and `immediate`, none of which maps
@@ -831,14 +957,17 @@ to be identifier- or content-safe.** Concretely, in the current code:
   `/api/alternative-payments/v1/operation/<externalId>`, `IPayPartsService` operation lookups log
   `/api/payparts/v1/operation/<operationId>`, and list operations log their query string;
 - some operations log **method-specific values**. `IPaymentService.ConfirmP2PAsync` logs the external ID and
-  the amount it is about to send;
-- when you **enable retries**, the shared retry warning includes the transport exception message. That text
-  comes from the runtime or the provider and the SDK does not control what it contains. Retries are disabled
-  by default, so this path is inactive unless you turn it on.
+  the amount it is about to send.
 
 Changing any of that would mean touching operations outside the scope of this change, so it was left alone.
 Treat SDK log output as potentially containing identifiers and values unless the operation is one of the ten
 listed above.
+
+The **shared retry warning is audited**, and it is the same statement for every operation. It reports the retry
+number, the configured budget, the failure category (an exception type name), the HTTP status when the failure
+came from a response, and the computed delay in milliseconds — and nothing else. It does not render the
+exception message, and it carries no response body, no provider text, no request target, and no credential.
+Earlier SDK versions interpolated the failure's message into it; they no longer do.
 
 ### Adding your own HTTP telemetry
 

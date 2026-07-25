@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -91,7 +92,16 @@ public abstract class BaseService
         {
             Logger?.LogInformation("Making GET request to {Endpoint}", endpointForLogging);
 
-            HttpResponseMessage response = await HttpClient.GetAsync(endpoint, cancellationToken).ConfigureAwait(false);
+            // Built inside the attempt: an HttpRequestMessage is single-use, so a retry must never reuse the
+            // one a previous attempt sent.
+            using HttpRequestMessage message = new(HttpMethod.Get, endpoint);
+
+            // The response owns its content, and on a real handler the connection behind it, until it is
+            // disposed. The body is read into a string first, so disposing here releases both - including
+            // when HandleErrorResponse throws on the way out.
+            using HttpResponseMessage response = await HttpClient
+                .SendAsync(message, cancellationToken)
+                .ConfigureAwait(false);
             string content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
@@ -134,8 +144,16 @@ public abstract class BaseService
             string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
             Logger?.LogInformation("Making POST request to {Endpoint}", endpoint);
 
-            StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await HttpClient.PostAsync(endpoint, content, cancellationToken).ConfigureAwait(false);
+            // Body and request are built inside the attempt and owned by it: disposing the request disposes
+            // the content, and a retry always sends a freshly built request rather than a spent one.
+            using HttpRequestMessage message = new(HttpMethod.Post, endpoint)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+
+            using HttpResponseMessage response = await HttpClient
+                .SendAsync(message, cancellationToken)
+                .ConfigureAwait(false);
             string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
@@ -180,8 +198,15 @@ public abstract class BaseService
             string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
             Logger?.LogInformation("Making POST request to {Endpoint}", endpoint);
 
-            StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await HttpClient.PostAsync(endpoint, content, cancellationToken).ConfigureAwait(false);
+            // Same per-attempt ownership as the plain POST helper.
+            using HttpRequestMessage message = new(HttpMethod.Post, endpoint)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+
+            using HttpResponseMessage response = await HttpClient
+                .SendAsync(message, cancellationToken)
+                .ConfigureAwait(false);
             string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
@@ -391,7 +416,10 @@ public abstract class BaseService
                 request.Content = new StringContent(content, Encoding.UTF8, "application/json");
             }
 
-            HttpResponseMessage response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            // Disposed on every path, including when HandleErrorResponse throws below.
+            using HttpResponseMessage response = await HttpClient
+                .SendAsync(request, cancellationToken)
+                .ConfigureAwait(false);
             string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
@@ -409,10 +437,20 @@ public abstract class BaseService
     /// Execute an HTTP operation with retry logic based on the configured retry policy
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Available to derived services so that an operation needing its own transport — an official POST
     /// with no body, or a redirect-only GET — reuses this single retry loop instead of duplicating it.
     /// A repeat is always the same request against the same target: this method never changes route,
     /// verb, body, or authentication mode.
+    /// </para>
+    /// <para>
+    /// <paramref name="operation"/> is invoked exactly once per attempt, for at most
+    /// <c>1 + </c><see cref="RetryPolicy.MaxRetryAttempts"/> attempts, and must therefore build and release
+    /// its own request and response: an <see cref="HttpRequestMessage"/> is single-use and cannot be carried
+    /// across a retry. Which failures are repeated is decided in one place — see
+    /// <see cref="ShouldRetryFailure"/> — and a failure that is not repeated, including the last one when the
+    /// budget is spent, propagates exactly as the attempt raised it.
+    /// </para>
     /// </remarks>
     /// <typeparam name="T">Result of one attempt.</typeparam>
     /// <param name="operation">One complete attempt, including reading and mapping the response.</param>
@@ -420,73 +458,135 @@ public abstract class BaseService
     protected async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
     {
         RetryPolicy retryPolicy = Configuration.RetryPolicy;
-        int currentAttempt = 0;
-        Exception? lastException = null;
 
-        while (currentAttempt <= retryPolicy.MaxRetryAttempts)
+        // Retries after the first attempt, so the total is exactly 1 + MaxRetryAttempts.
+        int retryCount = 0;
+
+        while (true)
         {
             try
             {
                 return await operation().ConfigureAwait(false);
             }
-            catch (RozetkaPayException ex) when (ex.InnerException is HttpRequestException &&
-                retryPolicy.ShouldRetry(ex.InnerException) && currentAttempt < retryPolicy.MaxRetryAttempts)
+            // An exception filter rather than a catch body: when the budget is spent, or the failure was
+            // never retriable, the last attempt's own exception leaves this method untouched. That is what
+            // keeps the status-specific SDK exception - and its RozetkaPayApiError evidence, including the
+            // raw response body - intact instead of being replaced by a wrapper that erases both.
+            catch (Exception failure) when (ShouldRetryFailure(failure, retryPolicy, retryCount, cancellationToken))
             {
-                lastException = ex.InnerException;
-                currentAttempt++;
-                await HandleRetryAsync(currentAttempt, lastException, retryPolicy, cancellationToken).ConfigureAwait(false);
-            }
-            catch (RozetkaPayRateLimitException ex) when (retryPolicy.ShouldRetry(HttpStatusCode.TooManyRequests) &&
-                currentAttempt < retryPolicy.MaxRetryAttempts)
-            {
-                lastException = ex;
-                currentAttempt++;
-                await HandleRetryAsync(currentAttempt, lastException, retryPolicy, cancellationToken).ConfigureAwait(false);
-            }
-            catch (HttpRequestException ex) when (retryPolicy.ShouldRetry(ex) && currentAttempt < retryPolicy.MaxRetryAttempts)
-            {
-                lastException = ex;
-                currentAttempt++;
-                await HandleRetryAsync(currentAttempt, lastException, retryPolicy, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TaskCanceledException ex) when (retryPolicy.ShouldRetry(ex) && currentAttempt < retryPolicy.MaxRetryAttempts)
-            {
-                lastException = ex;
-                currentAttempt++;
-                await HandleRetryAsync(currentAttempt, lastException, retryPolicy, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // Don't retry on non-retriable exceptions
-                throw;
+                retryCount++;
+                await DelayBeforeRetryAsync(retryCount, failure, retryPolicy, cancellationToken).ConfigureAwait(false);
             }
         }
-
-        // If we get here, we've exhausted all retry attempts
-        if (lastException != null)
-        {
-            Logger?.LogError(lastException, "Request failed after {AttemptCount} attempts", currentAttempt);
-            throw new RozetkaPayException($"Request failed after {currentAttempt} attempts: {lastException.Message}", lastException);
-        }
-
-        // This should never happen, but just in case
-        throw new RozetkaPayException("Request failed for unknown reason");
     }
 
     /// <summary>
-    /// Handle retry delay and logging
+    /// The single retry decision. A failure is repeated only when the policy is enabled, the budget still
+    /// has room, the caller has not cancelled, and the failure itself is retriable.
     /// </summary>
-    private async Task HandleRetryAsync(int attempt, Exception? exception, RetryPolicy retryPolicy, CancellationToken cancellationToken)
+    /// <remarks>
+    /// An HTTP failure is recognized by the response evidence the SDK attached to it, never by the exception
+    /// type or its message, so <see cref="RetryPolicy.RetriableStatusCodes"/> is honoured exactly as
+    /// configured — default set or custom set. An SDK exception constructed by hand carries no evidence and is
+    /// therefore never treated as an HTTP failure, whatever its class name suggests.
+    /// </remarks>
+    private static bool ShouldRetryFailure(
+        Exception failure,
+        RetryPolicy retryPolicy,
+        int retryCount,
+        CancellationToken cancellationToken)
     {
-        TimeSpan delay = retryPolicy.CalculateDelay(attempt);
+        if (!retryPolicy.Enabled || retryCount >= retryPolicy.MaxRetryAttempts)
+        {
+            return false;
+        }
 
-        Logger?.LogWarning("Request attempt {Attempt} failed{Exception}. Retrying in {Delay}ms",
-            attempt, exception != null ? $" with exception: {exception.Message}" : "", delay.TotalMilliseconds);
+        // The caller's decision outranks the policy: a cancelled operation buys no further attempt, and is
+        // not delayed on the way out either.
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+
+        if (failure is RozetkaPayException { ApiError: { } apiError })
+        {
+            return retryPolicy.ShouldRetry(apiError.StatusCode);
+        }
+
+        // Transport failures, including one the SDK has already wrapped. The categories are exactly the ones
+        // RetryPolicy.ShouldRetry(Exception) publishes.
+        return retryPolicy.ShouldRetry(failure)
+            || (failure.InnerException is { } inner && retryPolicy.ShouldRetry(inner));
+    }
+
+    /// <summary>
+    /// Report the retry and wait for it.
+    /// </summary>
+    private async Task DelayBeforeRetryAsync(
+        int retryNumber,
+        Exception failure,
+        RetryPolicy retryPolicy,
+        CancellationToken cancellationToken)
+    {
+        TimeSpan delay = ResolveRetryDelay(retryNumber, failure, retryPolicy);
+
+        // Actionable without becoming a leak: which retry, what kind of failure, the HTTP status when there
+        // was a response, and the wait. The exception object is deliberately not passed and its message is
+        // deliberately not rendered - both can carry provider text, a raw body, or a caller identifier, and a
+        // log sink writes whatever it is given.
+        Logger?.LogWarning(
+            "Retry {RetryNumber} of {MaxRetryAttempts} scheduled after {FailureKind}, HTTP status {StatusCode}, in {DelayMilliseconds}ms",
+            retryNumber,
+            retryPolicy.MaxRetryAttempts,
+            failure.GetType().Name,
+            DescribeStatus(failure),
+            delay.TotalMilliseconds);
 
         if (delay > TimeSpan.Zero)
         {
+            // The caller's token, so cancelling during the wait ends the operation instead of starting
+            // another request.
             await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// How long to wait before the next attempt.
+    /// </summary>
+    /// <remarks>
+    /// A <c>429</c> that arrived with a usable <c>Retry-After</c> uses the server's own figure, bounded by
+    /// <see cref="RetryPolicy.MaxDelay"/> so that a hostile or mistaken header cannot park a request for
+    /// hours behind the caller's back; a hint of zero or in the past means retry immediately. Every other
+    /// failure - and a <c>429</c> whose header was absent or unparseable - uses the configured backoff
+    /// unchanged.
+    /// </remarks>
+    private static TimeSpan ResolveRetryDelay(int retryNumber, Exception failure, RetryPolicy retryPolicy)
+    {
+        // The hint is parsed while the response is still open and attached to the mapped exception there, so
+        // only a real 429 can reach this branch and no header is re-read - or re-parsed out of a message - at
+        // retry time.
+        if (failure is RozetkaPayRateLimitException { RetryAfter: { } hint })
+        {
+            if (hint <= TimeSpan.Zero)
+            {
+                return TimeSpan.Zero;
+            }
+
+            return hint > retryPolicy.MaxDelay ? retryPolicy.MaxDelay : hint;
+        }
+
+        return retryPolicy.CalculateDelay(retryNumber);
+    }
+
+    /// <summary>
+    /// The HTTP status behind a failure as a log-safe token, or <c>none</c> when the failure never reached a
+    /// response.
+    /// </summary>
+    private static string DescribeStatus(Exception failure)
+    {
+        return failure is RozetkaPayException { ApiError: { } apiError }
+            ? ((int)apiError.StatusCode).ToString(CultureInfo.InvariantCulture)
+            : "none";
     }
 
     /// <summary>
@@ -533,8 +633,11 @@ public abstract class BaseService
             case HttpStatusCode.NotFound:
                 throw new RozetkaPayNotFoundException("Resource not found", apiError);
             case HttpStatusCode.TooManyRequests:
-                double retryAfter = response.Headers.RetryAfter?.Delta?.TotalSeconds ?? 60;
-                throw new RozetkaPayRateLimitException($"Rate limit exceeded. Retry after {retryAfter} seconds", apiError);
+                ReadRetryAfter(response, out double retryAfter, out TimeSpan? retryAfterHint);
+                throw new RozetkaPayRateLimitException(
+                    $"Rate limit exceeded. Retry after {retryAfter} seconds",
+                    apiError,
+                    retryAfterHint);
             case HttpStatusCode.InternalServerError:
                 throw new RozetkaPayException("Internal server error", null, apiError);
             default:
@@ -545,6 +648,49 @@ public abstract class BaseService
                     null,
                     apiError);
         }
+    }
+
+    /// <summary>
+    /// Read the <c>Retry-After</c> header of a <c>429</c> exactly once, as both the figure the exception
+    /// message has always reported and the delay the retry loop can act on.
+    /// </summary>
+    /// <remarks>
+    /// The header is converted here, while the response is still open, because the retry decision happens
+    /// after the response has been disposed. An HTTP-date becomes a delay relative to now; delta-seconds are
+    /// taken as they are. A header the typed accessor cannot parse is treated as absent rather than allowed to
+    /// replace <see cref="RozetkaPayRateLimitException"/> with a parser error, and the message keeps the
+    /// delta-seconds form - and the historical <c>60</c> fallback - that consumers already depend on.
+    /// </remarks>
+    /// <param name="response">Failed <c>429</c> response.</param>
+    /// <param name="messageSeconds">Seconds to report in the exception message.</param>
+    /// <param name="hint">
+    /// Delay the provider asked for, or <see langword="null"/> when the header was absent or unparseable.
+    /// </param>
+    private static void ReadRetryAfter(HttpResponseMessage response, out double messageSeconds, out TimeSpan? hint)
+    {
+        const double DefaultMessageSeconds = 60;
+
+        RetryConditionHeaderValue? retryAfter;
+        try
+        {
+            retryAfter = response.Headers.RetryAfter;
+        }
+        catch (FormatException)
+        {
+            // Defensive rather than observed: on both target frameworks the typed accessor yields null for a
+            // value it cannot parse. The guard keeps that a guarantee of this SDK instead of a detail of the
+            // runtime, so a provider header can never surface as a parser error in place of the 429.
+            retryAfter = null;
+        }
+
+        messageSeconds = retryAfter?.Delta?.TotalSeconds ?? DefaultMessageSeconds;
+
+        hint = retryAfter switch
+        {
+            { Delta: { } delta } => delta,
+            { Date: { } date } => date - DateTimeOffset.UtcNow,
+            _ => null
+        };
     }
 
     /// <summary>
