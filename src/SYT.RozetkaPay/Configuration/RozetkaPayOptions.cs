@@ -92,13 +92,6 @@ public sealed class RozetkaPayOptions
     public string UserAgent { get; set; } = "RozetkaPaySDK/.NET";
 
     /// <summary>
-    /// SSL certificate validation switch, carried through to
-    /// <see cref="RozetkaPayConfiguration.ValidateSslCertificate"/>. Defaults to <see langword="true"/>;
-    /// turn it off only against a development server.
-    /// </summary>
-    public bool ValidateSslCertificate { get; set; } = true;
-
-    /// <summary>
     /// Retry policy for failed HTTP requests. Retries are disabled by default.
     /// </summary>
     public RetryPolicy RetryPolicy { get; set; } = RetryPolicy.Default;

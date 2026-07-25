@@ -55,7 +55,6 @@ internal static class RozetkaPayOptionsMapper
             CustomerAuth = options.CustomerAuth,
             Timeout = options.Timeout,
             UserAgent = options.UserAgent,
-            ValidateSslCertificate = options.ValidateSslCertificate,
             RetryPolicy = CloneRetryPolicy(options.RetryPolicy)!
         };
     }
@@ -75,7 +74,6 @@ internal static class RozetkaPayOptionsMapper
             CustomerAuth = configuration.CustomerAuth,
             Timeout = configuration.Timeout,
             UserAgent = configuration.UserAgent,
-            ValidateSslCertificate = configuration.ValidateSslCertificate,
             RetryPolicy = CloneRetryPolicy(configuration.RetryPolicy)!
         };
     }
@@ -93,7 +91,6 @@ internal static class RozetkaPayOptionsMapper
         destination.CustomerAuth = source.CustomerAuth;
         destination.Timeout = source.Timeout;
         destination.UserAgent = source.UserAgent;
-        destination.ValidateSslCertificate = source.ValidateSslCertificate;
 
         // Cloned again: the factory may build several options instances, and they must not share a policy.
         destination.RetryPolicy = CloneRetryPolicy(source.RetryPolicy)!;

@@ -45,12 +45,6 @@ public class RozetkaPayConfiguration
     public string UserAgent { get; set; } = "RozetkaPaySDK/.NET";
 
     /// <summary>
-    /// Whether to validate SSL certificates (default: true)
-    /// Set to false only for development/testing environments
-    /// </summary>
-    public bool ValidateSslCertificate { get; set; } = true;
-
-    /// <summary>
     /// Retry policy for failed HTTP requests
     /// </summary>
     public RetryPolicy RetryPolicy { get; set; } = RetryPolicy.Default;
@@ -74,4 +68,4 @@ public class RozetkaPayConfiguration
         string credentials = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{Login}:{Password}"));
         return $"Basic {credentials}";
     }
-} 
+}

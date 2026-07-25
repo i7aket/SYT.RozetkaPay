@@ -132,7 +132,6 @@ The SDK binds the `RozetkaPay` configuration section to `RozetkaPayOptions`
 | `CustomerAuth` | `string?` | *unset* | `X-CUSTOMER-AUTH` header (customer wallet access). |
 | `Timeout` | `TimeSpan` | `00:00:30` | Must be greater than zero. |
 | `UserAgent` | `string` | `RozetkaPaySDK/.NET` | |
-| `ValidateSslCertificate` | `bool` | `true` | |
 | `RetryPolicy` | object | disabled | `Enabled`, `MaxRetryAttempts`, `BaseDelay`, `MaxDelay`, `BackoffStrategy`, `RetriableStatusCodes`. |
 
 ### Environments
@@ -214,10 +213,48 @@ production, and repository secrets in CI:
 dotnet user-secrets set "RozetkaPay:Password" "<your password>"
 ```
 
+### TLS certificate validation
+
+The SDK does not configure certificate validation and has no setting that turns it off. Every HTTPS request
+is validated by the platform's own trust policy — the `HttpMessageHandler` defaults of .NET, using the
+operating system trust store. When you pass your own `HttpClient`, its handler policy is yours and the SDK
+neither inspects nor replaces it.
+
+`ValidateSslCertificate` was **removed** from `RozetkaPayOptions` and `RozetkaPayConfiguration`. It never
+reached an `HttpMessageHandler`: setting it to `false` changed no handler and no TLS behaviour, so it only
+ever promised something the SDK did not do. Assigning it now fails to compile, and leaving the old
+configuration key in place fails fast:
+
+```text
+RozetkaPay:ValidateSslCertificate was removed because it never controlled the HTTP handler. TLS certificate
+validation always follows the platform or caller-supplied HttpMessageHandler policy. Remove this
+configuration key.
+```
+
+`AddRozetkaPay(IConfiguration)` throws that `InvalidOperationException` whenever the key is present,
+whatever its value — an ignored key would let an operator believe a TLS policy they configured is still in
+force. The message names the key and never its value. **Migration: delete the key.** No replacement setting
+is needed; validation was already the platform's.
+
+To trust a certificate the platform does not:
+
+- **Production — install the CA in the OS trust store.** A private or corporate CA belongs in the machine's
+  trust store, where it applies to the whole host and is auditable. Nothing changes in the SDK.
+- **Local or test infrastructure — own the handler yourself.** Build the `HttpClient` in your own code with
+  a handler narrowed to the one certificate you mean to accept (pin its thumbprint; never accept every
+  error), and hand it to `new RozetkaPayClient(configuration, httpClient)`. The trust decision then lives in
+  your application, visible in review, and cannot leak into production through configuration.
+- **Never install a trust-all callback in production.** `DangerousAcceptAnyServerCertificateValidator`, a
+  `ServerCertificateCustomValidationCallback` that returns `true`, or any equivalent that ignores
+  `SslPolicyErrors` disables authentication of the payment endpoint and opens the traffic — credentials and
+  card data included — to interception. The SDK will not do this on your behalf, and there is no
+  configuration that asks it to.
+
 ### Configuration objects still work
 
-`RozetkaPayConfiguration` and the overloads that take it are unchanged, and remain the way to configure the
-client without DI:
+`RozetkaPayConfiguration` and the overloads that take it are still supported, and remain the way to
+configure the client without DI. The only change is the removal of the obsolete `ValidateSslCertificate`
+property described under **TLS certificate validation** above; nothing else about these overloads changed:
 
 ```csharp
 services.AddRozetkaPay(new RozetkaPayConfiguration
