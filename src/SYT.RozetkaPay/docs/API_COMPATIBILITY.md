@@ -18,24 +18,175 @@ An SDK method can call the right **path** and still call the wrong **operation**
 verb, a body the operation does not declare, or a response shape the operation does not return. Path
 coverage therefore does not imply operation parity, and the two are reported separately below.
 
-### View 1 — pinned repository snapshot (`docs/openapi.json`)
-
-- SHA-256: `309e61bf2185706c137f2d270d767b31777f7a4d09f2f2e0fb900fe36601cc44`
-- Paths: `49`
-- Operations: `57`
-- Path coverage: `49/49`
-- Operation parity: reached for the pinned `57`-operation set as of EXP-355, after the three
-  corrections below; proven by `tests/SYT.RozetkaPay.Tests/OperationParityTests.cs`.
-- Additional legacy compatibility routes in SDK: `25`
-
-### View 2 — live official document, observed `2026-07-25`
+### Pinned repository snapshot (`docs/openapi.json`)
 
 - SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a`
+- Observed: `2026-07-25`
 - Paths: `59`
 - Operations: `67`
-- The live document publishes ten operations and ten paths that the pinned snapshot does not contain.
-  Refreshing the snapshot and covering those operations is **EXP-354**, and the final `67/67`
-  sandbox/auth/webhook coverage is **EXP-337**. This SDK does **not** claim live `67/67` parity.
+- Path coverage: `59/59`
+- Operation coverage: a typed SDK method exists for each of the pinned `67` operations.
+- Additional legacy compatibility routes in SDK: `25`
+
+EXP-354 refreshed the snapshot from the `49`-path / `57`-operation document to the current one. The
+snapshot is now byte-identical to the live official document, so the two views that used to be reported
+separately have collapsed into one. Identity is asserted, not assumed:
+`tests/SYT.RozetkaPay.Tests/OpenApi59OperationTests.cs` hashes the committed file and fails if it is not
+exactly the document above.
+
+### What "coverage" does and does not claim
+
+The claim is about the **pinned document**: for every operation it declares, the SDK has a typed method
+that sends the declared verb, request target, and body shape, and deserializes the declared response.
+That is proven by the wire-level tests listed under each section below.
+
+It is **not** a claim that a live sandbox has answered all `67` operations. End-to-end
+sandbox/authentication/webhook validation is **EXP-337**, and no such validation was performed here. This
+SDK therefore does **not** claim live, provider-verified `67/67` parity.
+
+## New Operations (EXP-354)
+
+Ten operations the previous snapshot did not contain. All ten are additive: no existing signature, route,
+verb, body, or response type changed.
+
+| operationId | Official verb and path | Service | Method | Request type | Response type | Auth | Transport notes |
+|---|---|---|---|---|---|---|---|
+| `UpdateSubscriptionPaymentMethod` | `PATCH /api/subscriptions/v1/subscriptions/{subscription_id}/payment-method` | `ISubscriptionService` | `UpdatePaymentMethodAsync(subscriptionId, request, ct)` | `UpdateSubscriptionPaymentMethodRequest` | `UpdateSubscriptionPaymentMethodResponse` | yes | `subscription_id` escaped once as one path segment; static log label; optional `X-CUSTOMER-AUTH` honoured |
+| `createInStorePayment` | `POST /api/in-store-payments/v1/create` | `IInStorePaymentService` | `CreateAsync(request, ct)` | `InStorePaymentCreateRequest` | `InStorePaymentCreateResponse` | yes | JSON body; `currency` is the literal `"980"`; amounts are exact text |
+| `confirmInStorePayment` | `POST /api/in-store-payments/v1/confirm` | `IInStorePaymentService` | `ConfirmAsync(request, ct)` | `InStorePaymentConfirmRequest` | `InStorePaymentConfirmResponse` | yes | JSON body carrying cardholder data; never logged |
+| `refundInStorePayment` | `POST /api/in-store-payments/v1/refund` | `IInStorePaymentService` | `RefundAsync(request, ct)` | `InStorePaymentRefundRequest` | `InStorePaymentRefundResponse` | yes | JSON body carrying cardholder data; never logged |
+| `getInStorePaymentInfo` | `POST /api/in-store-payments/v1/info` | `IInStorePaymentService` | `GetInfoAsync(externalId, ct)` | none | `InStorePaymentInfoResponse` | yes | **POST with no request content at all**; `external_id` query value escaped once |
+| `feeDetails` | `GET /api/partners/v1/fee-details` | `IPartnerService` | `GetFeeDetailsAsync(ct)` / `(merchantProjectId, ct)` | none | `PartnerFeeDetailsResponse` | yes | no-argument overload sends no query string |
+| `merchantStatus` | `GET /api/partners/v1/merchant-status` | `IPartnerService` | `GetMerchantStatusAsync(ct)` / `(options, ct)` | none | `MerchantStatusResponse` | yes | fixed order `merchant_project_id`, `merchant_entity_id` |
+| `transactionDetails` | `GET /api/partners/v1/transaction-details` | `IPartnerService` | `GetTransactionDetailsAsync(merchantEntityId, ct)` / `(merchantEntityId, options, ct)` | none | `PartnerTransactionDetailsListResponse` | yes | required `merchant_entity_id` first, then `merchant_order_id`, `unified_external_id` |
+| `createPaymentInstructions` | `POST /api/payment-instructions/v1/new` | `IPaymentInstructionService` | `CreateAsync(request, ct)` | `CreatePaymentInstructionsRequest` | `PaymentInstructionsResult` | yes | JSON body; enum tokens `cardpay`/`ppay` and `auth`/`purchase` pinned explicitly |
+| `declinePaymentInstruction` | `GET /api/payment-instructions/v1/decline` | `IPaymentInstructionService` | `DeclineAsync(projectId, paymentInstructionId, ct)` | none | `PaymentInstructionDeclineResult` | **no** (`security: []`) | separate credential-free client; `AllowAutoRedirect = false`; `302` is success; `Location` returned unfetched |
+
+Coverage: `SubscriptionPaymentMethodUpdateTests`, `InStorePaymentServiceTests`, `PartnerServiceTests`,
+`PaymentInstructionServiceTests`, `OpenApi59OperationTests`.
+
+### Unique callback operationIds
+
+`/api/alternative-payments/v1/callback/resend` and `/api/payparts/v1/callback/resend` previously shared
+the operationId `resendCallback`. The refreshed document gives them
+`resendAlternativePaymentCallback` and `resendPayPartsCallback`. This is a documentation change only —
+both are unchanged on the wire, and the corresponding SDK methods were **not** renamed or rewired. No
+non-empty operationId in the pinned document is duplicated any more, which
+`OpenApi59OperationTests` asserts.
+
+### `declinePaymentInstruction`: no authentication, no redirect following
+
+This operation is a security boundary, not a convenience detail.
+
+- **Unauthenticated.** The official document declares `security: []`. The SDK attaches no
+  `Authorization`, `Proxy-Authorization`, `X-ON-BEHALF-OF`, or `X-CUSTOMER-AUTH` header, even when the
+  configuration supplies them.
+- **A separate client, not a flag.** `HttpClient` has no per-request redirect switch, so the guarantee
+  lives in a second client whose primary handler sets `AllowAutoRedirect = false`. Direct construction
+  builds and owns that client; `AddRozetkaPay` configures a dedicated named client
+  (`RozetkaPay.PaymentInstructions.Decline`) instead. Platform TLS validation is untouched in both paths:
+  no certificate callback is installed and no check is relaxed.
+- **The redirect is not followed and the target is not fetched.** The `Location` header is the result,
+  returned as `PaymentInstructionDeclineResult`. Under the default disabled `RetryPolicy` a decline is a
+  single request; when a retry policy is enabled the SDK may repeat the **same** decline request for the
+  conditions it already supports, and never switches client, route, verb, or authentication mode. A
+  successful `302` is never repeated.
+- **The caller owns any navigation.** `Location` is provider-controlled input. Redirecting a browser to it
+  is the normal use; fetching it server-side without validating scheme and host is a request-forgery
+  sink. The SDK never does so on the caller's behalf.
+- **`302` is success.** It never enters error mapping or retry handling. A `302` without a usable
+  `Location` — absent, blank, or unparseable — throws `RozetkaPayException` with a static message that
+  repeats neither the header value nor either identifier. Any other non-success status maps through the
+  same status-to-exception table as every other operation.
+- **Nothing sensitive is logged.** Only the static route `/api/payment-instructions/v1/decline` reaches a
+  log sink — never `project_id`, `payment_instruction_id`, or `Location`.
+
+A non-provider loopback test proves the transport end to end: the SDK sends one request to a local server
+answering `302` towards a second local server, the second server receives nothing, and the recorded
+request carries no credential header.
+
+### Request-target safety carried over from EXP-353
+
+EXP-353 established the encoding discipline for caller-supplied values, and every EXP-354 operation
+follows it rather than re-deriving it:
+
+- **Path segments** use `RequestTargetEncoding.EscapePathSegment`, which encodes exactly once and rejects
+  the identifiers `.` and `..` with `ArgumentException` before any request is sent — `System.Uri` removes
+  exact dot segments while building the request, so sending them would silently address a different
+  endpoint. `UpdateSubscriptionPaymentMethod` is the only new operation with a path parameter, and it
+  inherits both behaviours.
+- **Query values** are escaped once with `Uri.EscapeDataString` at their own insertion point. A space
+  becomes `%20`, never `+`; a literal `%` becomes `%25`, so a pre-encoded-looking value such as
+  `already%2Fencoded` is sent as `already%252Fencoded`.
+- **`null` omits, empty sends.** An optional parameter is left out only when it is `null`; an empty string
+  is sent as an empty value for the provider to validate.
+- **Parameter order is fixed by the SDK**, so two identical calls always produce the same request target.
+- **Caller input never reaches a log label — for these ten operations.** Each one whose request target
+  carries an identifier logs a static route template through a transport helper that takes a separate log
+  label.
+
+`PathSegmentEncodingTests` and `QueryParameterEscapingTests` still pass unchanged, and each new service's
+tests assert the handler-observed `PathAndQuery` rather than the string the service built.
+
+### Logging scope: what EXP-354 does and does not change
+
+Two separate mechanisms produce HTTP log output, and only one of them is changed SDK-wide.
+
+**Changed for every operation.** `AddRozetkaPay` now calls `RemoveAllLoggers()` on both named clients, so the
+built-in `IHttpClientFactory` handler logging under `System.Net.Http.HttpClient.RozetkaPay.*` is not emitted
+at all. That logging wrote the request URI — and while `Microsoft.Extensions.Http` 9.0.5 redacts the whole
+query to `?*`, it does **not** redact path segments, so `subscription_id` reached `LogicalHandler` and
+`ClientHandler` verbatim at Information level. Its header logging is redacted in the rendered message only:
+the structured state of those entries carried the real `Authorization` and `X-CUSTOMER-AUTH` values at Trace
+level. Neither is configurable, so the loggers are removed outright.
+
+**Not changed, and not audited.** The SDK's own service logging for pre-existing operations. EXP-354 makes
+**no** identifier- or content-safety claim about it, because changing it would mean touching operations
+outside this ticket's scope. In the current code that logging includes:
+
+- the **real request target** for most operations, with a caller identifier embedded in several routes —
+  `/api/customers/v1/{customerId}/cards/{cardId}`, `/api/alternative-payments/v1/operation/{externalId}`,
+  `/api/payparts/v1/operation/{operationId}`, and the query strings of list operations. The two-argument
+  `BaseService` helpers pass the endpoint as its own log label, which is exactly the pre-EXP-354 behaviour;
+- **method-specific values** in at least one place: `PaymentService.ConfirmP2PAsync` logs the external ID and
+  the amount;
+- the **transport exception message** in the shared retry warning, whose content comes from the runtime or the
+  provider. Retries are disabled by default, so this path is inactive unless a consumer enables them.
+
+### What EXP-354 does claim
+
+Scoped to the ten operations in the table above, and limited to what the tests actually measure under the
+default disabled retry policy. Two layers of coverage, and it takes both:
+
+| Layer | Tests | What it measures |
+|---|---|---|
+| Per-operation service logging | `SubscriptionPaymentMethodUpdateTests` (subscription update), `InStorePaymentServiceTests.EveryOperation_ShouldLogTheStaticRouteOnly` (all four in-store), `PartnerServiceTests.EveryOperation_ShouldLogTheStaticRouteOnly` (all three partner), `PaymentInstructionServiceTests.Create_ShouldLogTheStaticRouteAndNothingFromTheRequestOrResponse` and `…Decline_ShouldLogNeitherIdentifierNorLocation` | Each operation's own log statements, through a recording logger, with hostile markers in the request and the response |
+| Whole pipeline through DI | `Exp354FactoryLoggingTests` | A real `AddRozetkaPay` driven through a capturing `ILoggerProvider` that inspects every category, rendered message, structured value and scope — this is what catches logging the SDK does not write itself |
+
+All ten operations are covered by the first layer; the second layer is what proves nothing else in the
+pipeline re-introduces a leak. With those in place:
+
+- each of those operations logs a **static route template** and the response status;
+- their captured logging contains **no** caller identifier (`subscription_id`, in-store `external_id`, the
+  partner query identifiers, decline `project_id` and `payment_instruction_id`), **no** credential
+  (`Authorization`, `X-ON-BEHALF-OF`, `X-CUSTOMER-AUTH`, the configured password), **no** request or response
+  body, and **no** `RozetkaPayApiError.RawBody`;
+- the decline operation additionally does not log the `Location` it returns.
+
+Nothing beyond those ten operations is asserted.
+
+### Historical partner DTOs are left intact
+
+`Models.Merchants.PartnersFeeDetails`, `Models.Merchants.PartnersTransactionDetails`,
+`Models.Merchants.FeeDetailsResponse`, `Models.Merchants.TransactionDetailsListResponse`, and the
+same-named types in `Models.Common` describe an older layout that does not match the official partner
+responses. They remain public and unchanged — removing them would break compiled consumers — but no new
+operation returns them. The correctly shaped results live in `Models.Partners`.
+`merchantStatus` deliberately reuses `Models.Merchants.MerchantStatusResponse`, whose shape already
+matches the official response exactly.
+
+Likewise, the historical `Models.Subscriptions.SubscriptionPaymentMethod` is not repurposed: the new
+operation uses `SubscriptionPaymentMethodUpdate`.
 
 ## Corrected Operation Mismatches (EXP-355)
 
@@ -87,10 +238,17 @@ normalized to `[]` when serializing, because the official schema has no spelling
 ## Last Verification
 
 - Date: `2026-07-25`
-- Result: three operation-level parity defects corrected; snapshot path coverage re-validated and
-  reported separately from operation parity.
-- Snapshot path count: `49`; snapshot operation count: `57`
-- SDK service coverage for snapshot OpenAPI paths: `49/49`
+- Result: pinned snapshot refreshed to the live official document; ten new operations covered by typed
+  SDK methods across three new service contracts plus one new subscription operation; both callback
+  operationIds now unique.
+- Snapshot SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a`
+- Snapshot path count: `59`; snapshot operation count: `67`
+- SDK service coverage for snapshot OpenAPI paths: `59/59`
+- Verified by: `OpenApi59OperationTests`, `OperationParityTests`,
+  `SubscriptionPaymentMethodUpdateTests`, `InStorePaymentServiceTests`, `PartnerServiceTests`,
+  `PaymentInstructionServiceTests`, `PathSegmentEncodingTests`, `QueryParameterEscapingTests`,
+  `PublicInterfacesTests`, `PublicInterfaceRegistrationTests`, `Exp354DisposalTests`
+- Not verified here: live sandbox behaviour for any operation. That remains **EXP-337**.
 
 ## Known Runtime Inconsistency (Observed in Integrations)
 

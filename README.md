@@ -21,7 +21,8 @@ unit tests:
 - `IRozetkaPayClient` — aggregate contract, derives from `IDisposable`
 - `IPaymentService`, `IBatchPaymentService`, `IPayPartsService`, `IPayoutService`,
   `ICustomerService`, `ISubscriptionService`, `IReportService`,
-  `IAlternativePaymentService`, `IMerchantService`, `IFinMonService`
+  `IAlternativePaymentService`, `IMerchantService`, `IFinMonService`,
+  `IInStorePaymentService`, `IPartnerService`, `IPaymentInstructionService`
 - `IRozetkaPayWebhookSignatureVerifier` — verifies the `X-ROZETKAPAY-SIGNATURE` header on
   incoming callbacks
 - `RozetkaPayOptions` / `RozetkaPayEnvironment` — typed settings bound from the `RozetkaPay`
@@ -31,6 +32,16 @@ unit tests:
 to the same DI-managed instance. API services are scoped; the immutable webhook verifier is
 a singleton. The concrete types stay public and unchanged, so existing code continues to
 compile. Details and testing examples are in the package README.
+
+The SDK is pinned to the official OpenAPI document observed on `2026-07-25` — `59` paths and
+`67` operations — and exposes a typed method for each of those operations. That is a statement
+about the pinned document, not a claim that a live sandbox answered all 67; see
+[API compatibility](src/SYT.RozetkaPay/docs/API_COMPATIBILITY.md).
+
+`declinePaymentInstruction` is the one unauthenticated operation. The SDK sends it over a
+dedicated credential-free client whose handler does not follow redirects, returns the `Location`
+header, and never fetches the target — see
+[Payment Instructions](src/SYT.RozetkaPay/README.md#payment-instructions).
 
 Configuration goes through the options pattern: set `Environment` to `Production` (the default) or
 `Sandbox` to pick the endpoint instead of writing a URL, and the settings are validated at startup

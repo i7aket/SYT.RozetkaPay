@@ -163,6 +163,28 @@ public interface ISubscriptionService
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(string subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Replace the payment method of a subscription. Official operation
+    /// <c>UpdateSubscriptionPaymentMethod</c>:
+    /// <c>PATCH /api/subscriptions/v1/subscriptions/{subscription_id}/payment-method</c>. The
+    /// configured <c>X-CUSTOMER-AUTH</c> header, when present, identifies the customer.
+    /// </summary>
+    /// <param name="subscriptionId">
+    /// Subscription ID. Pass the raw value: it is percent-encoded exactly once as a single path
+    /// segment.
+    /// </param>
+    /// <param name="request">New payment method, plus the optional official request fields.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Provider message and, when the provider requires one, a pending user action</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="subscriptionId"/> or <paramref name="request"/> is null.
+    /// </exception>
+    /// <exception cref="ArgumentException"><paramref name="subscriptionId"/> is exactly "." or "..".</exception>
+    Task<UpdateSubscriptionPaymentMethodResponse> UpdatePaymentMethodAsync(
+        string subscriptionId,
+        UpdateSubscriptionPaymentMethodRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Cancel subscription
     /// </summary>
     /// <param name="subscriptionId">Subscription ID</param>

@@ -7,8 +7,11 @@ It provides typed clients and models for:
 - PayParts (installments, refund retry/cancel)
 - Payouts
 - Customers and wallets
-- Subscriptions (including gift subscriptions)
+- Subscriptions (including gift subscriptions and payment-method replacement)
 - Alternative payments (including callback resend)
+- In-store (POS) payments (create, confirm, refund, info)
+- Partner reporting (fee details, merchant status, transaction details)
+- Payment instructions (batch creation and the unauthenticated decline redirect)
 - Merchant and FinMon APIs
 - Webhook payloads (`PaymentWebhook`)
 
@@ -33,11 +36,14 @@ substitute them in unit tests. See [Interfaces and Testing](#interfaces-and-test
 - Detailed compatibility notes: `docs/API_COMPATIBILITY.md`
 
 Path coverage and operation parity are reported separately: calling the right path does not prove the
-SDK calls the right operation. The pinned snapshot holds `49` paths and `57` operations, and the SDK
-covers `49/49` paths and reaches operation parity for those `57` operations. The live official document
-observed on `2026-07-25` publishes `59` paths and `67` operations; refreshing the snapshot to that set
-is tracked separately, and this SDK does **not** claim live `67/67` parity. See
-`docs/API_COMPATIBILITY.md`.
+SDK calls the right operation. The pinned snapshot now holds `59` paths and `67` operations — the
+official document as observed on `2026-07-25` — and the SDK covers `59/59` paths with a typed method
+for each of those `67` operations.
+
+That is a statement about the **pinned document**, verified by
+`tests/SYT.RozetkaPay.Tests/OpenApi59OperationTests.cs` and by the per-operation wire tests. It is
+**not** a claim that a live sandbox has answered all 67 operations; end-to-end sandbox, authentication
+and webhook coverage is tracked separately. See `docs/API_COMPATIBILITY.md`.
 
 ## Known API Response Inconsistency
 
@@ -295,6 +301,13 @@ and both resolve to the **same scoped instance**:
 | `IAlternativePaymentService` | `AlternativePaymentService` |
 | `IMerchantService` | `MerchantService` |
 | `IFinMonService` | `FinMonService` |
+| `IInStorePaymentService` | `InStorePaymentService` |
+| `IPartnerService` | `PartnerService` |
+| `IPaymentInstructionService` | `PaymentInstructionService` |
+
+The aggregate `IRozetkaPayClient` exposes each of them as a read-only property: `Payments`,
+`BatchPayments`, `PayParts`, `Payouts`, `Customers`, `Subscriptions`, `Reports`, `AlternativePayments`,
+`Merchants`, `FinMon`, `InStorePayments`, `Partners`, and `PaymentInstructions`.
 
 Guidance:
 
@@ -505,6 +518,305 @@ Rules that matter:
   and `CancelAsync` are obsolete warnings only, and their route, verb, body and response type are
   unchanged. `CancelAsync` still sends `external_id`, `reason` and `immediate`, none of which maps
   onto the official `refund` option — which is exactly why it was not redirected.
+
+## Replacing a Subscription Payment Method
+
+`ISubscriptionService.UpdatePaymentMethodAsync` calls
+`PATCH /api/subscriptions/v1/subscriptions/{subscription_id}/payment-method`. The configured
+`CustomerAuth` (`X-CUSTOMER-AUTH`) identifies the customer when it is set.
+
+```csharp
+using SYT.RozetkaPay.Models.Payments;
+using SYT.RozetkaPay.Models.Subscriptions;
+
+UpdateSubscriptionPaymentMethodResponse result = await subscriptions.UpdatePaymentMethodAsync(
+    "1d85591b-891b-4b10-9d60-2078940d8e74",
+    new UpdateSubscriptionPaymentMethodRequest
+    {
+        ResultUrl = "https://example.com/subscription/updated",
+        AutoRenew = true,
+        PaymentMethod = new SubscriptionPaymentMethodUpdate
+        {
+            Type = SubscriptionPaymentMethodUpdateType.Wallet,
+            Wallet = new CustomerWalletRequestPaymentMethod
+            {
+                OptionId = "b1f0c1d2-0000-4000-8000-000000000000"
+            }
+        }
+    },
+    cancellationToken);
+
+// A 3DS or redirect step, when the provider requires one.
+string? nextStep = result.UserAction?.Value;
+```
+
+`SubscriptionPaymentMethodUpdateType` covers every documented method — `CcToken`, `Wallet`, `GooglePay`,
+`ApplePay`, `RecurrentId` — and each one fills the matching nested property. `AutoRenew` is tri-state:
+`true` and `false` are both sent, and only `null` leaves the provider setting untouched. This is a new
+type; the historical `SubscriptionPaymentMethod` describes a different shape and is unchanged.
+
+## In-Store (POS) Payments
+
+`IInStorePaymentService` covers the four official in-store operations.
+
+```csharp
+using SYT.RozetkaPay.Models.InStorePayments;
+using SYT.RozetkaPay.Services;
+
+IInStorePaymentService inStore = serviceProvider.GetRequiredService<IInStorePaymentService>();
+
+InStorePaymentCreateResponse created = await inStore.CreateAsync(
+    new InStorePaymentCreateRequest
+    {
+        ExternalId = "pos-order-1",
+        PosTerminalId = "terminal-1",
+        TerminalSn = "SN-0001",
+        Amount = "10050",              // smallest monetary unit, as text
+        Currency = InStorePaymentCurrency.Uah
+    },
+    cancellationToken);
+
+InStorePaymentInfoResponse state = await inStore.GetInfoAsync("pos-order-1", cancellationToken);
+```
+
+Rules that matter:
+
+- **Amounts are strings, in the smallest monetary unit.** `"10050"` means `100.50 UAH`. The official
+  schema declares a string, so the SDK carries the value verbatim: leading zeros and exact provider text
+  survive in both directions. Mapping the field onto `decimal` would rewrite it.
+- **`Currency` is an enum whose only wire form is `"980"`.** `InStorePaymentCurrency.Uah` serializes to
+  the literal string `980`, the ISO 4217 numeric code.
+- **`GetInfoAsync` is a `POST` that sends no body.** The official operation declares no request body, so
+  the SDK sends none — not an empty JSON object — and does not downgrade the verb to `GET`. The external
+  ID travels as the `external_id` query value.
+- **Confirm and refund carry cardholder data.** `CardNumber` and `EncryptedTrack2` on
+  `InStorePaymentConfirmRequest` and `InStorePaymentRefundRequest` are sensitive. The SDK never logs a
+  request body, a response body, or any identifier from these operations — apply the same rule in your
+  own logs, error trackers, and crash reports, and keep these fields out of anything you persist for
+  debugging.
+- **The three receipt shapes are three types.** `InStorePaymentCreateReceiptData`,
+  `InStorePaymentConfirmReceiptData` and `InStorePaymentRefundReceiptData` model what each operation
+  actually returns; the refund receipt has no `fc_name`, because the official refund schema declares
+  none.
+
+## Partner Reporting
+
+`IPartnerService` covers the three official partner operations. Every input is a query value: pass raw
+values and the SDK encodes each exactly once.
+
+```csharp
+using SYT.RozetkaPay.Models.Partners;
+using SYT.RozetkaPay.Services;
+
+IPartnerService partners = serviceProvider.GetRequiredService<IPartnerService>();
+
+// No query at all.
+PartnerFeeDetailsResponse fees = await partners.GetFeeDetailsAsync(cancellationToken);
+
+// GET /api/partners/v1/merchant-status?merchant_project_id=...&merchant_entity_id=...
+MerchantStatusResponse status = await partners.GetMerchantStatusAsync(
+    new PartnerMerchantStatusOptions
+    {
+        MerchantProjectId = "project-1",
+        MerchantEntityId = "entity-1"
+    },
+    cancellationToken);
+
+// merchant_entity_id is required by the operation, so it is a method parameter.
+PartnerTransactionDetailsListResponse transactions = await partners.GetTransactionDetailsAsync(
+    "entity-1",
+    new PartnerTransactionDetailsOptions { MerchantOrderId = "order-1" },
+    cancellationToken);
+```
+
+Rules that matter:
+
+- **The no-argument overloads send no query string, not a bare `?`.**
+- **`null` omits, empty does not.** A `null` option is left out of the request target; an empty string is
+  sent as `merchant_project_id=` and validated by the provider.
+- **Parameter order is fixed by the SDK**, so two identical calls always produce the same request target:
+  `merchant_project_id` then `merchant_entity_id` for merchant status, and `merchant_entity_id`,
+  `merchant_order_id`, `unified_external_id` for transaction details.
+- **Result types are the `Models.Partners` ones.** `PartnerFeeDetailsResponse` and
+  `PartnerTransactionDetailsListResponse` match the official responses. The similarly named historical
+  types in `Models.Merchants` and `Models.Common` describe an older layout; they stay public and
+  unchanged for consumers already compiled against them, but no partner operation returns them.
+  Merchant status deliberately reuses `Models.Merchants.MerchantStatusResponse`, whose shape already
+  matches the official response.
+- **`ProcessedAt` is a string.** The official schema declares no date format, so the value is not parsed.
+
+## Payment Instructions
+
+`IPaymentInstructionService` covers the two official payment-instruction operations. They do **not**
+share an authentication mode.
+
+```csharp
+using SYT.RozetkaPay.Models.PaymentInstructions;
+using SYT.RozetkaPay.Services;
+
+IPaymentInstructionService instructions =
+    serviceProvider.GetRequiredService<IPaymentInstructionService>();
+
+// Authenticated: POST /api/payment-instructions/v1/new
+PaymentInstructionsResult batch = await instructions.CreateAsync(
+    new CreatePaymentInstructionsRequest
+    {
+        ProcessingType = PaymentInstructionProcessingType.CardPay,
+        Method = PaymentInstructionMethod.Purchase,
+        Currency = "UAH",
+        BatchExternalId = "batch-1",
+        Orders =
+        [
+            new PaymentInstructionOrder
+            {
+                ApiKey = "11111111-1111-1111-1111-111111111111",
+                Amount = 100.50m,
+                ExternalId = "order-1"
+            }
+        ]
+    },
+    cancellationToken);
+```
+
+`ProcessingType` and `Method` serialize to exactly `cardpay`/`ppay` and `auth`/`purchase`. The tokens are
+pinned on the enum members rather than derived from the SDK naming policy, which would otherwise emit
+`card_pay` and `p_pay`.
+
+### Declining an instruction is unauthenticated and does not follow the redirect
+
+`declinePaymentInstruction` is the one operation the official document declares `security: []`, and its
+documented success is a bare HTTP `302` whose `Location` header is the entire result.
+
+```csharp
+PaymentInstructionDeclineResult declined = await instructions.DeclineAsync(
+    "project-1",
+    "instruction-1",
+    cancellationToken);
+
+// Always 302 on success. Location is the provider's target - the SDK did not visit it.
+HttpStatusCode status = declined.StatusCode;
+Uri location = declined.Location;
+```
+
+What the SDK guarantees, and what it deliberately leaves to you:
+
+- **No RozetkaPay credential is sent.** The request goes over a dedicated client that carries no
+  `Authorization`, `Proxy-Authorization`, `X-ON-BEHALF-OF` or `X-CUSTOMER-AUTH` header, even when your
+  configuration sets them. Because `HttpClient` has no per-request redirect switch, this is a separate
+  client over a separate handler rather than a flag.
+- **The redirect is never followed.** That client's primary handler has `AllowAutoRedirect = false`. The
+  SDK reads the `Location` header, returns it, and makes exactly one HTTP request.
+- **The target is never fetched.** `DeclineAsync` does not read, resolve, or follow `Location`, and never
+  copies a credential to the host named in it.
+- **Navigating there is your decision, and validate it first.** `Location` is provider-controlled input.
+  Redirecting a browser to it is the normal use. Fetching it *server-side* without validating scheme and
+  host is a server-side request-forgery sink — treat it as untrusted data.
+- **Neither identifier nor the location is logged.** Only the static route
+  `/api/payment-instructions/v1/decline` reaches a log sink. A `302` without a usable `Location`, or a
+  successful status that is not `302`, throws `RozetkaPayException` with a message that repeats neither
+  the header value nor either identifier.
+- **`302` is success, never an error or a retry trigger.** Other statuses map through the same
+  status-to-exception table as every other operation, with `RozetkaPayApiError` attached.
+
+When you construct the service yourself, the ordinary constructor is already safe — it builds its own
+credential-free non-redirecting client and owns it, so dispose the service (or let the container own it)
+to release that client:
+
+```csharp
+using SYT.RozetkaPay.Configuration;
+using SYT.RozetkaPay.Services;
+
+PaymentInstructionService service = new(configuration, httpClient);
+using (service as IDisposable)
+{
+    PaymentInstructionDeclineResult result = await service.DeclineAsync("project-1", "instruction-1");
+}
+```
+
+There is also a constructor that accepts a decline `HttpClient` you prepared yourself — this is what
+`AddRozetkaPay` uses, with a dedicated named client. Such a client **must** be configured with
+`AllowAutoRedirect = false`; that cannot be checked through the public `HttpClient` surface, so it is your
+guarantee. What can be checked is: a client carrying any credential-bearing default header is rejected at
+construction rather than silently stripped, and a client you supplied is never disposed by the service.
+
+## Logging
+
+Two things produce HTTP log output when the SDK is registered through `AddRozetkaPay`: the SDK's own service
+logging, and the built-in `IHttpClientFactory` handler logging. They have different guarantees, and the
+difference matters — so read this section as scoped, not as a blanket claim.
+
+### The built-in factory logging is removed — for every operation
+
+**`AddRozetkaPay` calls `RemoveAllLoggers()` on both of its named clients** (`RozetkaPay` and
+`RozetkaPay.PaymentInstructions.Decline`), so entries under `System.Net.Http.HttpClient.RozetkaPay.*` are not
+emitted at all. This applies to every SDK operation that goes through those clients, new and pre-existing
+alike.
+
+It is deliberate. That logging writes the request URI, and while `Microsoft.Extensions.Http` redacts the whole
+query to `?*`, it does **not** redact path segments — so any identifier the SDK places in a path reached the
+log verbatim at Information level. Its header logging is redacted in the rendered message only; the
+structured state of those entries carries the real header values, so a structured sink would record
+`Authorization` and `X-CUSTOMER-AUTH` in clear at Trace level. Neither behaviour is configurable
+(`RedactLoggedHeaders` covers headers only, and there is no hook for the URI), so the loggers are removed
+outright.
+
+### What the SDK's own service logging contains
+
+There is no SDK-wide guarantee here, and none is claimed. The service logging was audited for the ten
+operations of the OpenAPI 59/67 sync only.
+
+**For those ten operations**, the logging captured by their tests contains the static route template and the
+response status, and no caller identifier, credential, request body, response body, card number, encrypted
+track 2 value, `RozetkaPayApiError.RawBody`, or — for the decline operation — the `Location` it returns:
+
+```text
+info: SYT.RozetkaPay.Services.SubscriptionService
+      Making PATCH request to /api/subscriptions/v1/subscriptions/{subscription_id}/payment-method
+dbug: SYT.RozetkaPay.Services.SubscriptionService
+      Response status: OK
+```
+
+The identifiers covered are the subscription `subscription_id`, the in-store `external_id`, the partner
+query identifiers, the payment-instruction payer and order values, and the decline `project_id` and
+`payment_instruction_id`. Those operations are listed in `docs/API_COMPATIBILITY.md` under
+**New Operations**.
+
+The guarantee is exactly what the tests measure, under the default disabled retry policy: a per-operation
+leak test in each service suite — `SubscriptionPaymentMethodUpdateTests`, `InStorePaymentServiceTests`,
+`PartnerServiceTests` and `PaymentInstructionServiceTests`, which between them cover all ten operations —
+plus `Exp354FactoryLoggingTests`, which drives a real `AddRozetkaPay` through a capturing
+`ILoggerProvider` and checks the whole logging pipeline rather than the service statements alone.
+
+**Every other SDK operation logs whatever it logged before this change, and that is not audited or claimed
+to be identifier- or content-safe.** Concretely, in the current code:
+
+- most operations log their **real request target**, and several routes embed a caller identifier in it —
+  `ICustomerService.DeletePaymentFromWalletAsync` logs `/api/customers/v1/<customerId>/cards/<cardId>`,
+  `IAlternativePaymentService.GetOperationAsync` logs
+  `/api/alternative-payments/v1/operation/<externalId>`, `IPayPartsService` operation lookups log
+  `/api/payparts/v1/operation/<operationId>`, and list operations log their query string;
+- some operations log **method-specific values**. `IPaymentService.ConfirmP2PAsync` logs the external ID and
+  the amount it is about to send;
+- when you **enable retries**, the shared retry warning includes the transport exception message. That text
+  comes from the runtime or the provider and the SDK does not control what it contains. Retries are disabled
+  by default, so this path is inactive unless you turn it on.
+
+Changing any of that would mean touching operations outside the scope of this change, so it was left alone.
+Treat SDK log output as potentially containing identifiers and values unless the operation is one of the ten
+listed above.
+
+### Adding your own HTTP telemetry
+
+Removing the factory loggers does not touch your logging. If you need request-level telemetry for these
+clients, add it with a `DelegatingHandler` or an `IHttpClientLogger` that logs a target you have redacted
+yourself:
+
+```csharp
+services.AddRozetkaPay(configuration);
+services.AddHttpClient("RozetkaPay").AddHttpMessageHandler(() => new MyRedactingLoggingHandler());
+```
+
+Log the route template, or a target with the identifier removed — not `request.RequestUri` as it stands.
 
 ## Webhook Signature Verification
 

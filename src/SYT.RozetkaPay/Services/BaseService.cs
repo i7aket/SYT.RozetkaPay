@@ -226,15 +226,83 @@ public abstract class BaseService
     /// <summary>
     /// Make a PATCH request to the specified endpoint with JSON body and retry support
     /// </summary>
-    protected async Task<TResponse> PatchAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+    protected Task<TResponse> PatchAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+    {
+        return PatchAsync<TRequest, TResponse>(endpoint, endpoint, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Make a PATCH request carrying a JSON body, logging <paramref name="endpointForLogging"/> instead
+    /// of the real request target.
+    /// </summary>
+    /// <param name="endpoint">Request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">
+    /// Static route template written by the SDK. Callers pass this when the request target carries a
+    /// caller identifier, so that the identifier never reaches a log sink.
+    /// </param>
+    /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected async Task<TResponse> PatchAsync<TRequest, TResponse>(
+        string endpoint,
+        string endpointForLogging,
+        TRequest request,
+        CancellationToken cancellationToken = default)
     {
         return await ExecuteWithRetryAsync(async () =>
         {
             string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
-            Logger?.LogInformation("Making PATCH request to {Endpoint}", endpoint);
+            Logger?.LogInformation("Making PATCH request to {Endpoint}", endpointForLogging);
 
             StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content }, cancellationToken).ConfigureAwait(false);
+            using HttpRequestMessage message = new(HttpMethod.Patch, endpoint) { Content = content };
+
+            // The response owns its content, and on a real handler the connection behind it, until it is
+            // disposed. The body is read into a string first, so disposing here releases both - including
+            // when HandleErrorResponse throws on the way out.
+            using HttpResponseMessage response = await HttpClient
+                .SendAsync(message, cancellationToken)
+                .ConfigureAwait(false);
+            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+            Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                HandleErrorResponse(response, responseContent);
+            }
+
+            return DeserializeResponse<TResponse>(responseContent, response.StatusCode);
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Make a POST request that carries no request body at all, logging
+    /// <paramref name="endpointForLogging"/> instead of the real request target.
+    /// </summary>
+    /// <remarks>
+    /// Some official operations are declared as POST with parameters in the query and no request body.
+    /// The request is built explicitly and <see cref="HttpRequestMessage.Content"/> is left null, so the
+    /// SDK never sends an invented <c>{}</c> body that the operation does not declare, and never
+    /// downgrades an official POST to a GET.
+    /// </remarks>
+    /// <param name="endpoint">Request target actually sent, including any query values.</param>
+    /// <param name="endpointForLogging">Static route template written by the SDK.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected async Task<TResponse> PostWithoutBodyAsync<TResponse>(
+        string endpoint,
+        string endpointForLogging,
+        CancellationToken cancellationToken = default)
+    {
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            Logger?.LogInformation("Making POST request to {Endpoint}", endpointForLogging);
+
+            using HttpRequestMessage request = new(HttpMethod.Post, endpoint);
+
+            // Disposed on every path, including when HandleErrorResponse throws below.
+            using HttpResponseMessage response = await HttpClient
+                .SendAsync(request, cancellationToken)
+                .ConfigureAwait(false);
             string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
@@ -340,7 +408,16 @@ public abstract class BaseService
     /// <summary>
     /// Execute an HTTP operation with retry logic based on the configured retry policy
     /// </summary>
-    private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
+    /// <remarks>
+    /// Available to derived services so that an operation needing its own transport — an official POST
+    /// with no body, or a redirect-only GET — reuses this single retry loop instead of duplicating it.
+    /// A repeat is always the same request against the same target: this method never changes route,
+    /// verb, body, or authentication mode.
+    /// </remarks>
+    /// <typeparam name="T">Result of one attempt.</typeparam>
+    /// <param name="operation">One complete attempt, including reading and mapping the response.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    protected async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
     {
         RetryPolicy retryPolicy = Configuration.RetryPolicy;
         int currentAttempt = 0;
@@ -415,7 +492,17 @@ public abstract class BaseService
     /// <summary>
     /// Handle error responses and throw appropriate exceptions
     /// </summary>
-    private void HandleErrorResponse(HttpResponseMessage response, string content)
+    /// <remarks>
+    /// Available to derived services so that an operation with its own transport maps failures through
+    /// exactly this switch. Duplicating the switch elsewhere would let one operation drift into a
+    /// different exception type for the same status code. The method always throws.
+    /// </remarks>
+    /// <param name="response">Failed response. Only its status code and headers are read here.</param>
+    /// <param name="content">
+    /// Response body, already read exactly once by the caller. Kept verbatim on
+    /// <see cref="RozetkaPayApiError.RawBody"/> and never logged.
+    /// </param>
+    protected void HandleErrorResponse(HttpResponseMessage response, string content)
     {
         // The body is read once by the caller and kept verbatim: it is the only place a caller can inspect
         // provider fields this SDK version does not know about.

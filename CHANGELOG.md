@@ -11,6 +11,52 @@ immediately before tagging a release (see the release process in `README.md`).
 ## [Unreleased]
 
 ### Added
+- Typed coverage for the ten operations the refreshed OpenAPI snapshot publishes and the previous one
+  did not. All additive: no existing signature, route, verb, body, or response type changed.
+- `ISubscriptionService.UpdatePaymentMethodAsync(subscriptionId, request, ct)` — official
+  `UpdateSubscriptionPaymentMethod`:
+  `PATCH /api/subscriptions/v1/subscriptions/{subscription_id}/payment-method`, with
+  `UpdateSubscriptionPaymentMethodRequest`, `SubscriptionPaymentMethodUpdate`,
+  `SubscriptionPaymentMethodUpdateType`, `SubscriptionRecurrentIdPaymentMethod`, and
+  `UpdateSubscriptionPaymentMethodResponse` in `SYT.RozetkaPay.Models.Subscriptions`. The
+  identifier is escaped once as one path segment and never logged; the configured `X-CUSTOMER-AUTH`
+  header is honoured. The historical `SubscriptionPaymentMethod` is untouched, not repurposed.
+- `IInStorePaymentService` / `InStorePaymentService` with the four official in-store (POS) operations:
+  `CreateAsync`, `ConfirmAsync`, `RefundAsync` (`POST /api/in-store-payments/v1/{create,confirm,refund}`)
+  and `GetInfoAsync` (`POST /api/in-store-payments/v1/info?external_id=…`). Request and response models
+  live in `SYT.RozetkaPay.Models.InStorePayments`, including three distinct receipt types because the
+  create, confirm, and refund receipts are three different official shapes. Amounts are strings in the
+  smallest monetary unit and are carried verbatim; `InStorePaymentCurrency.Uah` serializes to the
+  literal `"980"`.
+- `IPartnerService` / `PartnerService` with the three official partner operations: `GetFeeDetailsAsync`,
+  `GetMerchantStatusAsync`, and `GetTransactionDetailsAsync`, each with a no-query and an explicit-query
+  overload. `PartnerFeeDetailsResponse`, `PartnerFeeDetails`, `PartnerTransactionDetailsListResponse`,
+  `PartnerTransactionDetails`, `PartnerMerchantStatusOptions`, and `PartnerTransactionDetailsOptions`
+  live in the new `SYT.RozetkaPay.Models.Partners` namespace. Merchant status reuses the existing
+  `Models.Merchants.MerchantStatusResponse`, whose shape already matches the official response.
+- `IPaymentInstructionService` / `PaymentInstructionService` with `CreateAsync`
+  (`POST /api/payment-instructions/v1/new`) and `DeclineAsync`
+  (`GET /api/payment-instructions/v1/decline`). `SYT.RozetkaPay.Models.PaymentInstructions` adds
+  `CreatePaymentInstructionsRequest`, `PaymentInstructionPayer`, `PaymentInstructionOrder`,
+  `PaymentInstructionsResult`, `PaymentInstruction`, `PaymentInstructionDeclineResult`,
+  `PaymentInstructionProcessingType`, and `PaymentInstructionMethod`. Enum wire tokens
+  (`cardpay`/`ppay`, `auth`/`purchase`) are pinned on the members instead of derived from the naming
+  policy, which would emit `card_pay` and `p_pay`.
+- `declinePaymentInstruction` is sent unauthenticated and its redirect is never followed. The official
+  document declares it `security: []` and answers a bare `302` whose `Location` header is the result.
+  Because `HttpClient` has no per-request redirect switch, the SDK uses a dedicated client whose primary
+  handler sets `AllowAutoRedirect = false` and which carries no `Authorization`,
+  `Proxy-Authorization`, `X-ON-BEHALF-OF`, or `X-CUSTOMER-AUTH` header. The SDK returns the `Location`
+  without reading or fetching the target; deciding whether to navigate there — and validating it first —
+  belongs to the caller. Platform TLS validation is unchanged: no certificate callback is installed.
+- `IRozetkaPayClient` and `RozetkaPayClient` expose `InStorePayments`, `Partners`, and
+  `PaymentInstructions`; `AddRozetkaPay` registers all three concrete services and interface aliases as
+  scoped, resolving to the same instance, and adds one dedicated non-redirect named `HttpClient`
+  (`RozetkaPay.PaymentInstructions.Decline`) sharing only the endpoint, timeout, and user agent.
+- Test coverage for the above: `OpenApi59OperationTests`, `SubscriptionPaymentMethodUpdateTests`,
+  `InStorePaymentServiceTests`, `PartnerServiceTests`, `PaymentInstructionServiceTests`, and
+  `Exp354DisposalTests`, including a non-provider loopback test proving that the decline request carries
+  no credential and that the redirect target receives nothing.
 - Canonical members for three published operations that the SDK previously reached only through a
   legacy verb, path, body or response shape:
   - `ICustomerService.DeleteCustomerPaymentAsync(request, ct)` and
@@ -71,6 +117,53 @@ immediately before tagging a release (see the release process in `README.md`).
 - Tag-triggered NuGet publishing and GitHub Releases (`Release NuGet` workflow).
 
 ### Changed
+- The pinned OpenAPI snapshot `docs/openapi.json` is refreshed to the official document observed on
+  `2026-07-25` — SHA-256 `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a`, `59` paths,
+  `67` operations, up from `49` paths and `57` operations. `OpenApi59OperationTests` hashes the committed
+  file, so the snapshot cannot drift silently. Path coverage is `59/59` and a typed method exists for
+  each pinned operation; this is a statement about the pinned document and **not** a claim that a live
+  sandbox has answered all `67` operations.
+- The two callback resend operations no longer share an operationId: the refreshed document names them
+  `resendAlternativePaymentCallback` and `resendPayPartsCallback` instead of `resendCallback`. This is a
+  documentation change only — both are unchanged on the wire, and the corresponding SDK methods were not
+  renamed or rewired. No non-empty operationId in the pinned document is duplicated any more.
+- `BaseService` gains an additive `PatchAsync` overload that takes a static log label, so a `PATCH` whose
+  request target carries a caller identifier logs the route template instead. The existing overload keeps
+  its previous logging behaviour.
+- `BaseService` gains `PostWithoutBodyAsync`, for official `POST` operations that declare no request body.
+  It leaves `HttpRequestMessage.Content` null rather than sending an invented `{}`, and reuses the
+  existing retry, error-mapping, and deserialization behaviour.
+- `BaseService.HandleErrorResponse` and `BaseService.ExecuteWithRetryAsync` changed from `private` to
+  `protected` so an operation needing its own transport reuses the single status-to-exception switch and
+  the single retry loop instead of duplicating either. Both additive; no status-to-exception mapping
+  changed.
+- `RozetkaPayClient.Dispose` also releases the decline client the payment-instruction service created
+  internally. Disposal stays idempotent, and an externally supplied `HttpClient` is still not disposed.
+- The safe-label `PatchAsync` overload and `PostWithoutBodyAsync` dispose their `HttpResponseMessage`
+  deterministically, on the success path and on the path where the status-to-exception mapper throws. The
+  pre-existing two-argument `PatchAsync` delegates to the new overload and inherits that fix; its signature,
+  request target, body and logging are unchanged.
+- **`AddRozetkaPay` now removes the built-in `IHttpClientFactory` HTTP logging from both of its named
+  clients** (`RozetkaPay` and `RozetkaPay.PaymentInstructions.Decline`), so entries under
+  `System.Net.Http.HttpClient.RozetkaPay.*` — `LogicalHandler` and `ClientHandler` alike — are no longer
+  emitted for any SDK operation. This is a deliberate privacy fix, not a convenience change: that logging
+  writes the request URI, and while `Microsoft.Extensions.Http` redacts the whole query to `?*` it does
+  **not** redact path segments, so the `subscription_id` of the new payment-method update reached the log
+  verbatim at Information level. Its header logging also redacts values in the rendered message only,
+  leaving the real `Authorization` and `X-CUSTOMER-AUTH` values in the structured state at Trace level.
+  Neither is configurable, so the loggers are removed with the supported `RemoveAllLoggers()` API.
+- Removing those loggers does not change what the SDK's **own** service logging emits, and no SDK-wide
+  guarantee about that logging is made here. The ten operations added in this entry log a static route
+  template and, in the logging their tests capture under the default disabled retry policy, no caller
+  identifier, credential, request body, response body, `RozetkaPayApiError.RawBody`, or decline `Location`.
+  Every pre-existing operation logs exactly what it logged before and is **not** audited or claimed to be
+  identifier- or content-safe: most log the real request target, several routes embed a caller identifier in
+  it (`/api/customers/v1/{customerId}/cards/{cardId}`,
+  `/api/alternative-payments/v1/operation/{externalId}`, `/api/payparts/v1/operation/{operationId}`, and the
+  query strings of list operations), `PaymentService.ConfirmP2PAsync` logs the external ID and the amount,
+  and the shared retry warning includes the transport exception message when retries are enabled. See the
+  Logging section of the package README for the exact scope. Applications that need request-level HTTP
+  telemetry should add their own `DelegatingHandler` or `IHttpClientLogger` that logs a redacted target.
 - `DeletePaymentFromWalletAsync`, `GetCustomerSubscriptionsAsync` and `CancelAsync` are now
   `[Obsolete]` on both the interfaces and the implementations, each naming its canonical replacement.
   This is a compile-time warning only: their route, HTTP verb, request body and response type are

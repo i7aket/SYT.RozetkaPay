@@ -24,6 +24,14 @@ public class SubscriptionService : BaseService, ISubscriptionService
         "/api/subscriptions/v1/subscriptions/{subscription_id}/cancel";
 
     /// <summary>
+    /// Static route template of the official payment-method update operation, used as the log label
+    /// only. The real request target carries the escaped subscription identifier, which must not be
+    /// logged.
+    /// </summary>
+    private const string UpdatePaymentMethodLogLabel =
+        "/api/subscriptions/v1/subscriptions/{subscription_id}/payment-method";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SubscriptionService"/> class.
     /// </summary>
     /// <param name="configuration">SDK configuration.</param>
@@ -275,6 +283,35 @@ public class SubscriptionService : BaseService, ISubscriptionService
         }
 
         return await DeleteAsync<DefaultResponse>(endpoint, CancelSubscriptionLogLabel, cancellationToken);
+    }
+
+    /// <summary>
+    /// Replace the payment method of a subscription. Official operation
+    /// <c>UpdateSubscriptionPaymentMethod</c>:
+    /// <c>PATCH /api/subscriptions/v1/subscriptions/{subscription_id}/payment-method</c>.
+    /// </summary>
+    /// <param name="subscriptionId">Subscription ID. Passed raw and escaped once as one path segment.</param>
+    /// <param name="request">New payment method, plus the optional official request fields.</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Provider message and, when the provider requires one, a pending user action</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="subscriptionId"/> or <paramref name="request"/> is null.
+    /// </exception>
+    /// <exception cref="ArgumentException"><paramref name="subscriptionId"/> is exactly "." or "..".</exception>
+    public async Task<UpdateSubscriptionPaymentMethodResponse> UpdatePaymentMethodAsync(
+        string subscriptionId,
+        UpdateSubscriptionPaymentMethodRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
+
+        return await PatchAsync<UpdateSubscriptionPaymentMethodRequest, UpdateSubscriptionPaymentMethodResponse>(
+            $"{SubscriptionsEndpoint}/{encodedSubscriptionId}/payment-method",
+            UpdatePaymentMethodLogLabel,
+            request,
+            cancellationToken);
     }
 
     /// <summary>

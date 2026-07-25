@@ -31,7 +31,10 @@ public class PublicInterfacesTests
         (typeof(IReportService), typeof(ReportService)),
         (typeof(IAlternativePaymentService), typeof(AlternativePaymentService)),
         (typeof(IMerchantService), typeof(MerchantService)),
-        (typeof(IFinMonService), typeof(FinMonService))
+        (typeof(IFinMonService), typeof(FinMonService)),
+        (typeof(IInStorePaymentService), typeof(InStorePaymentService)),
+        (typeof(IPartnerService), typeof(PartnerService)),
+        (typeof(IPaymentInstructionService), typeof(PaymentInstructionService))
     ];
 
     private static readonly (Type Interface, Type Implementation)[] AllContractPairs =
@@ -61,7 +64,10 @@ public class PublicInterfacesTests
         ("Reports", typeof(IReportService), typeof(ReportService)),
         ("AlternativePayments", typeof(IAlternativePaymentService), typeof(AlternativePaymentService)),
         ("Merchants", typeof(IMerchantService), typeof(MerchantService)),
-        ("FinMon", typeof(IFinMonService), typeof(FinMonService))
+        ("FinMon", typeof(IFinMonService), typeof(FinMonService)),
+        ("InStorePayments", typeof(IInStorePaymentService), typeof(InStorePaymentService)),
+        ("Partners", typeof(IPartnerService), typeof(PartnerService)),
+        ("PaymentInstructions", typeof(IPaymentInstructionService), typeof(PaymentInstructionService))
     ];
 
     public static TheoryData<Type, Type> ServiceContracts => ToTheoryData(ServiceContractPairs);
@@ -87,9 +93,12 @@ public class PublicInterfacesTests
             .Where(type => type.IsInterface)
             .ToArray();
 
-        // Eleven API service contracts from EXP-331 plus the webhook verifier from EXP-332. Adding a
-        // public interface without listing it here is a deliberate trip wire on the package surface.
-        Assert.Equal(11, AllContractPairs.Length);
+        // Thirteen API service contracts plus the aggregate client contract - the eleven from EXP-331
+        // and the three service contracts added by EXP-354 - plus the webhook verifier from EXP-332.
+        // Adding a public interface without listing it here is a deliberate trip wire on the package
+        // surface.
+        Assert.Equal(14, AllContractPairs.Length);
+        Assert.Equal(13, ServiceContractPairs.Length);
         Assert.Single(NonServiceInterfaces);
         Assert.Equal(
             AllExportedInterfaces.Select(type => type.FullName).Order(StringComparer.Ordinal),
@@ -134,11 +143,17 @@ public class PublicInterfacesTests
             // EXP-355 added two canonical wallet members and four canonical subscription members
             // alongside the preserved legacy ones.
             [nameof(ICustomerService)] = 9,
-            [nameof(ISubscriptionService)] = 17,
+            // EXP-354 added the canonical UpdateSubscriptionPaymentMethod operation.
+            [nameof(ISubscriptionService)] = 18,
             [nameof(IReportService)] = 2,
             [nameof(IAlternativePaymentService)] = 10,
             [nameof(IMerchantService)] = 4,
-            [nameof(IFinMonService)] = 1
+            [nameof(IFinMonService)] = 1,
+            // EXP-354 service contracts. Disposal is not an API operation: PaymentInstructionService
+            // implements IDisposable explicitly, so the contract stays at its two official operations.
+            [nameof(IInStorePaymentService)] = 4,
+            [nameof(IPartnerService)] = 6,
+            [nameof(IPaymentInstructionService)] = 2
         };
 
         Dictionary<string, int> actual = ServiceContractPairs.ToDictionary(
@@ -180,10 +195,11 @@ public class PublicInterfacesTests
     }
 
     [Fact]
-    public void IRozetkaPayClient_ShouldExposeTenReadOnlyServiceProperties()
+    public void IRozetkaPayClient_ShouldExposeThirteenReadOnlyServiceProperties()
     {
         PropertyInfo[] properties = DeclaredProperties(typeof(IRozetkaPayClient));
 
+        Assert.Equal(13, ClientProperties.Length);
         Assert.Equal(ClientProperties.Length, properties.Length);
 
         foreach ((string propertyName, Type interfaceType, _) in ClientProperties)
@@ -238,6 +254,87 @@ public class PublicInterfacesTests
         Assert.Same(client.AlternativePayments, contract.AlternativePayments);
         Assert.Same(client.Merchants, contract.Merchants);
         Assert.Same(client.FinMon, contract.FinMon);
+        Assert.Same(client.InStorePayments, contract.InStorePayments);
+        Assert.Same(client.Partners, contract.Partners);
+        Assert.Same(client.PaymentInstructions, contract.PaymentInstructions);
+    }
+
+    /// <summary>
+    /// The three EXP-354 partner result types must be the new correctly shaped ones. The historical
+    /// same-concept DTOs in <c>Models.Merchants</c> and <c>Models.Common</c> describe an older layout;
+    /// they stay public and untouched, but no new operation may return them.
+    /// </summary>
+    [Fact]
+    public void PartnerService_ShouldNotReturnTheHistoricalMerchantDtos()
+    {
+        Type[] staleTypes =
+        [
+            typeof(SYT.RozetkaPay.Models.Merchants.PartnersFeeDetails),
+            typeof(SYT.RozetkaPay.Models.Merchants.PartnersTransactionDetails),
+            typeof(SYT.RozetkaPay.Models.Merchants.FeeDetailsResponse),
+            typeof(SYT.RozetkaPay.Models.Merchants.TransactionDetailsListResponse),
+            typeof(SYT.RozetkaPay.Models.Common.PartnersFeeDetails),
+            typeof(SYT.RozetkaPay.Models.Common.PartnersTransactionDetails)
+        ];
+
+        // Still exported: removing them would break compiled consumers.
+        foreach (Type staleType in staleTypes)
+        {
+            Assert.True(staleType.IsPublic, $"{staleType.FullName} must stay public.");
+        }
+
+        IEnumerable<Type> returnedTypes = typeof(IPartnerService)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Select(method => method.ReturnType)
+            .Select(static returnType => returnType.IsGenericType ? returnType.GetGenericArguments()[0] : returnType);
+
+        foreach (Type returnedType in returnedTypes)
+        {
+            Assert.DoesNotContain(returnedType, staleTypes);
+        }
+
+        Assert.Equal(
+            typeof(SYT.RozetkaPay.Models.Partners.PartnerFeeDetailsResponse),
+            typeof(IPartnerService).GetMethod(
+                nameof(IPartnerService.GetFeeDetailsAsync),
+                [typeof(CancellationToken)])!.ReturnType.GetGenericArguments()[0]);
+        Assert.Equal(
+            typeof(SYT.RozetkaPay.Models.Partners.PartnerTransactionDetailsListResponse),
+            typeof(IPartnerService).GetMethod(
+                nameof(IPartnerService.GetTransactionDetailsAsync),
+                [typeof(string), typeof(CancellationToken)])!.ReturnType.GetGenericArguments()[0]);
+
+        // The merchant-status response is deliberately the existing Models.Merchants type: its shape
+        // already matches the official partner merchant-status response exactly.
+        Assert.Equal(
+            typeof(SYT.RozetkaPay.Models.Merchants.MerchantStatusResponse),
+            typeof(IPartnerService).GetMethod(
+                nameof(IPartnerService.GetMerchantStatusAsync),
+                [typeof(CancellationToken)])!.ReturnType.GetGenericArguments()[0]);
+    }
+
+    /// <summary>
+    /// <see cref="PaymentInstructionService"/> owns an internally created decline client, so it is
+    /// disposable — but disposal is a lifetime concern, not an API operation. The implementation is
+    /// explicit so the service contract keeps exactly its two official operations, and
+    /// <see cref="IRozetkaPayClient"/> stays the only <see cref="IDisposable"/> SDK interface.
+    /// </summary>
+    [Fact]
+    public void PaymentInstructionService_ShouldImplementDisposalExplicitly()
+    {
+        Assert.Contains(typeof(IDisposable), typeof(PaymentInstructionService).GetInterfaces());
+        Assert.DoesNotContain(typeof(IDisposable), typeof(IPaymentInstructionService).GetInterfaces());
+
+        Assert.Null(typeof(PaymentInstructionService).GetMethod(
+            "Dispose",
+            BindingFlags.Public | BindingFlags.Instance,
+            Type.EmptyTypes));
+
+        Type[] disposableInterfaces = AllExportedInterfaces
+            .Where(static type => typeof(IDisposable).IsAssignableFrom(type))
+            .ToArray();
+
+        Assert.Equal([typeof(IRozetkaPayClient)], disposableInterfaces);
     }
 
     [Fact]

@@ -63,6 +63,21 @@ public class RozetkaPayClient : IRozetkaPayClient
     /// </summary>
     public FinMonService FinMon { get; }
 
+    /// <summary>
+    /// In-store (POS) payment service for terminal payment operations
+    /// </summary>
+    public InStorePaymentService InStorePayments { get; }
+
+    /// <summary>
+    /// Partner service for partner fee, status and transaction reporting
+    /// </summary>
+    public PartnerService Partners { get; }
+
+    /// <summary>
+    /// Payment instruction service for instruction batches and the unauthenticated decline operation
+    /// </summary>
+    public PaymentInstructionService PaymentInstructions { get; }
+
     // Explicit IRozetkaPayClient members expose the same service instances as the concrete
     // properties above. The concrete property types are kept as-is for source compatibility.
 
@@ -96,6 +111,15 @@ public class RozetkaPayClient : IRozetkaPayClient
     /// <inheritdoc />
     IFinMonService IRozetkaPayClient.FinMon => FinMon;
 
+    /// <inheritdoc />
+    IInStorePaymentService IRozetkaPayClient.InStorePayments => InStorePayments;
+
+    /// <inheritdoc />
+    IPartnerService IRozetkaPayClient.Partners => Partners;
+
+    /// <inheritdoc />
+    IPaymentInstructionService IRozetkaPayClient.PaymentInstructions => PaymentInstructions;
+
     /// <summary>
     /// Initialize RozetkaPayClient with configuration
     /// </summary>
@@ -119,6 +143,13 @@ public class RozetkaPayClient : IRozetkaPayClient
         AlternativePayments = new AlternativePaymentService(configuration1, HttpClient, logger);
         Merchants = new MerchantService(configuration1, HttpClient, logger);
         FinMon = new FinMonService(configuration1, HttpClient, logger);
+        InStorePayments = new InStorePaymentService(configuration1, HttpClient, logger);
+        Partners = new PartnerService(configuration1, HttpClient, logger);
+
+        // The payment-instruction service creates its own unauthenticated, non-redirecting client for
+        // the decline operation. That client is owned by the service and released when this client is
+        // disposed; the authenticated HttpClient above is untouched by it.
+        PaymentInstructions = new PaymentInstructionService(configuration1, HttpClient, logger);
     }
 
     /// <summary>
@@ -144,12 +175,20 @@ public class RozetkaPayClient : IRozetkaPayClient
     /// <summary>
     /// Dispose the HTTP client if it was created internally
     /// </summary>
+    /// <remarks>
+    /// Only resources this client owns are released. An externally supplied
+    /// <see cref="System.Net.Http.HttpClient"/> stays usable, while the decline client that the
+    /// payment-instruction service created internally is always released.
+    /// </remarks>
     public void Dispose()
     {
         if (_disposed)
         {
             return;
         }
+
+        // Always owned: the payment-instruction service created this client itself.
+        ((IDisposable)PaymentInstructions).Dispose();
 
         if (_ownsHttpClient)
         {
@@ -159,4 +198,4 @@ public class RozetkaPayClient : IRozetkaPayClient
         _disposed = true;
         GC.SuppressFinalize(this);
     }
-} 
+}

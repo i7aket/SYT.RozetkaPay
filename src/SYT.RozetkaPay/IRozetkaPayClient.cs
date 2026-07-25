@@ -66,4 +66,19 @@ public interface IRozetkaPayClient : IDisposable
     /// FinMon service for financial monitoring
     /// </summary>
     IFinMonService FinMon { get; }
+
+    /// <summary>
+    /// In-store (POS) payment service for terminal payment operations
+    /// </summary>
+    IInStorePaymentService InStorePayments { get; }
+
+    /// <summary>
+    /// Partner service for partner fee, status and transaction reporting
+    /// </summary>
+    IPartnerService Partners { get; }
+
+    /// <summary>
+    /// Payment instruction service for instruction batches and the unauthenticated decline operation
+    /// </summary>
+    IPaymentInstructionService PaymentInstructions { get; }
 }
