@@ -18,8 +18,8 @@ immediately before tagging a release (see the release process in `README.md`).
   added, removed, renamed, duplicated, or moved to another verb fails the build — and then invokes every
   row's canonical SDK method and asserts the request it produced. Per row: exact verb and concrete
   request target against a literal, single-pass percent-encoding of hostile caller values, body policy
-  and content type cross-checked against the document's `requestBody`, authentication policy
-  cross-checked against the document's operation-level `security`, `Basic` decoded and compared as UTF-8
+  cross-checked against the document's `requestBody`, content type asserted on the wire, and authentication
+  policy cross-checked against the document's operation-level `security`; `Basic` is decoded and compared as UTF-8
   `login:password`, optional headers present only when configured, and the caller's cancellation token
   observed at the transport. The suite cannot reach the network: the base address is in the reserved
   `.invalid` TLD and the transport never forwards. Rows call canonical members only — the `25` legacy
