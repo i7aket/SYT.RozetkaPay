@@ -346,6 +346,44 @@ delay, does not invoke another attempt, and propagates the `OperationCanceledExc
 `TaskCanceledException` that comes from a **timeout** while your token is still live is a transport failure and
 stays retriable.
 
+**A token you have already cancelled sends nothing.** The SDK checks it itself, in its own shared transport
+code, before the transport helper writes its `Making … request to …` log, before your request object is
+serialized to JSON, before any retry bookkeeping, before an `HttpRequestMessage` exists, and before
+`HttpClient` or your `HttpMessageHandler` is invoked. Your handler is called exactly **zero** times.
+
+This is the SDK's own guarantee, not the runtime's. `HttpClient` also has a pre-dispatch check, but it fires at
+different points on `net9.0` and `net10.0` and behaves differently per verb, so relying on it would make a
+cancelled request mean different things on different frameworks. It is not relied on.
+
+The contract covers every transport family, with no verb left out:
+
+| Helper family | Covered |
+|---|---|
+| Authenticated `GET` | yes |
+| Authenticated `POST` with a JSON body | yes |
+| Authenticated `POST` that accepts `204`/empty | yes |
+| Authenticated `PATCH` with a JSON body | yes |
+| Authenticated `POST` with **no** body at all | yes |
+| Authenticated `DELETE`, with and without a JSON body | yes |
+| The legacy-route `404` fallback wrappers (`GET`, `POST`, `POST`-accepting-`204`) | yes — primary **and** fallback |
+| The unauthenticated, non-redirecting payment-instruction decline | yes |
+
+Three further guarantees:
+
+- **Your token comes back.** The `OperationCanceledException` carries **your** `CancellationToken`, not one
+  the SDK invented, so `exception.CancellationToken == yourToken` holds and you can still tell your own
+  cancellation from a timeout. (These are `async` methods: the exception surfaces when you `await` the returned
+  task — the SDK does not promise to throw synchronously before the task is handed to you.)
+- **A cancelled fallback is not a fallback.** If the primary endpoint answers `404` and your token is cancelled
+  before the fallback is dispatched, the SDK stops there: no fallback request, and not even the "falling back"
+  log line.
+- **The retry policy does not change any of this.** Enabled or disabled, with any budget, the semantics are
+  identical — the check happens before the policy is even read.
+
+Cancelling **during** a request in flight is the other case, and it is unchanged: that one attempt is already at
+the transport and may be observed there, but it is the only attempt. No retry follows, no fallback follows, and
+the attempt still releases its request, body, response, and response content.
+
 #### When the budget runs out
 
 The exception you catch is the one the last attempt produced — not a wrapper. A retried-then-exhausted `429`

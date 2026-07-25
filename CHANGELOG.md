@@ -218,7 +218,9 @@ immediately before tagging a release (see the release process in `README.md`).
 - Every DELETE request now rejects an already-cancelled `CancellationToken` before the retry loop and
   before `HttpClient` is invoked, so no DELETE reaches an `HttpMessageHandler` after the caller has
   cancelled. This previously depended on a `HttpClient` pre-dispatch check that behaves differently on
-  `net9.0` and `net10.0`.
+  `net9.0` and `net10.0`. DELETE was the first verb to get that guarantee and, at the time, the only one;
+  EXP-357 (see **Fixed**) extends the same contract to every transport helper — including the JSON-body
+  DELETE, whose guard used to run after the caller's body had already been serialized.
 - The exception hierarchy and every pre-existing public exception constructor are unchanged:
   `RozetkaPayException`, `RozetkaPayAuthorizationException`, `RozetkaPayValidationException`,
   `RozetkaPayRateLimitException`, and `RozetkaPayNotFoundException` keep their parameterless,
@@ -270,6 +272,44 @@ immediately before tagging a release (see the release process in `README.md`).
   payment endpoint and exposes credentials and card data to interception.
 
 ### Fixed
+- **An already-cancelled `CancellationToken` now stops every HTTP helper before it does anything**
+  (EXP-357). The two DELETE paths and the payment-instruction decline carried an explicit pre-dispatch
+  guard; every other helper entered the shared retry executor and left the outcome to the runtime's own
+  pre-dispatch check inside `HttpClient` — which is not a contract. It fires at different points on
+  `net9.0` and `net10.0` and differs per verb, so the same cancelled call behaved differently depending on
+  the framework and the operation. Measured on the base commit: an already-cancelled `GET`, bodiless
+  `POST`, or `GET` fallback **dispatched the request and returned a successful result** on both target
+  frameworks; a cancelled JSON `POST`, `POST` accepting `204`, `PATCH`, or `POST` fallback did the same on
+  `net10.0` and on `net9.0` cancelled only *after* writing its `Making … request to …` log; and the
+  JSON-body `DELETE` serialized the caller's body before reaching its own guard, because that helper
+  serializes outside the attempt.
+  Cancellation is now one contract owned by the SDK:
+  - the check is the **first executable line** of `BaseService.ExecuteWithRetryAsync`, before
+    `Configuration.RetryPolicy` is read and before any retry counter exists — so, for every helper whose
+    attempt passes through the shared executor, it precedes helper logging, JSON serialization, request
+    allocation, and every `HttpClient` and `HttpMessageHandler` call. It is repeated at the top of each
+    later loop iteration, so a token cancelled while the previous attempt ran never enters the next one;
+  - the JSON-body `DELETE` gained its own guard **before** `JsonSerializer.Serialize`, and the bodiless
+    `DELETE` and decline guards stay where they are — both do work before reaching the executor;
+  - the three `404` fallback wrappers (`GET`, `POST`, `POST` accepting `204`) check the token as the
+    **first statement** of their `catch (RozetkaPayNotFoundException)`, so cancellation that becomes
+    observable after a primary `404` prevents the fallback request *and* the "falling back" log line.
+    `OperationCanceledException` is not caught there and still escapes unchanged;
+  - the handler is invoked exactly **zero** times, a pre-cancelled call writes **no** log entry at all, and
+    the caller's body is **never** serialized;
+  - the exception carries the caller's **exact** `CancellationToken` — `ThrowIfCancellationRequested`, not
+    a hand-built or tokenless exception — so callers can still distinguish their own cancellation from a
+    timeout;
+  - enabled and disabled `RetryPolicy` produce identical semantics, because the check precedes the policy
+    read.
+  Unchanged: the public API (no interface, signature, overload, cancellation-token default, DTO, exception
+  constructor, `RetryPolicy` member, or DI registration was touched); timeout semantics — a timeout-like
+  `TaskCanceledException` while the caller's token is still live is still a retriable transport failure and
+  is never reported as caller cancellation; mid-flight cancellation, which still ends the operation after
+  the one attempt already at the transport, with no retry, no fallback, and full per-attempt disposal; and
+  every route, verb, body, content type, response mapping, and redirect for a token that is not cancelled.
+  The methods remain `async`, so the exception surfaces on `await` — synchronous throw timing is not
+  claimed and was not changed.
 - **Configured retriable HTTP statuses are now actually retried** (EXP-356). `RetryPolicy` has always
   published `RetriableStatusCodes`, defaulting to `500`, `502`, `503`, `504`, `429`, `408`, and
   `RetryPolicy.ShouldRetry(HttpStatusCode)` has always reported those values correctly — but the retry loop
