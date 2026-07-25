@@ -127,10 +127,32 @@ public class RozetkaPayRateLimitException : RozetkaPayException
     /// <param name="innerException">Inner exception.</param>
     public RozetkaPayRateLimitException(string message, Exception innerException) : base(message, innerException) { }
 
-    internal RozetkaPayRateLimitException(string message, RozetkaPayApiError apiError)
+    /// <param name="message">Error message.</param>
+    /// <param name="apiError">Structured details of the failed API response.</param>
+    /// <param name="retryAfter">
+    /// The response's <c>Retry-After</c> value, already converted to a delay relative to the moment the
+    /// response was mapped, or <see langword="null"/> when the response carried no usable hint.
+    /// </param>
+    internal RozetkaPayRateLimitException(
+        string message,
+        RozetkaPayApiError apiError,
+        TimeSpan? retryAfter = null)
         : base(message, null, apiError)
     {
+        RetryAfter = retryAfter;
     }
+
+    /// <summary>
+    /// How long the provider asked the caller to wait, taken from the <c>Retry-After</c> response header and
+    /// already converted to a relative delay, or <see langword="null"/> when the header was absent or
+    /// unparseable.
+    /// </summary>
+    /// <remarks>
+    /// Internal on purpose. It is an input to the retry loop, not part of the public failure contract: the
+    /// public surface of this type stays exactly what it was, and the value never reaches
+    /// <see cref="Exception.Message"/>, <see cref="Exception.ToString"/>, or a log.
+    /// </remarks>
+    internal TimeSpan? RetryAfter { get; }
 }
 
 /// <summary>

@@ -151,9 +151,12 @@ outside this ticket's scope. In the current code that logging includes:
   `/api/payparts/v1/operation/{operationId}`, and the query strings of list operations. The two-argument
   `BaseService` helpers pass the endpoint as its own log label, which is exactly the pre-EXP-354 behaviour;
 - **method-specific values** in at least one place: `PaymentService.ConfirmP2PAsync` logs the external ID and
-  the amount;
-- the **transport exception message** in the shared retry warning, whose content comes from the runtime or the
-  provider. Retries are disabled by default, so this path is inactive unless a consumer enables them.
+  the amount.
+
+EXP-354 also listed the **transport exception message** in the shared retry warning as unaudited text. EXP-356
+removed it: the retry warning now reports only the retry number, the configured budget, the failure category as
+an exception type name, the HTTP status when the failure came from a response, and the computed delay. See
+**Retry Behaviour** below.
 
 ### What EXP-354 does claim
 
@@ -216,12 +219,11 @@ No canonical operation therefore ever switches to a legacy route or verb. A cano
 and `500` keep their existing exception mapping. A fallback would hide an operation-parity error behind
 a response that looks successful.
 
-Retrying is a separate concern, and EXP-355 did not change it. The default `RetryPolicy` is disabled, so
-by default a canonical call is a single request. When a retry policy is enabled, the SDK may repeat the
-**same** canonical request target for the conditions it already supports — transport-level failures
-(`HttpRequestException`, `TaskCanceledException`, `SocketException`) and `429`. Such a repeat is always
-the same operation against the same target; it is never a different route, verb, or body. A `404` is not
-a retriable condition, so it is never repeated and never followed by a legacy attempt.
+Retrying is a separate concern. The default `RetryPolicy` is disabled, so by default a canonical call is a
+single request. When a retry policy is enabled, the SDK may repeat the **same** canonical request target for
+the conditions the policy declares — see **Retry Behaviour** below. Such a repeat is always the same operation
+against the same target; it is never a different route, verb, or body. A `404` is not in the default retriable
+set, and a caller who adds it still gets a repeat of the same canonical request, never a legacy attempt.
 
 ### Why the old members are only obsolete
 
@@ -236,6 +238,50 @@ array onto it. Reads accept both the official array and the historical `{ "subsc
 wrapper; writes always emit the official root array. Null and empty stay distinct: an official `[]`
 yields an empty list, a wrapper carrying `"subscriptions": null` yields `null`, and an absent list is
 normalized to `[]` when serializing, because the official schema has no spelling for "no array at all".
+
+## Retry Behaviour (EXP-356)
+
+`RetryPolicy.RetriableStatusCodes` is a public setting, and the runtime now honours exactly the set it
+declares. Before EXP-356 the loop had a status-specific branch for `429` only, so the other five default
+statuses — `500`, `502`, `503`, `504`, `408` — were configured as retriable but escaped on the first attempt,
+and a custom set had no effect on any status but `429`. Statements in this document that described retrying as
+covering "transport-level failures and `429`" described that gap and are superseded by this section.
+
+**No public API changed.** `RetryPolicy` keeps every property and factory, `MaxRetryAttempts` keeps its
+meaning, and every public exception constructor is unchanged. The default policy is still disabled.
+
+| Contract | Behaviour |
+|---|---|
+| Attempts | Exactly `1 + MaxRetryAttempts` requests. `Enabled = false` or `MaxRetryAttempts = 0` sends one. |
+| Status decision | Read from the response the SDK received (`RozetkaPayException.ApiError.StatusCode`) against `RetriableStatusCodes` — never from an exception type, message, or provider code. |
+| Default set | Exactly `408`, `429`, `500`, `502`, `503`, `504`. |
+| Custom set | Honoured as configured, additions and removals alike; an empty set retries no status. |
+| Transport failures | `HttpRequestException`, `SocketException`, and timeout-like `TaskCanceledException` — exactly the categories `RetryPolicy.ShouldRetry(Exception)` publishes. The only wrapper unwrapped is the SDK's own: a `RozetkaPayException` over one of those categories. An exception the SDK did not raise is never made retriable by its inner exception. |
+| Repeat shape | Same verb, target, body bytes, content type, and authentication mode; a fresh request object per attempt. |
+| Caller cancellation | Never retried; no delay is scheduled and the `OperationCanceledException` propagates unwrapped. |
+| `429` `Retry-After` | Delta-seconds or HTTP-date replaces the backoff, zero/past means immediate, positive values are capped by `MaxDelay`, absent or unparseable falls back to the configured backoff. Ignored on other statuses. |
+| Exhaustion | The last attempt's own exception, with its `RozetkaPayApiError` (final status, code, request identifier, raw body). No wrapper, and no merged evidence from earlier attempts. |
+| Resources | Every attempt disposes its own request, request body, response, and response content — on success, on a retried failure, on exhaustion, and on cancellation. |
+| Retry log | One `Warning` per retry: retry number, budget, failure category, HTTP status when known, delay in ms. No exception message, body, provider text, request target, or credential. |
+
+Two incidental corrections come with the centralized predicate: a `SocketException` raised directly by a
+handler is now retried, which is what `RetryPolicy.ShouldRetry(Exception)` has always published; and a
+negative `MaxRetryAttempts` — which options validation already rejects — now sends one attempt instead of
+throwing `Request failed for unknown reason` without calling the operation at all.
+
+Retrying a **mutating** operation can produce a second provider-side operation: the attempt that appeared to
+fail may have been accepted. The SDK does not claim exactly-once delivery and cannot make a repeat safe on its
+own. Callers enabling retries for mutating calls must supply a stable `external_id` / idempotency value per
+business intent and reconcile by it.
+
+Verified by `RetryStatusCodeContractTests` (`77` cases per target framework): the six default statuses through
+seven transport helpers plus the anonymous decline redirect, attempt-count arithmetic, disabled and custom
+sets, exhaustion evidence, transport compatibility — including the negative case that an arbitrary exception
+wrapping an `HttpRequestException` is **not** retried — caller cancellation, the `Retry-After` matrix,
+per-attempt disposal, and log-leak assertions with hostile markers. The suite never touches a socket — its
+base address is in the reserved `.invalid` TLD and the transport never forwards — and it contains no sleep and
+no timing-threshold assertion: every wait-sensitive case is settled by cancelling from the retry-warning
+callback, immediately before the delay is awaited.
 
 ## Deterministic 67/67 Coverage (EXP-337)
 
@@ -324,22 +370,28 @@ secrets were absent would be a false claim of live verification, so it does not 
 - Date: `2026-07-25`
 - Result: deterministic contract coverage for all `67` pinned operations, executed per operation on both
   target frameworks; real Kestrel HTTP-boundary coverage for outbound authentication, the anonymous
-  decline/redirect, and the inbound webhook signature pipeline; one opt-in read-only live sandbox smoke
+  decline/redirect, and the inbound webhook signature pipeline; the full retry contract of EXP-356 executed
+  against the production retry loop over a non-forwarding transport; one opt-in read-only live sandbox smoke
   test, skipped in this run.
-- Snapshot SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a` (unchanged; EXP-337
-  does not touch `docs/openapi.json`)
+- Snapshot SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a` (unchanged; neither
+  EXP-337 nor EXP-356 touches `docs/openapi.json`)
 - Snapshot path count: `59`; snapshot operation count: `67`
 - SDK service coverage for snapshot OpenAPI paths: `59/59`
 - Deterministic operation contract coverage: `67/67`, asserted as an exact set against the pinned document
-- Test result: `net9.0` — `1242` passed, `1` skipped, `0` failed; `net10.0` — `1242` passed, `1` skipped,
+- Retry contract coverage: `77` cases per target framework — six default statuses, seven transport helpers,
+  the anonymous decline redirect, attempt-count arithmetic, disabled and custom sets, exhaustion evidence,
+  transport compatibility including the arbitrary-wrapper negative case, caller cancellation, the
+  `Retry-After` matrix, per-attempt disposal, and log-leak assertions
+- Test result: `net9.0` — `1319` passed, `1` skipped, `0` failed; `net10.0` — `1319` passed, `1` skipped,
   `0` failed. The single skip is the live sandbox smoke test, skipped because no sandbox credentials were
   supplied.
+- Build: `Release` with `-warnaserror` — `0` warnings, `0` errors
 - Verified by: `OpenApiOperationContractTests`, `HttpBoundaryIntegrationTests`, `WebhookHttpBoundaryTests`,
   `SandboxSkipBehaviorTests`, `OpenApi59OperationTests`, `OperationParityTests`,
   `SubscriptionPaymentMethodUpdateTests`, `InStorePaymentServiceTests`, `PartnerServiceTests`,
   `PaymentInstructionServiceTests`, `PathSegmentEncodingTests`, `QueryParameterEscapingTests`,
   `WebhookSignatureVerifierTests`, `PublicInterfacesTests`, `PublicInterfaceRegistrationTests`,
-  `Exp354DisposalTests`
+  `Exp354DisposalTests`, `RetryStatusCodeContractTests`
 - **Not** verified: that a live RozetkaPay environment answers all `67` operations. No mutating operation
   was called against any live environment, and none will be. The live check is exactly one read-only
   merchant identity call, and it did not run here.
