@@ -89,7 +89,8 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <returns>Operation info response</returns>
     public async Task<AlternativePaymentOperationResponse> GetOperationInfoAsync(string externalId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<AlternativePaymentOperationResponse>($"/api/alternative-payments/v1/operation/{externalId}", cancellationToken);
+        string encodedExternalId = RequestTargetEncoding.EscapePathSegment(externalId, nameof(externalId));
+        return await GetAsync<AlternativePaymentOperationResponse>($"/api/alternative-payments/v1/operation/{encodedExternalId}", cancellationToken);
     }
 
     /// <summary>
@@ -107,7 +108,8 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     {
         string primaryEndpoint =
             $"/api/alternative-payments/v1/info/operation?external_id={Uri.EscapeDataString(externalId)}&operation_id={Uri.EscapeDataString(operationId)}";
-        string fallbackEndpoint = $"/api/alternative-payments/v1/operation/{Uri.EscapeDataString(externalId)}";
+        string fallbackEndpoint =
+            $"/api/alternative-payments/v1/operation/{RequestTargetEncoding.EscapePathSegment(externalId, nameof(externalId))}";
         return await GetAsyncWithFallback<AlternativePaymentOperationResult>(primaryEndpoint, fallbackEndpoint, cancellationToken);
     }
 
@@ -184,6 +186,7 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <returns>Payment status response</returns>
     public async Task<AlternativePaymentStatusResponse> GetStatusAsync(string paymentId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<AlternativePaymentStatusResponse>($"/api/alternative-payments/v1/{paymentId}/status", cancellationToken);
+        string encodedPaymentId = RequestTargetEncoding.EscapePathSegment(paymentId, nameof(paymentId));
+        return await GetAsync<AlternativePaymentStatusResponse>($"/api/alternative-payments/v1/{encodedPaymentId}/status", cancellationToken);
     }
 }

@@ -53,7 +53,8 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="cancellationToken">Cancellation token</param>
     public async Task DeactivatePlanAsync(string planId, CancellationToken cancellationToken = default)
     {
-        await DeleteAsync<object>($"/api/subscriptions/v1/plans/{planId}", cancellationToken);
+        string encodedPlanId = RequestTargetEncoding.EscapePathSegment(planId, nameof(planId));
+        await DeleteAsync<object>($"/api/subscriptions/v1/plans/{encodedPlanId}", cancellationToken);
     }
 
     /// <summary>
@@ -65,7 +66,8 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <returns>Subscription plan response</returns>
     public async Task<SubscriptionPlanResponse> GetPlanAsync(string planId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<SubscriptionPlanResponse>($"/api/subscriptions/v1/plans/{planId}", cancellationToken);
+        string encodedPlanId = RequestTargetEncoding.EscapePathSegment(planId, nameof(planId));
+        return await GetAsync<SubscriptionPlanResponse>($"/api/subscriptions/v1/plans/{encodedPlanId}", cancellationToken);
     }
 
     /// <summary>
@@ -78,7 +80,8 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <returns>Subscription plan response</returns>
     public async Task<SubscriptionPlanResponse> UpdatePlanAsync(string planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken = default)
     {
-        return await PatchAsync<UpdateSubscriptionPlanRequest, SubscriptionPlanResponse>($"/api/subscriptions/v1/plans/{planId}", request, cancellationToken);
+        string encodedPlanId = RequestTargetEncoding.EscapePathSegment(planId, nameof(planId));
+        return await PatchAsync<UpdateSubscriptionPlanRequest, SubscriptionPlanResponse>($"/api/subscriptions/v1/plans/{encodedPlanId}", request, cancellationToken);
     }
 
     // ===================== SUBSCRIPTIONS (6 endpoints) =====================
@@ -116,7 +119,8 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <returns>Customer subscriptions response</returns>
     public async Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(string customerId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<CustomerSubscriptionsResponse>($"/api/subscriptions/v1/subscriptions/customer/{customerId}", cancellationToken);
+        string encodedCustomerId = RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId));
+        return await GetAsync<CustomerSubscriptionsResponse>($"/api/subscriptions/v1/subscriptions/customer/{encodedCustomerId}", cancellationToken);
     }
 
     /// <summary>
@@ -127,7 +131,8 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="cancellationToken">Cancellation token</param>
     public async Task DeactivateAsync(string subscriptionId, CancellationToken cancellationToken = default)
     {
-        await DeleteAsync<object>($"/api/subscriptions/v1/subscriptions/{subscriptionId}", cancellationToken);
+        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
+        await DeleteAsync<object>($"/api/subscriptions/v1/subscriptions/{encodedSubscriptionId}", cancellationToken);
     }
 
     /// <summary>
@@ -139,7 +144,8 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <returns>Subscription response</returns>
     public async Task<SubscriptionResponse> GetAsync(string subscriptionId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<SubscriptionResponse>($"/api/subscriptions/v1/subscriptions/{subscriptionId}", cancellationToken);
+        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
+        return await GetAsync<SubscriptionResponse>($"/api/subscriptions/v1/subscriptions/{encodedSubscriptionId}", cancellationToken);
     }
 
     /// <summary>
@@ -152,7 +158,8 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <returns>Subscription response</returns>
     public async Task<SubscriptionResponse> UpdateAsync(string subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken = default)
     {
-        return await PatchAsync<UpdateSubscriptionRequest, SubscriptionResponse>($"/api/subscriptions/v1/subscriptions/{subscriptionId}", request, cancellationToken);
+        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
+        return await PatchAsync<UpdateSubscriptionRequest, SubscriptionResponse>($"/api/subscriptions/v1/subscriptions/{encodedSubscriptionId}", request, cancellationToken);
     }
 
     /// <summary>
@@ -164,7 +171,8 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <returns>Subscription payments response</returns>
     public async Task<SubscriptionPaymentsResponse> GetPaymentsAsync(string subscriptionId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<SubscriptionPaymentsResponse>($"/api/subscriptions/v1/subscriptions/{subscriptionId}/payments", cancellationToken);
+        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
+        return await GetAsync<SubscriptionPaymentsResponse>($"/api/subscriptions/v1/subscriptions/{encodedSubscriptionId}/payments", cancellationToken);
     }
 
     /// <summary>
@@ -176,6 +184,7 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="cancellationToken">Cancellation token</param>
     public async Task CancelAsync(string subscriptionId, CancelSubscriptionRequest request, CancellationToken cancellationToken = default)
     {
-        await PostAsync<CancelSubscriptionRequest, object>($"/api/subscriptions/v1/subscriptions/{subscriptionId}/cancel", request, cancellationToken);
+        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
+        await PostAsync<CancelSubscriptionRequest, object>($"/api/subscriptions/v1/subscriptions/{encodedSubscriptionId}/cancel", request, cancellationToken);
     }
-} 
+}

@@ -125,6 +125,35 @@ immediately before tagging a release (see the release process in `README.md`).
   (`status=%20%20%20`) instead of being truncated to an empty value by URI canonicalization. Null
   and empty filters are still omitted, and query parameter names, ordering, and endpoint paths are
   unchanged.
+- Every caller-controlled identifier the SDK puts into a request **path** is now percent-encoded as
+  an individual path segment. Previously such an identifier was interpolated raw, so a `/` added a
+  path segment, a `?` started a query, and a `#` started a fragment and silently discarded the rest
+  of the identifier. Input that already looked like a percent escape was passed through as an escape
+  rather than as data, so `already%2Fencoded` went on the wire unchanged and a server decodes it to
+  `already/encoded`. Non-ASCII text, spaces, and a `%` that does not form a valid escape were already
+  percent-encoded correctly by `System.Uri` and were never misrouted; they are covered by the new
+  tests as regression protection, not as fixed defects. This covers
+  `AlternativePaymentService.GetOperationInfoAsync` and
+  `GetStatusAsync`; `PayPartsService.GetOperationInfoAsync`; `CustomerService.GetCustomerCardsAsync`
+  and `DeletePaymentFromWalletAsync` (both segments encoded independently); and every
+  `SubscriptionService` plan and subscription route — `GetPlanAsync`, `UpdatePlanAsync`,
+  `DeactivatePlanAsync`, `GetAsync`, `UpdateAsync`, `DeactivateAsync`, `GetPaymentsAsync`,
+  `CancelAsync`, and `GetCustomerSubscriptionsAsync`.
+- This is the path-segment counterpart of the query-value encoding fixed earlier in this release.
+  A path segment and a query value are separate contexts and are encoded at their own insertion
+  points; the compatibility fallback paths that already encoded their segments are unchanged on the
+  wire and are still encoded exactly once.
+- Callers pass raw identifiers and must not pre-encode: `already%2Fencoded` is sent as
+  `already%252Fencoded`. An identifier made only of RFC 3986 unreserved characters, such as
+  `plan-123`, reaches the wire byte-for-byte unchanged.
+- The identifiers `.` and `..` are now rejected with `ArgumentException` naming the offending
+  parameter, before any request is sent. They cannot be carried through as data: `.` is an unreserved
+  character that percent-encoding leaves alone, and `System.Uri` removes exact dot segments — also
+  from the `%2E` spelling — while building the request, which would silently retarget the call
+  (`GetPlanAsync(".")` requested `/api/subscriptions/v1/plans/`). A method with a path fallback
+  rejects such an identifier before its primary query request.
+- Endpoint paths, HTTP verbs, request bodies, primary/fallback order, the 404-only fallback trigger,
+  public interfaces, and models are unchanged.
 
 ## [0.1.0-alpha.2] - 2026-02-28
 
