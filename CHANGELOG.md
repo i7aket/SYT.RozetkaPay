@@ -11,6 +11,49 @@ immediately before tagging a release (see the release process in `README.md`).
 ## [Unreleased]
 
 ### Added
+- Release-grade, independently verifiable NuGet package artifacts (EXP-339). The package now carries an
+  original local `128x128` `PackageIcon` (`assets/package-icon.png`, committed next to its
+  `assets/package-icon.svg` source) instead of shipping without one; it is an own SDK mark — a payment-link
+  glyph over an `SYT` wordmark — and not the RozetkaPay logo or any third-party asset. Source Link is no
+  longer an unstated side effect of SDK defaults: `Deterministic`, `PublishRepositoryUrl` and
+  `EmbedUntrackedSources` are pinned in the project file, and Source Link keeps coming from the built-in
+  .NET SDK tooling, so **no `Microsoft.SourceLink.*` `PackageReference` is added and the published
+  dependency groups (`net9.0`, `net10.0`) are unchanged**. Official builds run with
+  `ContinuousIntegrationBuild=true` — set conditionally for `GITHUB_ACTIONS` in the project and passed
+  explicitly by both workflows — so every embedded source path is normalized to `/_/*` and no runner or
+  worktree filesystem root is published. Two executable gates enforce all of it:
+  `scripts/verify-package-artifacts.sh` proves package contents rather than file names (exactly one
+  `.nupkg` + one `.snupkg` of the same version, nuspec `id`/`icon`/`readme`/`license`, a
+  `<repository type="git" …>` element whose `commit` equals the exact checked-out SHA, unchanged dependency
+  groups, `lib/{net9.0,net10.0}` DLL and XML docs, no PDB in the primary package, a single root
+  `package-icon.png` whose PNG `IHDR` really is `128x128` and under `1 MiB` and byte-identical to the
+  committed asset, a `.snupkg` holding exactly the two PDBs, and — via the `sourcelink` tool pinned to
+  `3.1.1` in `.config/dotnet-tools.json` — one Source Link mapping per PDB pointing at that exact commit
+  with every document under `/_/` and its source downloaded and checksum-matched);
+  `scripts/verify-deterministic-build.sh` proves reproducibility rather than an MSBuild property value by
+  rebuilding the same commit in a throwaway detached `git worktree` under a different filesystem root and
+  requiring identical SHA-256 for `SYT.RozetkaPay.dll`, `.pdb` and `.xml` on both frameworks. Both
+  workflows run both gates in the same order, so a tag release cannot pass weaker artifact checks than a
+  pull request, and the pre-existing exact tag/version gate still guards publish. The remote Source Link
+  check is on by default; `--skip-remote-source-check` exists only for a local commit that is not pushed
+  yet. `assets/package-icon.png` is reproducible from its SVG with:
+  ```bash
+  magick -size 1024x1024 xc:none -draw "
+  scale 8,8
+  fill '#12243F' stroke none
+  path 'M31 5 H97 A26 26 0 0 1 123 31 V97 A26 26 0 0 1 97 123 H31 A26 26 0 0 1 5 97 V31 A26 26 0 0 1 31 5 Z'
+  fill none stroke '#22D3EE' stroke-width 9 stroke-linecap round stroke-linejoin round
+  path 'M58 35 H51 A13 13 0 0 0 51 61 H58'
+  path 'M70 35 H77 A13 13 0 0 1 77 61 H70'
+  path 'M54 48 H74'
+  stroke '#FFFFFF' stroke-width 5
+  path 'M47 85 A5.5 4.3 0 1 0 42 90 A5.5 4.3 0 1 1 37 95'
+  path 'M55.5 82 L61.5 91 L67.5 82'
+  path 'M61.5 91 V98'
+  path 'M75.5 82 H91.5'
+  path 'M83.5 82 V98'
+  " -filter Lanczos -resize 128x128 -strip PNG32:assets/package-icon.png
+  ```
 - Executable contract coverage for **all `67` operations** of the pinned OpenAPI snapshot (EXP-337).
   `tests/SYT.RozetkaPay.Tests/TestInfrastructure/OpenApiOperationManifest.cs` holds one hand-written
   canonical row per published operation; `OpenApiOperationContractTests` compares that table with

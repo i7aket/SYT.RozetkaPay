@@ -12,6 +12,32 @@
 Consumer installation and usage documentation lives in the package README
 (`src/SYT.RozetkaPay/README.md`), which is also shipped on NuGet.
 
+The package ships an embedded `128x128` icon and a companion `.snupkg` symbol package with
+Source Link metadata, so a debugger can step from the compiled assembly straight into the
+exact repository source the package was built from:
+
+- Icon: `assets/package-icon.png`, packed into the package root as `package-icon.png`. It is
+  an original SDK mark generated from the committed `assets/package-icon.svg` — not the
+  RozetkaPay logo and not derived from any third-party asset.
+- Symbols: `lib/net9.0/SYT.RozetkaPay.pdb` and `lib/net10.0/SYT.RozetkaPay.pdb`, published in
+  the `.snupkg` only. The primary `.nupkg` carries no PDB.
+- Source Link comes from the tooling built into the .NET SDK. There is deliberately **no**
+  `Microsoft.SourceLink.*` `PackageReference`, so the published dependency groups stay exactly
+  `net9.0` and `net10.0` with no build-only package leaking into them.
+- Official CI and release builds run with `ContinuousIntegrationBuild=true`, so every source
+  path embedded in the symbols is normalized to `/_/*`. No runner, machine or worktree
+  filesystem root is ever published.
+
+Each PDB carries a single Source Link mapping pinned to the commit that produced it:
+
+```json
+{
+  "documents": {
+    "/_/*": "https://raw.githubusercontent.com/i7aket/SYT.RozetkaPay/<commit>/*"
+  }
+}
+```
+
 ## Public API
 
 The SDK exposes each service through a public interface and the whole surface through a
@@ -82,9 +108,49 @@ raw response body. Treat the raw body as sensitive — the SDK never logs it. Se
 Every pull request targeting `main`, and every push to `main`, runs the
 `Build & Test` workflow, which:
 
-1. Restores and builds the solution in `Release` with warnings treated as errors.
-2. Runs the full test suite on `net9.0` and `net10.0`.
-3. Packs the NuGet package and verifies the produced `.nupkg`/`.snupkg`.
+1. Restores the pinned local tools (`.config/dotnet-tools.json`) and the solution.
+2. Builds in `Release` with warnings treated as errors and
+   `-p:ContinuousIntegrationBuild=true`, so the produced symbols contain no
+   machine-specific source root.
+3. Runs the full test suite on `net9.0` and `net10.0`.
+4. Rebuilds the same commit in a second, throwaway `git worktree` under a
+   different filesystem root and requires the `SYT.RozetkaPay.dll`, `.pdb` and
+   `.xml` of both frameworks to be identical by SHA-256
+   (`scripts/verify-deterministic-build.sh`).
+5. Packs the NuGet package and verifies the produced `.nupkg`/`.snupkg`
+   (`scripts/verify-package-artifacts.sh`).
+
+The artifact verifier inspects archive contents rather than file names. It proves the
+packed icon really is a `128x128` PNG under `1 MiB` and byte-identical to the committed
+asset, that the nuspec keeps its `id`, `icon`, `readme` and `license` metadata and its
+`net9.0`/`net10.0` dependency groups, that the `<repository>` element records the exact
+commit that was checked out, that the primary package carries no PDB while the `.snupkg`
+carries exactly the two, and that each PDB has a single Source Link mapping to that commit
+with every source document normalized under `/_/`. It then runs `dotnet sourcelink test`,
+which downloads every source document for that commit and compares checksums.
+
+Both verifiers are ordinary scripts, so the same gates can be reproduced locally:
+
+```bash
+dotnet tool restore
+dotnet restore SYT.RozetkaPay.sln
+dotnet build SYT.RozetkaPay.sln -c Release --no-restore -warnaserror \
+  -p:ContinuousIntegrationBuild=true
+dotnet test SYT.RozetkaPay.sln -c Release --no-build
+
+scripts/verify-deterministic-build.sh
+
+artifact_dir="$(mktemp -d)"
+dotnet pack src/SYT.RozetkaPay/SYT.RozetkaPay.csproj -c Release --no-build \
+  -p:ContinuousIntegrationBuild=true -o "$artifact_dir"
+scripts/verify-package-artifacts.sh "$artifact_dir" "$(git rev-parse HEAD)"
+```
+
+`scripts/verify-deterministic-build.sh` requires tracked files to match `HEAD`, creates its
+second checkout under `mktemp -d`, and removes only that temporary worktree. Add
+`--skip-remote-source-check` to `scripts/verify-package-artifacts.sh` when the commit has not
+been pushed yet — its sources cannot be on the remote, so only then does the download check
+have to be skipped. CI and release builds never skip it.
 
 The suite includes the `67`-operation contract coverage and the loopback HTTP-boundary
 tests, and it makes no outbound network request: the contract transport targets a reserved
@@ -134,11 +200,20 @@ Pushing the tag triggers the `Release NuGet` workflow, which:
 
 1. Validates that the tag is a well-formed `vX.Y.Z[-prerelease]` version and
    fails before publishing on a malformed tag.
-2. Restores, builds (`-warnaserror`), tests both target frameworks, and packs.
-3. Confirms the packed version matches the tag.
-4. Publishes the package (and symbols) to nuget.org.
-5. Creates a GitHub Release with the `.nupkg`, `.snupkg`, and `SHA256SUMS`
+2. Confirms the tagged commit is reachable from `origin/main`.
+3. Restores tools and the solution, builds (`-warnaserror`,
+   `-p:ContinuousIntegrationBuild=true`), tests both target frameworks, proves the
+   deterministic two-root rebuild, packs, and runs the **same**
+   `scripts/verify-package-artifacts.sh` gate the pull-request workflow runs —
+   icon, nuspec, repository commit and remote Source Link checksums — all before
+   any publish step.
+4. Confirms the packed version matches the tag.
+5. Publishes the package (and symbols) to nuget.org.
+6. Creates a GitHub Release with the `.nupkg`, `.snupkg`, and `SHA256SUMS`
    attached. Tags containing a prerelease label are marked as pre-releases.
+
+A release therefore never passes weaker artifact checks than a pull request: the shared
+verifier runs first, and the exact tag/version gate still stands between it and publish.
 
 ### Required secret
 

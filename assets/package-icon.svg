@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="SYT RozetkaPay SDK">
+  <title>SYT RozetkaPay SDK</title>
+  <!--
+    Original SDK mark for the SYT.RozetkaPay NuGet package.
+
+    This is not the RozetkaPay logo and is not derived from any third-party or
+    trademarked asset: it is a generic payment-link glyph above an "SYT"
+    wordmark on a rounded navy tile, drawn entirely from primitive geometry so
+    the file depends on no external font or image.
+
+    assets/package-icon.png is rendered from exactly this geometry; the
+    reproducible ImageMagick command is recorded in CHANGELOG.md (EXP-339).
+  -->
+  <rect x="5" y="5" width="118" height="118" rx="26" ry="26" fill="#12243F"/>
+  <g fill="none" stroke="#22D3EE" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M58 35 H51 A13 13 0 0 0 51 61 H58"/>
+    <path d="M70 35 H77 A13 13 0 0 1 77 61 H70"/>
+    <path d="M54 48 H74"/>
+  </g>
+  <g fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M47 85 A5.5 4.3 0 1 0 42 90 A5.5 4.3 0 1 1 37 95"/>
+    <path d="M55.5 82 L61.5 91 L67.5 82"/>
+    <path d="M61.5 91 V98"/>
+    <path d="M75.5 82 H91.5"/>
+    <path d="M83.5 82 V98"/>
+  </g>
+</svg>
