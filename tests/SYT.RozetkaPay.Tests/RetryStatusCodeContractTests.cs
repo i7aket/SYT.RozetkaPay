@@ -565,6 +565,32 @@ public class RetryStatusCodeContractTests
         Assert.Equal("transport attempt 3", exception.Message);
     }
 
+    /// <summary>
+    /// Only the SDK's own wrapper is unwrapped. A retryable transport exception buried inside an arbitrary
+    /// outer exception is not evidence of a transport failure the SDK produced, and must not be repeated on
+    /// the strength of its inner exception alone.
+    /// </summary>
+    [Fact]
+    public async Task ArbitraryExceptionWrappingATransportFailure_ShouldNotBeRetried()
+    {
+        int calls = 0;
+        RetryProbeService service = RetryContractContext.Service(
+            new ScriptedRetryHandler(RetryOutcomes.Success()),
+            RetryContractContext.Immediate(maxRetryAttempts: 3));
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.ExecuteAsync<RetryProbeResult>(() =>
+            {
+                calls++;
+                throw new InvalidOperationException(
+                    "not an SDK wrapper",
+                    new HttpRequestException(RetryContractContext.TransportMessageMarker));
+            }));
+
+        Assert.Equal(1, calls);
+        Assert.IsType<HttpRequestException>(exception.InnerException);
+    }
+
     [Fact]
     public async Task NonRetriableException_ShouldNotBeRetried()
     {
@@ -653,10 +679,26 @@ public class RetryStatusCodeContractTests
     /// A <c>429</c> carrying delta-seconds waits exactly what the provider asked for, instead of the
     /// configured backoff.
     /// </summary>
+    /// <remarks>
+    /// The decision is asserted without paying for it. The retry warning is written immediately before the
+    /// wait, so cancelling from the log callback lands between the two: the logged figure proves the hint took
+    /// precedence over the configured backoff, the wait is abandoned instead of slept through, and the next
+    /// request is never sent. Nothing here depends on elapsed time.
+    /// </remarks>
     [Fact]
     public async Task RetryAfterDeltaSeconds_ShouldReplaceTheConfiguredBackoff()
     {
-        RetryLogRecorder logger = new();
+        using CancellationTokenSource callerTokenSource = new();
+        RetryLogRecorder logger = new()
+        {
+            OnEntry = entry =>
+            {
+                if (entry.Level == LogLevel.Warning && entry.Message.StartsWith("Retry ", StringComparison.Ordinal))
+                {
+                    callerTokenSource.Cancel();
+                }
+            }
+        };
         ScriptedRetryHandler handler = new(
             RetryOutcomes.Failure(
                 HttpStatusCode.TooManyRequests,
@@ -666,10 +708,36 @@ public class RetryStatusCodeContractTests
             RetryOutcomes.Success());
         RetryProbeService service = RetryContractContext.Service(handler, HintPolicy(TimeSpan.FromSeconds(30)), logger);
 
-        await service.GetJsonAsync<RetryProbeResult>(RetryContractContext.Endpoint);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.GetJsonAsync<RetryProbeResult>(RetryContractContext.Endpoint, callerTokenSource.Token));
 
-        Assert.Equal(2, handler.AttemptCount);
+        // 1000 ms, not the 15 ms backoff, and not the 30 s cap.
         Assert.Equal([1000d], logger.RetryDelaysMilliseconds);
+        Assert.Equal(1, handler.AttemptCount);
+    }
+
+    /// <summary>
+    /// A provider that answers <c>Retry-After: 0</c> is asking for an immediate repeat, so the wait is zero
+    /// rather than the configured backoff.
+    /// </summary>
+    [Fact]
+    public async Task RetryAfterDeltaZero_ShouldRetryImmediately()
+    {
+        RetryLogRecorder logger = new();
+        ScriptedRetryHandler handler = new(
+            RetryOutcomes.Failure(
+                HttpStatusCode.TooManyRequests,
+                RetryContractContext.ErrorBody,
+                static (response, _) => response.Headers.RetryAfter =
+                    new RetryConditionHeaderValue(TimeSpan.Zero)),
+            RetryOutcomes.Success());
+        RetryProbeService service = RetryContractContext.Service(handler, HintPolicy(), logger);
+
+        RetryProbeResult result = await service.GetJsonAsync<RetryProbeResult>(RetryContractContext.Endpoint);
+
+        Assert.Equal("succeeded", result.Outcome);
+        Assert.Equal(2, handler.AttemptCount);
+        Assert.Equal([0d], logger.RetryDelaysMilliseconds);
     }
 
     /// <summary>
@@ -961,6 +1029,7 @@ public class RetryStatusCodeContractTests
     [Theory]
     [InlineData("get")]
     [InlineData("post")]
+    [InlineData("post-no-content")]
     [InlineData("patch")]
     [InlineData("post-without-body")]
     [InlineData("delete")]
@@ -980,6 +1049,41 @@ public class RetryStatusCodeContractTests
         Assert.Equal(2, handler.RequestProbes.Count);
         Assert.All(handler.RequestProbes, probe =>
             Assert.True(probe.Disposed, "the SDK must dispose the request message it built for the attempt."));
+    }
+
+    /// <summary>
+    /// Cancellation that lands after the response has been handed to the SDK, but before its body has been
+    /// read, must still release everything the attempt owns — and must not buy another attempt.
+    /// </summary>
+    /// <remarks>
+    /// Deterministic: the handler cancels once it has recorded the request, so the response is produced and
+    /// handed over and the cancellation falls on the body read rather than on the send.
+    /// </remarks>
+    [Fact]
+    public async Task CancellationWhileReadingTheBody_ShouldReleaseTheAttemptAndNotRetry()
+    {
+        using CancellationTokenSource callerTokenSource = new();
+        ScriptedRetryHandler handler = new(RetryOutcomes.CancellableSuccess())
+        {
+            AttachRequestDisposalProbe = true,
+            OnAttempt = (_, _) => callerTokenSource.Cancel()
+        };
+        RetryProbeService service = RetryContractContext.Service(
+            handler,
+            RetryContractContext.Immediate(maxRetryAttempts: 3));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.GetJsonAsync<RetryProbeResult>(RetryContractContext.Endpoint, callerTokenSource.Token));
+
+        // One attempt: a cancelled caller never buys another, whatever the budget says.
+        Assert.Equal(1, handler.AttemptCount);
+
+        CancellableTrackedResponse response = Assert.Single(handler.CancellableResponses);
+        Assert.True(response.Disposed, "the response of a cancelled attempt must still be disposed.");
+        Assert.True(response.TrackedContent.Disposed, "the content of a cancelled attempt must still be disposed.");
+
+        DisposalTrackingContent probe = Assert.Single(handler.RequestProbes);
+        Assert.True(probe.Disposed, "the request of a cancelled attempt must still be disposed.");
     }
 
     // ===================== helpers =====================

@@ -513,10 +513,18 @@ public abstract class BaseService
             return retryPolicy.ShouldRetry(apiError.StatusCode);
         }
 
-        // Transport failures, including one the SDK has already wrapped. The categories are exactly the ones
+        // A transport failure raised directly. The categories are exactly the ones
         // RetryPolicy.ShouldRetry(Exception) publishes.
-        return retryPolicy.ShouldRetry(failure)
-            || (failure.InnerException is { } inner && retryPolicy.ShouldRetry(inner));
+        if (retryPolicy.ShouldRetry(failure))
+        {
+            return true;
+        }
+
+        // The one wrapper the SDK unwraps is its own: a RozetkaPayException over a retryable transport
+        // category, which is the pre-existing wrapped-transport path. An arbitrary exception is never made
+        // retriable by whatever it happens to carry as its inner exception - the SDK did not raise it, and its
+        // inner exception is not evidence about the transport.
+        return failure is RozetkaPayException { InnerException: { } inner } && retryPolicy.ShouldRetry(inner);
     }
 
     /// <summary>

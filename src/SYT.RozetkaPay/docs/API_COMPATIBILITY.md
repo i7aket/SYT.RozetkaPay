@@ -256,7 +256,7 @@ meaning, and every public exception constructor is unchanged. The default policy
 | Status decision | Read from the response the SDK received (`RozetkaPayException.ApiError.StatusCode`) against `RetriableStatusCodes` — never from an exception type, message, or provider code. |
 | Default set | Exactly `408`, `429`, `500`, `502`, `503`, `504`. |
 | Custom set | Honoured as configured, additions and removals alike; an empty set retries no status. |
-| Transport failures | `HttpRequestException`, `SocketException`, and timeout-like `TaskCanceledException` — exactly the categories `RetryPolicy.ShouldRetry(Exception)` publishes — including one already wrapped in a `RozetkaPayException`. |
+| Transport failures | `HttpRequestException`, `SocketException`, and timeout-like `TaskCanceledException` — exactly the categories `RetryPolicy.ShouldRetry(Exception)` publishes. The only wrapper unwrapped is the SDK's own: a `RozetkaPayException` over one of those categories. An exception the SDK did not raise is never made retriable by its inner exception. |
 | Repeat shape | Same verb, target, body bytes, content type, and authentication mode; a fresh request object per attempt. |
 | Caller cancellation | Never retried; no delay is scheduled and the `OperationCanceledException` propagates unwrapped. |
 | `429` `Retry-After` | Delta-seconds or HTTP-date replaces the backoff, zero/past means immediate, positive values are capped by `MaxDelay`, absent or unparseable falls back to the configured backoff. Ignored on other statuses. |
@@ -274,11 +274,14 @@ fail may have been accepted. The SDK does not claim exactly-once delivery and ca
 own. Callers enabling retries for mutating calls must supply a stable `external_id` / idempotency value per
 business intent and reconcile by it.
 
-Verified by `RetryStatusCodeContractTests` (`73` cases per target framework): the six default statuses through
+Verified by `RetryStatusCodeContractTests` (`77` cases per target framework): the six default statuses through
 seven transport helpers plus the anonymous decline redirect, attempt-count arithmetic, disabled and custom
-sets, exhaustion evidence, transport compatibility, caller cancellation, the `Retry-After` matrix, per-attempt
-disposal, and log-leak assertions with hostile markers. The suite never touches a socket — its base address is
-in the reserved `.invalid` TLD and the transport never forwards.
+sets, exhaustion evidence, transport compatibility — including the negative case that an arbitrary exception
+wrapping an `HttpRequestException` is **not** retried — caller cancellation, the `Retry-After` matrix,
+per-attempt disposal, and log-leak assertions with hostile markers. The suite never touches a socket — its
+base address is in the reserved `.invalid` TLD and the transport never forwards — and it contains no sleep and
+no timing-threshold assertion: every wait-sensitive case is settled by cancelling from the retry-warning
+callback, immediately before the delay is awaited.
 
 ## Deterministic 67/67 Coverage (EXP-337)
 
@@ -375,11 +378,11 @@ secrets were absent would be a false claim of live verification, so it does not 
 - Snapshot path count: `59`; snapshot operation count: `67`
 - SDK service coverage for snapshot OpenAPI paths: `59/59`
 - Deterministic operation contract coverage: `67/67`, asserted as an exact set against the pinned document
-- Retry contract coverage: `73` cases per target framework — six default statuses, seven transport helpers,
+- Retry contract coverage: `77` cases per target framework — six default statuses, seven transport helpers,
   the anonymous decline redirect, attempt-count arithmetic, disabled and custom sets, exhaustion evidence,
-  transport compatibility, caller cancellation, the `Retry-After` matrix, per-attempt disposal, and log-leak
-  assertions
-- Test result: `net9.0` — `1315` passed, `1` skipped, `0` failed; `net10.0` — `1315` passed, `1` skipped,
+  transport compatibility including the arbitrary-wrapper negative case, caller cancellation, the
+  `Retry-After` matrix, per-attempt disposal, and log-leak assertions
+- Test result: `net9.0` — `1319` passed, `1` skipped, `0` failed; `net10.0` — `1319` passed, `1` skipped,
   `0` failed. The single skip is the live sandbox smoke test, skipped because no sandbox credentials were
   supplied.
 - Build: `Release` with `-warnaserror` — `0` warnings, `0` errors

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SYT.RozetkaPay.Configuration;
@@ -52,6 +53,7 @@ internal sealed class ScriptedRetryHandler : HttpMessageHandler
     private readonly RetryAttemptOutcome[] _outcomes;
     private readonly List<RetryAttempt> _attempts = [];
     private readonly List<DisposalTrackingResponse> _responses = [];
+    private readonly List<CancellableTrackedResponse> _cancellableResponses = [];
     private readonly List<HttpContent> _requestContents = [];
     private readonly List<DisposalTrackingContent> _requestProbes = [];
 
@@ -90,6 +92,11 @@ internal sealed class ScriptedRetryHandler : HttpMessageHandler
     /// Every response handed to the SDK, kept for disposal inspection after the call returned.
     /// </summary>
     internal IReadOnlyList<DisposalTrackingResponse> Responses => _responses;
+
+    /// <summary>
+    /// Responses whose body read observes the caller's token, kept for disposal inspection.
+    /// </summary>
+    internal IReadOnlyList<CancellableTrackedResponse> CancellableResponses => _cancellableResponses;
 
     /// <summary>
     /// The request bodies the SDK built, as received. A disposed entry proves the request that owned it was
@@ -133,9 +140,14 @@ internal sealed class ScriptedRetryHandler : HttpMessageHandler
         OnAttempt?.Invoke(attempt, cancellationToken);
 
         HttpResponseMessage response = _outcomes[Math.Min(attempt - 1, _outcomes.Length - 1)](attempt);
-        if (response is DisposalTrackingResponse tracked)
+        switch (response)
         {
-            _responses.Add(tracked);
+            case DisposalTrackingResponse tracked:
+                _responses.Add(tracked);
+                break;
+            case CancellableTrackedResponse cancellable:
+                _cancellableResponses.Add(cancellable);
+                break;
         }
 
         return response;
@@ -153,6 +165,15 @@ internal static class RetryOutcomes
     internal static RetryAttemptOutcome Success(string body = SuccessBody)
     {
         return _ => Tracked(HttpStatusCode.OK, body);
+    }
+
+    /// <summary>
+    /// A successful response whose body read observes the caller's token, for the case where cancellation
+    /// arrives after the response was handed over but before it was consumed.
+    /// </summary>
+    internal static RetryAttemptOutcome CancellableSuccess(string body = SuccessBody)
+    {
+        return _ => new CancellableTrackedResponse(HttpStatusCode.OK, new CancellableTrackedContent(body));
     }
 
     internal static RetryAttemptOutcome NoContent()
@@ -201,6 +222,77 @@ internal static class RetryOutcomes
     private static DisposalTrackingResponse Tracked(HttpStatusCode status, string body)
     {
         return new DisposalTrackingResponse(status, new DisposalTrackingContent(body));
+    }
+}
+
+/// <summary>
+/// Response content that records disposal and observes the cancellation token while its body is read.
+/// </summary>
+/// <remarks>
+/// <see cref="DisposalTrackingContent"/> is pre-buffered, so reading it cannot be interrupted. This variant
+/// honours the token in the cancellable <see cref="HttpContent.SerializeToStreamAsync(Stream, TransportContext, CancellationToken)"/>
+/// overload, which is what makes "cancelled while the body was being read" a deterministic state to test
+/// rather than a race with whichever await the runtime happens to check first.
+/// </remarks>
+internal sealed class CancellableTrackedContent : HttpContent
+{
+    private readonly byte[] _payload;
+
+    internal CancellableTrackedContent(string payload)
+    {
+        _payload = Encoding.UTF8.GetBytes(payload);
+        Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
+    }
+
+    internal bool Disposed { get; private set; }
+
+    protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+    {
+        return SerializeToStreamAsync(stream, context, CancellationToken.None);
+    }
+
+    protected override async Task SerializeToStreamAsync(
+        Stream stream,
+        TransportContext? context,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await stream.WriteAsync(_payload, cancellationToken).ConfigureAwait(false);
+    }
+
+    protected override bool TryComputeLength(out long length)
+    {
+        length = _payload.Length;
+        return true;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        Disposed = true;
+        base.Dispose(disposing);
+    }
+}
+
+/// <summary>
+/// Response whose body read can be cancelled, and which records whether it and its content were disposed.
+/// </summary>
+internal sealed class CancellableTrackedResponse : HttpResponseMessage
+{
+    internal CancellableTrackedResponse(HttpStatusCode status, CancellableTrackedContent content)
+        : base(status)
+    {
+        Content = content;
+        TrackedContent = content;
+    }
+
+    internal CancellableTrackedContent TrackedContent { get; }
+
+    internal bool Disposed { get; private set; }
+
+    protected override void Dispose(bool disposing)
+    {
+        Disposed = true;
+        base.Dispose(disposing);
     }
 }
 
