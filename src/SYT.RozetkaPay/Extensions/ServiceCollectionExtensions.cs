@@ -21,6 +21,19 @@ public static class ServiceCollectionExtensions
     private const string RemovedValidateSslCertificateKey = "ValidateSslCertificate";
 
     /// <summary>
+    /// Name of the ordinary authenticated HTTP client used by every authenticated operation.
+    /// </summary>
+    private const string AuthenticatedHttpClientName = "RozetkaPay";
+
+    /// <summary>
+    /// Name of the dedicated client used by the unauthenticated <c>declinePaymentInstruction</c>
+    /// operation. It is a separate named client because <see cref="HttpClient"/> has no per-request
+    /// redirect switch: the guarantee that a <c>302</c> is never followed, and that no credential is
+    /// replayed to a provider-named host, lives in this client's primary handler.
+    /// </summary>
+    private const string NonRedirectHttpClientName = "RozetkaPay.PaymentInstructions.Decline";
+
+    /// <summary>
     /// Add RozetkaPay SDK services to the service collection
     /// </summary>
     /// <param name="services">The service collection</param>
@@ -230,92 +243,160 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(static provider =>
             RozetkaPayOptionsMapper.ToConfiguration(provider.GetRequiredService<IOptions<RozetkaPayOptions>>().Value));
 
-        services.AddHttpClient("RozetkaPay", (provider, client) =>
-        {
-            RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            client.BaseAddress = new Uri(config.BaseUrl);
-            client.Timeout = config.Timeout;
-            client.DefaultRequestHeaders.UserAgent.Clear();
-            if (!string.IsNullOrWhiteSpace(config.UserAgent))
+        // Every SDK named client removes the built-in IHttpClientFactory HTTP logging, and the SDK's own
+        // static-label logging is the single source of HTTP log output.
+        //
+        // Services log a static route template, never the real request target, so no caller identifier
+        // reaches a log sink through the SDK. AddHttpClient installs its own handler logging on top of that,
+        // under System.Net.Http.HttpClient.<name>.LogicalHandler and ...ClientHandler, which the SDK's log
+        // labels cannot influence - and that logging is unsafe here on two counts:
+        //
+        //  * it writes the request URI, and while Microsoft.Extensions.Http redacts the whole query to "?*",
+        //    it does not redact path segments. An identifier the SDK deliberately keeps out of its own logs -
+        //    the subscription_id of the payment-method update - was written out verbatim at Information level;
+        //  * its header logging redacts values in the rendered message only. The structured state of those
+        //    entries carries the real header values, so a sink that writes log state records Authorization
+        //    and X-CUSTOMER-AUTH in clear at Trace level.
+        //
+        // Neither is configurable: RedactLoggedHeaders covers headers only, and there is no hook for the URI.
+        // RemoveAllLoggers() is the supported way to turn the built-in logging off, and it does not touch the
+        // ILogger instances the services themselves use. It is applied to both clients - the authenticated one
+        // because of the path identifier, and the decline one so the guarantee does not depend on which
+        // spelling a future operation happens to use.
+        services
+            .AddHttpClient(AuthenticatedHttpClientName, (provider, client) =>
             {
-                client.DefaultRequestHeaders.UserAgent.ParseAdd(config.UserAgent);
-            }
-        });
+                RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
+                client.BaseAddress = new Uri(config.BaseUrl);
+                client.Timeout = config.Timeout;
+                client.DefaultRequestHeaders.UserAgent.Clear();
+                if (!string.IsNullOrWhiteSpace(config.UserAgent))
+                {
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd(config.UserAgent);
+                }
+            })
+            .RemoveAllLoggers();
+
+        // The decline client shares the validated endpoint, the timeout snapshot and the user agent, and
+        // nothing else. No credential-bearing default header is configured on it, and its primary handler
+        // refuses to follow redirects. TLS validation is left to the platform: no certificate callback is
+        // installed and no check is relaxed.
+        services
+            .AddHttpClient(NonRedirectHttpClientName, (provider, client) =>
+            {
+                RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
+                client.BaseAddress = new Uri(config.BaseUrl);
+                client.Timeout = config.Timeout;
+                client.DefaultRequestHeaders.UserAgent.Clear();
+                if (!string.IsNullOrWhiteSpace(config.UserAgent))
+                {
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd(config.UserAgent);
+                }
+            })
+            .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler { AllowAutoRedirect = false })
+            .RemoveAllLoggers();
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new PaymentService(config, httpClient, provider.GetService<ILogger<PaymentService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new BatchPaymentService(config, httpClient, provider.GetService<ILogger<BatchPaymentService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new PayPartsService(config, httpClient, provider.GetService<ILogger<PayPartsService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new PayoutService(config, httpClient, provider.GetService<ILogger<PayoutService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new CustomerService(config, httpClient, provider.GetService<ILogger<CustomerService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new SubscriptionService(config, httpClient, provider.GetService<ILogger<SubscriptionService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new ReportService(config, httpClient, provider.GetService<ILogger<ReportService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new AlternativePaymentService(config, httpClient, provider.GetService<ILogger<AlternativePaymentService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new MerchantService(config, httpClient, provider.GetService<ILogger<MerchantService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new FinMonService(config, httpClient, provider.GetService<ILogger<FinMonService>>());
         });
 
         services.TryAddScoped(provider =>
         {
             RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
-            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("RozetkaPay");
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
+            return new InStorePaymentService(config, httpClient, provider.GetService<ILogger<InStorePaymentService>>());
+        });
+
+        services.TryAddScoped(provider =>
+        {
+            RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
+            return new PartnerService(config, httpClient, provider.GetService<ILogger<PartnerService>>());
+        });
+
+        // The decline operation gets the dedicated non-redirect client from the factory. The factory owns
+        // its lifetime, so the service is constructed through the overload that does not take ownership.
+        services.TryAddScoped(provider =>
+        {
+            RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
+            IHttpClientFactory httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+            return new PaymentInstructionService(
+                config,
+                httpClientFactory.CreateClient(AuthenticatedHttpClientName),
+                httpClientFactory.CreateClient(NonRedirectHttpClientName),
+                provider.GetService<ILogger<PaymentInstructionService>>());
+        });
+
+        services.TryAddScoped(provider =>
+        {
+            RozetkaPayConfiguration config = provider.GetRequiredService<RozetkaPayConfiguration>();
+            HttpClient httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(AuthenticatedHttpClientName);
             return new RozetkaPayClient(config, httpClient, provider.GetService<ILogger<RozetkaPayClient>>());
         });
 
@@ -340,6 +421,9 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IAlternativePaymentService>(static provider => provider.GetRequiredService<AlternativePaymentService>());
         services.TryAddScoped<IMerchantService>(static provider => provider.GetRequiredService<MerchantService>());
         services.TryAddScoped<IFinMonService>(static provider => provider.GetRequiredService<FinMonService>());
+        services.TryAddScoped<IInStorePaymentService>(static provider => provider.GetRequiredService<InStorePaymentService>());
+        services.TryAddScoped<IPartnerService>(static provider => provider.GetRequiredService<PartnerService>());
+        services.TryAddScoped<IPaymentInstructionService>(static provider => provider.GetRequiredService<PaymentInstructionService>());
         services.TryAddScoped<IRozetkaPayClient>(static provider => provider.GetRequiredService<RozetkaPayClient>());
         services.TryAddSingleton<IRozetkaPayWebhookSignatureVerifier>(
             static provider => provider.GetRequiredService<RozetkaPayWebhookSignatureVerifier>());

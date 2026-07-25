@@ -25,4 +25,15 @@
     <ProjectReference Include="..\..\src\SYT.RozetkaPay\SYT.RozetkaPay.csproj" />
   </ItemGroup>
 
+  <!--
+    The pinned OpenAPI snapshot is asserted against directly, so it is copied next to the test assembly.
+    Reading the repository copy through a relative path from the output directory would silently pass if
+    the file moved; a missing copied file fails the build instead.
+  -->
+  <ItemGroup>
+    <None Include="..\..\src\SYT.RozetkaPay\docs\openapi.json"
+          Link="openapi.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
