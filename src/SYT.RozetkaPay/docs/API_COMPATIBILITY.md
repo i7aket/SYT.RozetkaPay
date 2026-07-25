@@ -331,7 +331,7 @@ secrets were absent would be a false claim of live verification, so it does not 
 - Snapshot path count: `59`; snapshot operation count: `67`
 - SDK service coverage for snapshot OpenAPI paths: `59/59`
 - Deterministic operation contract coverage: `67/67`, asserted as an exact set against the pinned document
-- Test result: `net9.0` — `1175` passed, `1` skipped, `0` failed; `net10.0` — `1175` passed, `1` skipped,
+- Test result: `net9.0` — `1242` passed, `1` skipped, `0` failed; `net10.0` — `1242` passed, `1` skipped,
   `0` failed. The single skip is the live sandbox smoke test, skipped because no sandbox credentials were
   supplied.
 - Verified by: `OpenApiOperationContractTests`, `HttpBoundaryIntegrationTests`, `WebhookHttpBoundaryTests`,
