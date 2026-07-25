@@ -118,7 +118,8 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts operation info</returns>
     public async Task<PayPartsOperationResponse> GetOperationInfoAsync(string operationId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<PayPartsOperationResponse>($"/api/payparts/v1/operation/{operationId}", cancellationToken);
+        string encodedOperationId = RequestTargetEncoding.EscapePathSegment(operationId, nameof(operationId));
+        return await GetAsync<PayPartsOperationResponse>($"/api/payparts/v1/operation/{encodedOperationId}", cancellationToken);
     }
 
     /// <summary>
@@ -133,7 +134,8 @@ public class PayPartsService : BaseService, IPayPartsService
     {
         string primaryEndpoint =
             $"/api/payparts/v1/info/operation?external_id={Uri.EscapeDataString(externalId)}&operation_id={Uri.EscapeDataString(operationId)}";
-        string fallbackEndpoint = $"/api/payparts/v1/operation/{Uri.EscapeDataString(operationId)}";
+        string fallbackEndpoint =
+            $"/api/payparts/v1/operation/{RequestTargetEncoding.EscapePathSegment(operationId, nameof(operationId))}";
         return await GetAsyncWithFallback<PayPartsOperationResult>(primaryEndpoint, fallbackEndpoint, cancellationToken);
     }
 

@@ -362,6 +362,36 @@ literal text — `already%2Fencoded` is sent as `already%252Fencoded`. Values ma
 characters, such as `external-order-id` or `2026-02-28`, are unchanged. List filter dates and
 pagination always use the invariant culture, so the ambient culture cannot alter a request URI.
 
+## Request Identifier Encoding
+
+Identifiers that the SDK places into the request **path** — plan, subscription, customer, card,
+payment, operation, and external IDs — follow the same rule: pass them **raw** and never pre-encode
+them. A query value and a path segment are different contexts, and each is encoded in its own
+context, so reserved characters stay data instead of becoming request-target structure.
+
+```csharp
+// Raw value: one path segment, no extra segment from '/', no query from '?', no fragment from '#'.
+await client.Subscriptions.GetPlanAsync("plan 7/8?x=1#z");
+// GET /api/subscriptions/v1/plans/plan%207%2F8%3Fx%3D1%23z
+```
+
+Because the SDK encodes exactly once, a pre-encoded identifier is treated as literal text —
+`already%2Fencoded` is sent as `already%252Fencoded`. An identifier made only of unreserved
+characters, such as `plan-123`, reaches the wire byte-for-byte unchanged.
+
+The identifiers `.` and `..` cannot be used and throw `ArgumentException` naming the parameter,
+before any request is sent:
+
+```csharp
+// throws ArgumentException (ParamName: "planId")
+await client.Subscriptions.GetPlanAsync("..");
+```
+
+They are rejected rather than encoded because `.` is an RFC 3986 unreserved character that
+percent-encoding leaves unchanged, and `System.Uri` removes exact dot segments while building the
+request. Sending them would silently address a different endpoint than the one you asked for. Every
+other identifier is preserved. This rule does not change any endpoint name or HTTP method.
+
 ## Webhook Signature Verification
 
 RozetkaPay signs every callback with the merchant password used for the payment operation and sends

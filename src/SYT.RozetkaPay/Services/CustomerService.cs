@@ -30,7 +30,8 @@ public class CustomerService : BaseService, ICustomerService
     public async Task<CustomerWalletResponse> GetCustomerWalletAsync(string customerId, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint = $"/api/customers/v1/wallet?external_id={Uri.EscapeDataString(customerId)}";
-        string fallbackEndpoint = $"/api/customers/v1/{Uri.EscapeDataString(customerId)}/wallet";
+        string fallbackEndpoint =
+            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}/wallet";
         return await GetAsyncWithFallback<CustomerWalletResponse>(primaryEndpoint, fallbackEndpoint, cancellationToken);
     }
 
@@ -45,7 +46,8 @@ public class CustomerService : BaseService, ICustomerService
     public async Task<AddCardToWalletResponse> AddCardToWalletAsync(string customerId, AddCardToWalletRequest request, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint = $"/api/customers/v1/wallet?external_id={Uri.EscapeDataString(customerId)}";
-        string fallbackEndpoint = $"/api/customers/v1/{Uri.EscapeDataString(customerId)}/cards";
+        string fallbackEndpoint =
+            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}/cards";
         return await PostAsyncWithFallback<AddCardToWalletRequest, AddCardToWalletResponse>(primaryEndpoint, fallbackEndpoint, request, cancellationToken);
     }
 
@@ -59,7 +61,9 @@ public class CustomerService : BaseService, ICustomerService
     /// <returns>Card deletion response</returns>
     public async Task<DeleteCardFromWalletResponse> DeletePaymentFromWalletAsync(string customerId, string cardId, CancellationToken cancellationToken = default)
     {
-        return await DeleteAsync<DeleteCardFromWalletResponse>($"/api/customers/v1/{customerId}/cards/{cardId}", cancellationToken);
+        string encodedCustomerId = RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId));
+        string encodedCardId = RequestTargetEncoding.EscapePathSegment(cardId, nameof(cardId));
+        return await DeleteAsync<DeleteCardFromWalletResponse>($"/api/customers/v1/{encodedCustomerId}/cards/{encodedCardId}", cancellationToken);
     }
 
     /// <summary>
@@ -74,7 +78,9 @@ public class CustomerService : BaseService, ICustomerService
     {
         string primaryEndpoint =
             $"/api/customers/v1/wallet/find?external_id={Uri.EscapeDataString(customerId)}&option_id={Uri.EscapeDataString(cardId)}";
-        string fallbackEndpoint = $"/api/customers/v1/{Uri.EscapeDataString(customerId)}/cards/{Uri.EscapeDataString(cardId)}";
+        string fallbackEndpoint =
+            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}"
+            + $"/cards/{RequestTargetEncoding.EscapePathSegment(cardId, nameof(cardId))}";
         return await GetAsyncWithFallback<WalletItemResponse>(primaryEndpoint, fallbackEndpoint, cancellationToken);
     }
 
@@ -90,7 +96,9 @@ public class CustomerService : BaseService, ICustomerService
     {
         string primaryEndpoint =
             $"/api/customers/v1/wallet/confirmation/status?external_id={Uri.EscapeDataString(customerId)}&option_id={Uri.EscapeDataString(cardId)}";
-        string fallbackEndpoint = $"/api/customers/v1/{Uri.EscapeDataString(customerId)}/cards/{Uri.EscapeDataString(cardId)}/confirmation";
+        string fallbackEndpoint =
+            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}"
+            + $"/cards/{RequestTargetEncoding.EscapePathSegment(cardId, nameof(cardId))}/confirmation";
         return await GetAsyncWithFallback<CardConfirmationStatusResponse>(primaryEndpoint, fallbackEndpoint, cancellationToken);
     }
 
@@ -105,7 +113,8 @@ public class CustomerService : BaseService, ICustomerService
     public async Task<SetDefaultCardResponse> SetDefaultCardAsync(string customerId, SetDefaultCardRequest request, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint = $"/api/customers/v1/wallet/settings/set?external_id={Uri.EscapeDataString(customerId)}";
-        string fallbackEndpoint = $"/api/customers/v1/{Uri.EscapeDataString(customerId)}/cards/default";
+        string fallbackEndpoint =
+            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}/cards/default";
         return await PostAsyncWithFallback<SetDefaultCardRequest, SetDefaultCardResponse>(primaryEndpoint, fallbackEndpoint, request, cancellationToken);
     }
 
@@ -118,6 +127,7 @@ public class CustomerService : BaseService, ICustomerService
     /// <returns>Customer cards response</returns>
     public async Task<CustomerCardsResponse> GetCustomerCardsAsync(string customerId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<CustomerCardsResponse>($"/api/customers/v1/{customerId}/cards", cancellationToken);
+        string encodedCustomerId = RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId));
+        return await GetAsync<CustomerCardsResponse>($"/api/customers/v1/{encodedCustomerId}/cards", cancellationToken);
     }
-} 
+}
