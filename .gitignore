@@ -1,10 +1,14 @@
 # macOS
 .DS_Store
 
-# IDE
+# IDE and agent-local state
 .idea/
 .idea.backup.*/
 .vscode/
+# Claude Code keeps its worktrees and local settings under the repository root.
+# A leading './' is not a gitignore pattern, so the directory has to be written
+# exactly like this to be ignored.
+.claude/
 *.suo
 *.user
 *.userosscache

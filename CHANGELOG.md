@@ -11,6 +11,36 @@ immediately before tagging a release (see the release process in `README.md`).
 ## [Unreleased]
 
 ### Added
+- Enforceable repository and build conventions (EXP-340). Compiler and analyzer settings are no longer
+  copy-pasted per project: a root `Directory.Build.props` declares `ImplicitUsings`, `Nullable`,
+  `TreatWarningsAsErrors`, `EnableNETAnalyzers`, `AnalysisLevel` and `EnforceCodeStyleInBuild` once, MSBuild
+  imports it into both `SYT.RozetkaPay` and `SYT.RozetkaPay.Tests` (verified by reading the *effective*
+  property values back from each project, not by the presence of the file), and the two now-redundant
+  `ImplicitUsings`/`Nullable` lines were removed from the project files. Because `TreatWarningsAsErrors` lives
+  in the build and not only on the CI command line, a plain `dotnet build -c Release` **without**
+  `-warnaserror` now fails on any warning — proven by a temporary `#warning` probe that breaks that exact
+  build and by the clean rebuild after it is removed. Both workflows keep passing `-warnaserror` as a visible
+  second belt. `AnalysisLevel` is deliberately `latest`, the level this code base satisfies with zero
+  warnings, and **no `NoWarn`, `WarningsNotAsErrors`, analyzer package or suppression is introduced**;
+  `latest-recommended` would add 66 pre-existing legacy API/perf diagnostics, which is a separate change.
+  A root `.editorconfig` fixes UTF-8, LF, final newline, trimmed trailing whitespace and indentation, and
+  states the C# style the code already uses, with every preference at `suggestion` or `silent` severity so it
+  guides new code instead of rewriting existing files: `dotnet format ... analyzers` and
+  `dotnet format ... style` both pass at `--severity warn`, no `.cs` file changed, and the known backlog of
+  227 `dotnet format whitespace` diagnostics in 15 legacy files is documented as outstanding rather than
+  hidden or silenced. `.gitignore` now really ignores `.claude/` — the previous `./.claude` spelling is not a
+  gitignore pattern and matched nothing, so Claude Code worktrees showed up as untracked noise in every
+  status — while the existing `.idea*`, `*.bak`, `artifacts*/`, `bin`/`obj`, `TestResults` and package-output
+  rules are preserved. Enforcing all of it, `scripts/verify-repository-hygiene.sh` fails the build if Git ever
+  starts tracking IDE/agent/build/package junk (enumerated NUL-safely via `git ls-files -z`, so paths with
+  spaces cannot slip past) and probes `git check-ignore` in both directions — the junk shapes must be ignored
+  and `.gitignore`, `.editorconfig`, `Directory.Build.props`, `.config/dotnet-tools.json`, `.github/**` and
+  `scripts/**` must stay visible. The verifier is read-only (it never writes, stages or deletes, and ignored
+  files in a working copy are explicitly not an error), takes no arguments, resolves the repository root
+  itself so it runs from any directory, and is executed by both `ci.yml` and `release.yml` immediately after
+  checkout, before restore, build and publish. Repository-maintainer concern only: no public API, runtime
+  behaviour, package content or dependency group changes, and the EXP-338/EXP-339 determinism, package,
+  Source Link and release guards are untouched.
 - Release-grade, independently verifiable NuGet package artifacts (EXP-339). The package now carries an
   original local `128x128` `PackageIcon` (`assets/package-icon.png`, committed next to its
   `assets/package-icon.svg` source) instead of shipping without one; it is an own SDK mark — a payment-link

@@ -30,6 +30,12 @@ jobs:
           # Full history is required so MinVer can compute the version.
           fetch-depth: 0
 
+      # Read-only guard, run before anything is restored or built: it fails if
+      # IDE/agent/build/package junk ever became tracked, and if the .gitignore
+      # rules that keep it untracked stopped matching. Cheap, so it runs first.
+      - name: Verify repository hygiene
+        run: scripts/verify-repository-hygiene.sh
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6.0.0
         with:
