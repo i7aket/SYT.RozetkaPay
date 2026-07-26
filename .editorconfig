@@ -1,0 +1,156 @@
+root = true
+
+# Editor and code-style contract for this repository.
+#
+# Scope: this file states the conventions new changes are expected to follow -
+# LF endings, UTF-8, indentation, and the C# style the existing code already
+# uses. It is deliberately not a mass-rewrite trigger: the C# preferences below
+# are kept at 'suggestion' or 'silent' severity, so they guide an editor and a
+# reviewer without turning the pre-existing whitespace backlog into build
+# errors. Analyzer categories are not disabled and no diagnostic is set to
+# 'none' here; warnings-as-errors and AnalysisLevel live in
+# Directory.Build.props.
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{cs,csx}]
+indent_style = space
+indent_size = 4
+tab_width = 4
+
+[*.{csproj,props,targets}]
+indent_style = space
+indent_size = 2
+
+[*.{json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.sh]
+indent_style = space
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cs,csx}]
+
+# Usings live above the namespace, in a single undivided block.
+#
+# 'dotnet_sort_system_directives_first' and 'dotnet_separate_import_directive_groups'
+# are deliberately NOT set. They are not severity-based preferences: setting
+# either one to any value switches on the imports fixer of 'dotnet format style',
+# which then demands a full alphabetical re-sort of the using block in 17
+# existing files. That is a .cs rewrite this ticket does not do, and it cannot be
+# lowered to 'suggestion' because these keys carry no severity. Ordering stays a
+# review convention (System first) until a ticket takes on the re-sort.
+csharp_using_directive_placement = outside_namespace:silent
+
+# Namespaces: file-scoped is preferred for new files, but only as a suggestion,
+# so the existing block-scoped files are not a build failure.
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# Accessibility is written out explicitly.
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
+csharp_preferred_modifier_order = public,private,protected,internal,file,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,required,volatile,async:suggestion
+
+# Braces and newlines: Allman, matching every existing file.
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+csharp_prefer_braces = true:suggestion
+
+# Indentation details.
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = false
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+
+# Spacing.
+csharp_space_after_cast = false
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_after_comma = true
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+
+# Wrapping.
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = false
+
+# 'var' is a free choice; neither form is pushed onto existing code.
+csharp_style_var_for_built_in_types = false:silent
+csharp_style_var_when_type_is_apparent = false:silent
+csharp_style_var_elsewhere = false:silent
+
+# Expression-bodied members are not imposed repository-wide.
+csharp_style_expression_bodied_methods = false:silent
+csharp_style_expression_bodied_constructors = false:silent
+csharp_style_expression_bodied_operators = false:silent
+csharp_style_expression_bodied_properties = true:silent
+csharp_style_expression_bodied_indexers = true:silent
+csharp_style_expression_bodied_accessors = true:silent
+csharp_style_expression_bodied_lambdas = true:silent
+csharp_style_expression_bodied_local_functions = false:silent
+
+# Modern language features: encouraged, never enforced.
+csharp_style_prefer_primary_constructors = false:silent
+dotnet_style_collection_initializer = true:silent
+dotnet_style_prefer_collection_expression = when_types_loosely_match:silent
+csharp_style_prefer_range_operator = true:silent
+csharp_style_prefer_index_operator = true:silent
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_throw_expression = true:silent
+csharp_style_prefer_null_check_over_type_check = true:silent
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_object_initializer = true:silent
+
+# Readonly/const hygiene, as guidance.
+dotnet_style_readonly_field = true:suggestion
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access = true:suggestion
+
+# Naming: interfaces start with 'I', types and members are PascalCase.
+dotnet_naming_rule.interfaces_start_with_i.symbols = interface_symbols
+dotnet_naming_rule.interfaces_start_with_i.style = prefixed_with_i
+dotnet_naming_rule.interfaces_start_with_i.severity = suggestion
+dotnet_naming_symbols.interface_symbols.applicable_kinds = interface
+dotnet_naming_symbols.interface_symbols.applicable_accessibilities = *
+dotnet_naming_style.prefixed_with_i.required_prefix = I
+dotnet_naming_style.prefixed_with_i.capitalization = pascal_case
+
+dotnet_naming_rule.types_are_pascal_case.symbols = type_symbols
+dotnet_naming_rule.types_are_pascal_case.style = pascal_case_style
+dotnet_naming_rule.types_are_pascal_case.severity = suggestion
+dotnet_naming_symbols.type_symbols.applicable_kinds = class,struct,enum,delegate
+dotnet_naming_symbols.type_symbols.applicable_accessibilities = *
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+dotnet_naming_rule.public_members_are_pascal_case.symbols = public_member_symbols
+dotnet_naming_rule.public_members_are_pascal_case.style = pascal_case_style
+dotnet_naming_rule.public_members_are_pascal_case.severity = suggestion
+dotnet_naming_symbols.public_member_symbols.applicable_kinds = property,method,event
+dotnet_naming_symbols.public_member_symbols.applicable_accessibilities = public,protected,protected_internal
+
+# A pre-existing whitespace backlog (227 'dotnet format whitespace' diagnostics
+# across 15 legacy files) is NOT fixed by this file. No severity is overridden to
+# hide it: the formatting rule IDE0055 keeps its default severity, which does not
+# reach warning, so the backlog stays visible in editors without failing the
+# build. 'dotnet format whitespace' is deliberately not a CI gate yet - claiming
+# one would mean rewriting those files, which is a separate change.

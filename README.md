@@ -99,25 +99,90 @@ raw response body. Treat the raw body as sensitive — the SDK never logs it. Se
 
 - SDK source: `src/SYT.RozetkaPay`
 - Tests: `tests/SYT.RozetkaPay.Tests`
+- Common build properties: `Directory.Build.props`
+- Code-style contract: `.editorconfig`
 - Continuous integration: `.github/workflows/ci.yml`
 - Release / publish: `.github/workflows/release.yml`
 - Changelog: `CHANGELOG.md`
+
+## Development and Repository Conventions
+
+The required .NET SDK is pinned by `global.json`; nothing else selects it.
+
+Compiler and analyzer settings are declared once, in the root
+`Directory.Build.props`, and MSBuild imports them into both projects — neither
+`.csproj` repeats them:
+
+| Property | Value |
+| --- | --- |
+| `ImplicitUsings` | `enable` |
+| `Nullable` | `enable` |
+| `TreatWarningsAsErrors` | `true` |
+| `EnableNETAnalyzers` | `true` |
+| `AnalysisLevel` | `latest` |
+| `EnforceCodeStyleInBuild` | `true` |
+
+Because `TreatWarningsAsErrors` lives there and not only on the CI command line,
+a plain local build already fails on any warning:
+
+```bash
+dotnet build SYT.RozetkaPay.sln -c Release   # no -warnaserror needed
+```
+
+Both workflows still pass `-warnaserror` explicitly; that is a deliberate second
+belt, not the source of the guarantee. `AnalysisLevel` is `latest` — the level
+this code base satisfies with zero warnings — and there are no `NoWarn` entries,
+no `WarningsNotAsErrors`, and no analyzer suppressions anywhere in the build.
+
+The root `.editorconfig` fixes UTF-8, LF endings, a final newline, trimmed
+trailing whitespace and indentation (4 spaces for C#, 2 for project, JSON and
+YAML files), plus the C# preferences the code already follows. Those preferences
+are kept at `suggestion` or `silent` severity on purpose, so they guide new code
+without rewriting existing files. Verify them with:
+
+```bash
+dotnet format SYT.RozetkaPay.sln analyzers --verify-no-changes --no-restore --severity warn
+dotnet format SYT.RozetkaPay.sln style --verify-no-changes --no-restore --severity warn
+```
+
+Both are green. `dotnet format whitespace` is **not** green and is not a CI gate:
+15 legacy files still carry 227 whitespace diagnostics. That backlog is known and
+untouched — reformatting them is a separate change, so do not read the two
+commands above as a claim that the whole tree is formatted.
+
+Repository hygiene has its own executable gate, run by both workflows right after
+checkout and reproducible locally:
+
+```bash
+scripts/verify-repository-hygiene.sh
+```
+
+It fails if Git ever starts tracking IDE, agent, build or package junk
+(`.DS_Store`, `.idea*`, `.claude/`, `.vscode/`, `bin/`, `obj/`, `TestResults/`,
+`artifacts*/`, `*.nupkg`, `*.snupkg`, `*.bak`, `*.user`, …), and it probes
+`git check-ignore` in both directions: those shapes must be ignored, while
+`.gitignore`, `.editorconfig`, `Directory.Build.props`, `.config/dotnet-tools.json`,
+`.github/**` and `scripts/**` must stay visible to Git. It is read-only — it never
+writes, stages or deletes anything, and ignored files sitting in your working copy
+are normal and are not an error.
 
 ## Continuous Integration
 
 Every pull request targeting `main`, and every push to `main`, runs the
 `Build & Test` workflow, which:
 
-1. Restores the pinned local tools (`.config/dotnet-tools.json`) and the solution.
-2. Builds in `Release` with warnings treated as errors and
+1. Verifies repository hygiene (`scripts/verify-repository-hygiene.sh`) before
+   anything is restored or built.
+2. Restores the pinned local tools (`.config/dotnet-tools.json`) and the solution.
+3. Builds in `Release` with warnings treated as errors and
    `-p:ContinuousIntegrationBuild=true`, so the produced symbols contain no
    machine-specific source root.
-3. Runs the full test suite on `net9.0` and `net10.0`.
-4. Rebuilds the same commit in a second, throwaway `git worktree` under a
+4. Runs the full test suite on `net9.0` and `net10.0`.
+5. Rebuilds the same commit in a second, throwaway `git worktree` under a
    different filesystem root and requires the `SYT.RozetkaPay.dll`, `.pdb` and
    `.xml` of both frameworks to be identical by SHA-256
    (`scripts/verify-deterministic-build.sh`).
-5. Packs the NuGet package and verifies the produced `.nupkg`/`.snupkg`
+6. Packs the NuGet package and verifies the produced `.nupkg`/`.snupkg`
    (`scripts/verify-package-artifacts.sh`).
 
 The artifact verifier inspects archive contents rather than file names. It proves the
@@ -200,7 +265,8 @@ Pushing the tag triggers the `Release NuGet` workflow, which:
 
 1. Validates that the tag is a well-formed `vX.Y.Z[-prerelease]` version and
    fails before publishing on a malformed tag.
-2. Confirms the tagged commit is reachable from `origin/main`.
+2. Runs the same `scripts/verify-repository-hygiene.sh` gate as the pull-request
+   workflow, then confirms the tagged commit is reachable from `origin/main`.
 3. Restores tools and the solution, builds (`-warnaserror`,
    `-p:ContinuousIntegrationBuild=true`), tests both target frameworks, proves the
    deterministic two-root rebuild, packs, and runs the **same**

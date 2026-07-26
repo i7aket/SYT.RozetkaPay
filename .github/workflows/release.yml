@@ -83,6 +83,12 @@ jobs:
           # version from the pushed tag.
           fetch-depth: 0
 
+      # The same read-only guard the pull-request workflow runs, so a tag
+      # release can never ship from a checkout with tracked junk or a broken
+      # ignore contract. Runs before restore, build and publish.
+      - name: Verify repository hygiene
+        run: scripts/verify-repository-hygiene.sh
+
       - name: Verify tagged commit belongs to main
         shell: bash
         run: |

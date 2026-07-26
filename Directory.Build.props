@@ -1,0 +1,37 @@
+<!--
+  Common compiler and analyzer settings for every project in this repository.
+
+  MSBuild imports the nearest Directory.Build.props found by walking upwards from
+  each project directory, so both SYT.RozetkaPay and SYT.RozetkaPay.Tests pick
+  these up without referencing this file. Defining them once here is what makes
+  the contract enforceable: a new project cannot silently opt out of nullable
+  reference types, analyzers, or warnings-as-errors by forgetting to copy a
+  property group.
+
+  TreatWarningsAsErrors is set here and not only on the CI command line, so a
+  plain 'dotnet build -c Release' reproduces the CI contract locally. Both
+  workflows still pass -warnaserror explicitly: that stays a visible,
+  belt-and-suspenders guarantee that does not depend on this file.
+
+  AnalysisLevel is 'latest' - the level the current code base actually satisfies
+  with zero warnings. 'latest-recommended' would add 66 pre-existing legacy
+  API/perf diagnostics that this file must not paper over: no NoWarn, no
+  WarningsNotAsErrors and no suppression belongs here.
+
+  Deliberately absent: TargetFramework(s) (each project declares its own),
+  package metadata and Source Link properties (they stay in the packable
+  project, where their meaning is local), and LangVersion (the pinned SDK in
+  global.json already determines the language version).
+-->
+<Project>
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

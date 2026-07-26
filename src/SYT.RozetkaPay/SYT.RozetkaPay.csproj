@@ -4,8 +4,6 @@
         <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
         <RootNamespace>SYT.RozetkaPay</RootNamespace>
         <AssemblyName>SYT.RozetkaPay</AssemblyName>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
         <PackageId>SYT.RozetkaPay</PackageId>
         <Title>SYT RozetkaPay SDK</Title>
         <MinVerTagPrefix>v</MinVerTagPrefix>
