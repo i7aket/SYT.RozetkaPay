@@ -1,6 +1,8 @@
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -313,6 +315,119 @@ public class RetryPolicyBehaviorTests
 
         Assert.True(delay >= TimeSpan.Zero);
         Assert.True(delay <= TimeSpan.FromMilliseconds(2500));
+    }
+
+    /// <summary>
+    /// EXP-341. Jitter is still plus/minus 25 percent around the already capped exponential delay, and
+    /// still never negative, now that the calculation reuses the runtime's shared random source.
+    /// </summary>
+    [Fact]
+    public void RetryPolicy_ExponentialWithJitter_ShouldStayWithinTwentyFivePercentOfTheCappedDelay()
+    {
+        RetryPolicy policy = new()
+        {
+            Enabled = true,
+            BaseDelay = TimeSpan.FromMilliseconds(1000),
+            MaxDelay = TimeSpan.FromMilliseconds(2000),
+            BackoffStrategy = BackoffStrategy.ExponentialWithJitter
+        };
+
+        // Attempt 2 is 1000 * 2^1 = 2000ms, which is exactly MaxDelay, so the capped base is known.
+        const double CappedMilliseconds = 2000;
+
+        bool sawBelow = false;
+        bool sawAbove = false;
+
+        for (int iteration = 0; iteration < 2000; iteration++)
+        {
+            double milliseconds = policy.CalculateDelay(2).TotalMilliseconds;
+
+            Assert.InRange(milliseconds, CappedMilliseconds * 0.75, CappedMilliseconds * 1.25);
+
+            sawBelow |= milliseconds < CappedMilliseconds;
+            sawAbove |= milliseconds > CappedMilliseconds;
+        }
+
+        // Jitter is still jitter: the value moves in both directions rather than collapsing to a constant.
+        Assert.True(sawBelow, "Jitter never produced a delay below the capped exponential delay.");
+        Assert.True(sawAbove, "Jitter never produced a delay above the capped exponential delay.");
+    }
+
+    /// <summary>
+    /// EXP-341. Concurrent callers share one random source, so the calculation has to be safe to call from
+    /// several threads and every value has to remain in range.
+    /// </summary>
+    [Fact]
+    public void RetryPolicy_ExponentialWithJitter_ShouldBeSafeUnderConcurrentCalls()
+    {
+        RetryPolicy policy = new()
+        {
+            Enabled = true,
+            BaseDelay = TimeSpan.FromMilliseconds(1000),
+            MaxDelay = TimeSpan.FromMilliseconds(2000),
+            BackoffStrategy = BackoffStrategy.ExponentialWithJitter
+        };
+
+        ConcurrentBag<double> observed = [];
+
+        Parallel.For(0, 4000, _ => observed.Add(policy.CalculateDelay(2).TotalMilliseconds));
+
+        Assert.Equal(4000, observed.Count);
+        Assert.All(observed, milliseconds => Assert.InRange(milliseconds, 1500, 2500));
+    }
+
+    /// <summary>
+    /// EXP-341 regression. The jitter calculation allocated a fresh <see cref="Random"/> on every retry
+    /// delay; it now reuses the process-wide thread-safe instance.
+    /// </summary>
+    /// <remarks>
+    /// The assertion is deliberately an order-of-magnitude one, not a literal zero and not a timing
+    /// measurement: a per-call <c>new Random()</c> costs tens of bytes each time, so 200 000 calls differ
+    /// by megabytes against a threshold of a few kilobytes. The loop is measured through a non-inlined
+    /// helper that is run once to warm up before the run that counts, and it contains no assertion, so
+    /// nothing the test itself does is attributed to the production code.
+    /// </remarks>
+    [Fact]
+    public void RetryPolicy_ExponentialWithJitter_ShouldNotAllocateARandomPerDelay()
+    {
+        const int Iterations = 200_000;
+
+        // A per-call `new Random()` allocates far more than this over 200 000 iterations - megabytes on
+        // both target frameworks - while a reused instance allocates nothing at all in this loop.
+        const long AllocationBudgetBytes = 64 * 1024;
+
+        RetryPolicy policy = new()
+        {
+            Enabled = true,
+            BaseDelay = TimeSpan.FromMilliseconds(1000),
+            MaxDelay = TimeSpan.FromMilliseconds(2000),
+            BackoffStrategy = BackoffStrategy.ExponentialWithJitter
+        };
+
+        _ = MeasureJitterAllocations(policy, iterations: 10_000);
+        long allocated = MeasureJitterAllocations(policy, Iterations);
+
+        Assert.True(
+            allocated <= AllocationBudgetBytes,
+            $"Jitter allocated {allocated} bytes over {Iterations} delay calculations, which is above the " +
+            $"{AllocationBudgetBytes}-byte budget. A new Random per calculation is the expected cause.");
+    }
+
+    /// <summary>
+    /// Bytes allocated on this thread by <paramref name="iterations"/> jitter calculations. Kept out of
+    /// the test body so the measured loop is a method of its own and no assertion runs inside it.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static long MeasureJitterAllocations(RetryPolicy policy, int iterations)
+    {
+        long before = GC.GetAllocatedBytesForCurrentThread();
+
+        for (int iteration = 0; iteration < iterations; iteration++)
+        {
+            _ = policy.CalculateDelay(2);
+        }
+
+        return GC.GetAllocatedBytesForCurrentThread() - before;
     }
 
     [Fact]

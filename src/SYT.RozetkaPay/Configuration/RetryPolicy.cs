@@ -113,10 +113,15 @@ public class RetryPolicy
 
         if (withJitter)
         {
-            // Add random jitter (±25% of the calculated delay)
+            // Add random jitter (±25% of the calculated delay).
+            //
+            // Random.Shared rather than a per-call `new Random()`: the old form allocated a fresh generator -
+            // and its internal state - on every retry delay, which is pure garbage on a path that can run for
+            // every attempt of every request. Random.Shared is the runtime's process-wide instance and is
+            // documented as thread-safe, so no lock, ThreadLocal or per-policy generator is needed. The
+            // formula, the ±25% band and the non-negative clamp are unchanged.
             double jitterRange = delay.TotalMilliseconds * 0.25;
-            Random random = new Random();
-            double jitter = (random.NextDouble() - 0.5) * 2 * jitterRange;
+            double jitter = (Random.Shared.NextDouble() - 0.5) * 2 * jitterRange;
             delay = TimeSpan.FromMilliseconds(Math.Max(0, delay.TotalMilliseconds + jitter));
         }
 

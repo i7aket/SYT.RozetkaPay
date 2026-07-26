@@ -347,6 +347,48 @@ immediately before tagging a release (see the release process in `README.md`).
   payment endpoint and exposes credentials and card data to interception.
 
 ### Fixed
+- **A shared `HttpClient`'s default headers are no longer rewritten, and jitter no longer allocates a
+  generator per retry delay** (EXP-341). Two independent defects on hot, shared state:
+  - **`BaseService` wrote authentication onto the client.** Its constructor assigned
+    `DefaultRequestHeaders.Authorization`, cleared and rebuilt `DefaultRequestHeaders.UserAgent`, and
+    removed/re-added `X-ON-BEHALF-OF` and `X-CUSTOMER-AUTH`. `RozetkaPayClient` builds every service over
+    **one** client and a consumer may own and share that client too, so the last service constructed decided
+    what *every* service sent, construction order was observable, and the writes happened on state other
+    requests were reading concurrently. A consumer's own `Authorization`, user agent or headers of those
+    names were silently overwritten or, when the SDK had no value configured, silently **removed**.
+  - **The credentials, user agent and optional headers are now request-scoped.** They are parsed and
+    snapshotted once during construction — the user agent *and* both optional values through one throwaway
+    scratch `HttpRequestMessage`, so the header grammar is still what validates them and an invalid user
+    agent, or an `OnBehalfOf` / `CustomerAuth` value carrying an illegal CR/LF, still fails *while the
+    service is constructed* rather than on the first call — and attached by a single private request factory
+    that every authenticated transport uses: `GET`, JSON `POST`, `POST` accepting `204`/empty, `PATCH`,
+    bodyless `POST`, `DELETE` with and without a JSON body. The factory runs **inside** the retry attempt, so
+    each retry's fresh `HttpRequestMessage` carries the same values. Blank stays absent, as before.
+    `BaseService` no longer reads, adds to or removes from the authenticated client's
+    `DefaultRequestHeaders` at all, and `ApplyOptionalHeader` is gone. The SDK's one remaining look at a
+    default header collection is deliberate and unchanged: `PaymentInstructionService` still *reads* a
+    caller-supplied **decline** client's defaults in order to reject one that carries credentials (EXP-354),
+    and still never writes to it.
+  - **Precedence without duplication, and no rewriting of consumer state.** A header set on the request wins
+    outright over a caller default of the same name — `HttpClient` merges defaults only for names the request
+    does not already carry — so the wire carries exactly one `Authorization`, one `User-Agent` and one value
+    of each configured optional header, proven per transport family and under concurrent calls from two
+    services with different logins, user agents and optional values over one client. Conversely, when the SDK
+    configuration names no optional value the caller's own default of that name is left in place and keeps
+    flowing, and an unrelated caller default is untouched throughout. The caller's whole default header
+    collection is compared against a full pre-construction snapshot before, during and after calls.
+  - **Jitter reuses the runtime's shared random source.** `RetryPolicy.CalculateDelay` allocated a
+    `new Random()` on every `ExponentialWithJitter` delay; it now uses the thread-safe process-wide
+    `Random.Shared`. A warmed allocation-counting regression test measures 14.4 MB over 200 000 calculations
+    on the old code against a 64 KB budget on the new one. No lock, `ThreadLocal<Random>`, cryptographic RNG
+    or seed injection was added, and the formula, the ±25 % band and the non-negative clamp are unchanged.
+  - **Unchanged:** public API, dependencies, target frameworks, retry semantics (enablement, attempt counts,
+    retriable statuses and exceptions, `Retry-After` handling, cancellation, logging, error mapping), and the
+    EXP-354 decline design — `DeclineAsync` stays unauthenticated on its own non-redirecting client, never
+    goes through the authenticated request factory, still rejects caller-supplied decline clients that carry
+    credential-bearing defaults, and still never mutates or disposes a caller-supplied one. Service
+    construction does still set `BaseAddress` and `Timeout` on the supplied client; only the header
+    collection is now left alone.
 - **The SDK's own service logging no longer contains any caller value from the request target** (EXP-359).
   This closes the legacy gap that the EXP-354 entry under **Changed** correctly described as out of its scope:
   most pre-existing operations logged their **real** request target, so any identifier the caller put in a path

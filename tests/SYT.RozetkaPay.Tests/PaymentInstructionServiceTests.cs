@@ -721,20 +721,40 @@ public class PaymentInstructionServiceTests
 
     /// <summary>
     /// The ordinary constructor must be safe with no caller action: it builds its own credential-free,
-    /// non-redirecting client, and the authenticated client it was handed keeps its credential.
+    /// non-redirecting client, and it leaves the authenticated client the caller handed it alone.
     /// </summary>
+    /// <remarks>
+    /// EXP-341 moved the credential off <see cref="HttpClient.DefaultRequestHeaders"/> and onto each
+    /// request, so the authenticated client's defaults must come out of construction exactly as the caller
+    /// supplied them - here, empty - while <c>CreateAsync</c> still sends the configured credentials.
+    /// </remarks>
     [Fact]
-    public void DefaultConstructor_ShouldNotCopyCredentialsOntoTheDeclineClient()
+    public async Task DefaultConstructor_ShouldNotMutateTheAuthenticatedClientOrTheDeclineClient()
     {
         RozetkaPayConfiguration configuration = Exp354TestContext.WithCustomerAuth();
-        using HttpClient authenticated = Exp354TestContext.CreateHttpClient(RecordingHandler.Json("{}"));
+        RecordingHandler handler = RecordingHandler.Json("{}");
+        using HttpClient authenticated = Exp354TestContext.CreateHttpClient(handler);
+
+        Assert.Empty(authenticated.DefaultRequestHeaders);
 
         PaymentInstructionService service = new(configuration, authenticated);
         using (service as IDisposable)
         {
-            // The authenticated client keeps exactly what BaseService configured on it.
-            Assert.NotNull(authenticated.DefaultRequestHeaders.Authorization);
-            Assert.True(authenticated.DefaultRequestHeaders.Contains("X-CUSTOMER-AUTH"));
+            // Construction installed nothing on the caller's collection.
+            Assert.Empty(authenticated.DefaultRequestHeaders);
+
+            await service.CreateAsync(MinimalRequest());
+
+            // The credentials still go on the wire - they are simply request-scoped now.
+            Exp354Request recorded = Assert.Single(handler.Requests);
+            Assert.Equal(
+                [configuration.GetBasicAuthenticationHeader()],
+                recorded.Headers["Authorization"]);
+            Assert.Equal([Exp354TestContext.CustomerAuthPlaceholder], recorded.Headers["X-CUSTOMER-AUTH"]);
+            Assert.Equal([configuration.UserAgent], recorded.Headers["User-Agent"]);
+
+            // And still nothing was written to the client the caller owns.
+            Assert.Empty(authenticated.DefaultRequestHeaders);
         }
     }
 

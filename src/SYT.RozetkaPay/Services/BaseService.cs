@@ -47,6 +47,16 @@ public abstract class BaseService
     private const string RedactedEndpointLogLabel = "[redacted]";
 
     /// <summary>
+    /// Optional request header naming the merchant a partner integration acts for.
+    /// </summary>
+    private const string OnBehalfOfHeaderName = "X-ON-BEHALF-OF";
+
+    /// <summary>
+    /// Optional request header carrying the customer authentication token.
+    /// </summary>
+    private const string CustomerAuthHeaderName = "X-CUSTOMER-AUTH";
+
+    /// <summary>
     /// SDK configuration used by service requests.
     /// </summary>
     protected readonly RozetkaPayConfiguration Configuration;
@@ -54,6 +64,11 @@ public abstract class BaseService
     /// <summary>
     /// HTTP client used to call RozetkaPay API.
     /// </summary>
+    /// <remarks>
+    /// The client may be owned by the consumer and shared with other services. Its
+    /// <see cref="HttpClient.DefaultRequestHeaders"/> are never read or written here: authentication and
+    /// the SDK-configured headers go on each request instead.
+    /// </remarks>
     protected readonly HttpClient HttpClient;
 
     /// <summary>
@@ -62,8 +77,45 @@ public abstract class BaseService
     protected readonly ILogger? Logger;
 
     /// <summary>
+    /// Basic credentials derived from the configuration once, attached to every authenticated request.
+    /// </summary>
+    private readonly AuthenticationHeaderValue _authorization;
+
+    /// <summary>
+    /// The configured user agent, already parsed into the header grammar. Empty when the configuration
+    /// names none, in which case the SDK adds no user agent and whatever the caller's client carries is
+    /// left to flow.
+    /// </summary>
+    private readonly ProductInfoHeaderValue[] _userAgent;
+
+    /// <summary>
+    /// Snapshotted <c>X-ON-BEHALF-OF</c>, or null when the configuration names none.
+    /// </summary>
+    private readonly string? _onBehalfOf;
+
+    /// <summary>
+    /// Snapshotted <c>X-CUSTOMER-AUTH</c>, or null when the configuration names none.
+    /// </summary>
+    private readonly string? _customerAuth;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BaseService"/> class.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Authentication and the SDK-configured headers are parsed and snapshotted here, and then attached to
+    /// each <see cref="HttpRequestMessage"/> the service builds. They are deliberately <b>not</b> installed
+    /// on <see cref="HttpClient.DefaultRequestHeaders"/>: one client is shared by every service of a
+    /// <see cref="RozetkaPayClient"/> and may also be owned and used by the consumer, so writing to that
+    /// collection made construction order observable, let one service's configuration overwrite another's,
+    /// and wrote to shared mutable state while requests were in flight.
+    /// </para>
+    /// <para>
+    /// Snapshotting also keeps the long-standing behaviour that a later edit to the mutable
+    /// <paramref name="configuration"/> object cannot silently change the credentials a request carries.
+    /// <see cref="RozetkaPayConfiguration.RetryPolicy"/> is read per call and is unaffected.
+    /// </para>
+    /// </remarks>
     /// <param name="configuration">SDK configuration.</param>
     /// <param name="httpClient">HTTP client.</param>
     /// <param name="logger">Optional logger.</param>
@@ -73,19 +125,122 @@ public abstract class BaseService
         HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         Logger = logger;
 
-        // Configure HttpClient
+        // Endpoint and timeout only. Header state belongs to the request, below.
         HttpClient.BaseAddress = new Uri(Configuration.BaseUrl);
         HttpClient.Timeout = Configuration.Timeout;
-        HttpClient.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(Configuration.GetBasicAuthenticationHeader());
 
-        HttpClient.DefaultRequestHeaders.UserAgent.Clear();
-        if (!string.IsNullOrWhiteSpace(Configuration.UserAgent))
+        _authorization = AuthenticationHeaderValue.Parse(Configuration.GetBasicAuthenticationHeader());
+
+        // One throwaway message is the scratch header collection for all three configured values. It is
+        // disposed here and never retained, and the caller's client is not touched.
+        using (HttpRequestMessage scratch = new())
         {
-            HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Configuration.UserAgent);
+            _userAgent = ParseUserAgent(scratch, Configuration.UserAgent);
+            _onBehalfOf = ValidateOptionalHeader(scratch, OnBehalfOfHeaderName, Configuration.OnBehalfOf);
+            _customerAuth = ValidateOptionalHeader(scratch, CustomerAuthHeaderName, Configuration.CustomerAuth);
+        }
+    }
+
+    /// <summary>
+    /// Parse the configured user agent into immutable header values without touching any client.
+    /// </summary>
+    /// <remarks>
+    /// The full user-agent grammar - several products, comments - is only implemented by the header parser
+    /// itself, so <paramref name="scratch"/> supplies a real request-header collection to parse into and the
+    /// resulting entries are copied out. Parsing here rather than at send time keeps the existing contract
+    /// that an invalid user agent fails while the service is being constructed instead of on the first HTTP
+    /// call.
+    /// </remarks>
+    /// <param name="scratch">Throwaway message owned and disposed by the constructor.</param>
+    /// <param name="userAgent">Configured user agent. Blank means the SDK adds none.</param>
+    /// <exception cref="FormatException">The configured user agent is not valid header syntax.</exception>
+    private static ProductInfoHeaderValue[] ParseUserAgent(HttpRequestMessage scratch, string? userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent))
+        {
+            return [];
         }
 
-        ApplyOptionalHeader("X-ON-BEHALF-OF", Configuration.OnBehalfOf);
-        ApplyOptionalHeader("X-CUSTOMER-AUTH", Configuration.CustomerAuth);
+        scratch.Headers.UserAgent.ParseAdd(userAgent);
+        return [.. scratch.Headers.UserAgent];
+    }
+
+    /// <summary>
+    /// Validate an optional header value and return what the SDK will send, or null when the configuration
+    /// names none. Blank is treated as absent, exactly as before.
+    /// </summary>
+    /// <remarks>
+    /// The value is added to <paramref name="scratch"/> for the same reason the user agent is parsed there:
+    /// until EXP-341 these headers were installed with <c>DefaultRequestHeaders.Add</c>, which validated
+    /// them during construction. Snapshotting must not turn a rejected value - a bare CR or LF that is not a
+    /// legal continuation, say - into a failure on the first request instead. The check is the header
+    /// grammar itself rather than a hand-written scan, so it cannot drift from what the request will accept.
+    /// </remarks>
+    /// <param name="scratch">Throwaway message owned and disposed by the constructor.</param>
+    /// <param name="headerName">Header the value will be sent under.</param>
+    /// <param name="headerValue">Configured value. Blank means the SDK sends nothing under this name.</param>
+    /// <exception cref="FormatException">The configured value is not a valid header value.</exception>
+    private static string? ValidateOptionalHeader(
+        HttpRequestMessage scratch,
+        string headerName,
+        string? headerValue)
+    {
+        if (string.IsNullOrWhiteSpace(headerValue))
+        {
+            return null;
+        }
+
+        scratch.Headers.Add(headerName, headerValue);
+        return headerValue;
+    }
+
+    /// <summary>
+    /// The single place an authenticated <see cref="HttpRequestMessage"/> is built. Every transport helper
+    /// in this class goes through it, inside the retry attempt, so no verb can be left carrying the shared
+    /// client's default headers instead of its own.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Nothing here reads, adds to or removes from <see cref="HttpClient.DefaultRequestHeaders"/>. A header
+    /// set on the request wins outright over a caller default of the same name -
+    /// <see cref="HttpClient"/> merges defaults only for names the request does not already carry, and
+    /// never concatenates the two - so the wire carries exactly one Authorization, one user agent and one
+    /// value of each configured optional header.
+    /// </para>
+    /// <para>
+    /// The converse is deliberate too: when the configuration names no optional value, the caller's own
+    /// default of that name is left alone rather than stripped. The SDK does not own that collection.
+    /// </para>
+    /// <para>
+    /// The values themselves are immutable and shared across requests and threads, so no per-request
+    /// copying is needed.
+    /// </para>
+    /// </remarks>
+    /// <param name="method">HTTP verb of the official operation. Never substituted.</param>
+    /// <param name="endpoint">Request target actually sent, including any query values.</param>
+    /// <returns>A fresh request owned by the caller, which disposes it together with any content.</returns>
+    private HttpRequestMessage CreateAuthenticatedRequest(HttpMethod method, string endpoint)
+    {
+        HttpRequestMessage request = new(method, endpoint);
+
+        request.Headers.Authorization = _authorization;
+
+        foreach (ProductInfoHeaderValue userAgent in _userAgent)
+        {
+            request.Headers.UserAgent.Add(userAgent);
+        }
+
+        if (_onBehalfOf is not null)
+        {
+            request.Headers.Add(OnBehalfOfHeaderName, _onBehalfOf);
+        }
+
+        if (_customerAuth is not null)
+        {
+            request.Headers.Add(CustomerAuthHeaderName, _customerAuth);
+        }
+
+        return request;
     }
 
     /// <summary>
@@ -119,8 +274,8 @@ public abstract class BaseService
             Logger?.LogInformation("Making GET request to {Endpoint}", endpointForLogging);
 
             // Built inside the attempt: an HttpRequestMessage is single-use, so a retry must never reuse the
-            // one a previous attempt sent.
-            using HttpRequestMessage message = new(HttpMethod.Get, endpoint);
+            // one a previous attempt sent. Each fresh message carries the same snapshotted headers.
+            using HttpRequestMessage message = CreateAuthenticatedRequest(HttpMethod.Get, endpoint);
 
             // The response owns its content, and on a real handler the connection behind it, until it is
             // disposed. The body is read into a string first, so disposing here releases both - including
@@ -230,10 +385,8 @@ public abstract class BaseService
 
             // Body and request are built inside the attempt and owned by it: disposing the request disposes
             // the content, and a retry always sends a freshly built request rather than a spent one.
-            using HttpRequestMessage message = new(HttpMethod.Post, endpoint)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
+            using HttpRequestMessage message = CreateAuthenticatedRequest(HttpMethod.Post, endpoint);
+            message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             using HttpResponseMessage response = await HttpClient
                 .SendAsync(message, cancellationToken)
@@ -351,11 +504,9 @@ public abstract class BaseService
             string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
             Logger?.LogInformation("Making POST request to {Endpoint}", endpointForLogging);
 
-            // Same per-attempt ownership as the plain POST helper.
-            using HttpRequestMessage message = new(HttpMethod.Post, endpoint)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
+            // Same per-attempt ownership and per-request headers as the plain POST helper.
+            using HttpRequestMessage message = CreateAuthenticatedRequest(HttpMethod.Post, endpoint);
+            message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             using HttpResponseMessage response = await HttpClient
                 .SendAsync(message, cancellationToken)
@@ -477,8 +628,8 @@ public abstract class BaseService
             string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
             Logger?.LogInformation("Making PATCH request to {Endpoint}", endpointForLogging);
 
-            StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-            using HttpRequestMessage message = new(HttpMethod.Patch, endpoint) { Content = content };
+            using HttpRequestMessage message = CreateAuthenticatedRequest(HttpMethod.Patch, endpoint);
+            message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // The response owns its content, and on a real handler the connection behind it, until it is
             // disposed. The body is read into a string first, so disposing here releases both - including
@@ -521,7 +672,7 @@ public abstract class BaseService
         {
             Logger?.LogInformation("Making POST request to {Endpoint}", endpointForLogging);
 
-            using HttpRequestMessage request = new(HttpMethod.Post, endpoint);
+            using HttpRequestMessage request = CreateAuthenticatedRequest(HttpMethod.Post, endpoint);
 
             // Disposed on every path, including when HandleErrorResponse throws below.
             using HttpResponseMessage response = await HttpClient
@@ -616,7 +767,7 @@ public abstract class BaseService
         {
             Logger?.LogInformation("Making DELETE request to {Endpoint}", endpointForLogging);
 
-            using HttpRequestMessage request = new(HttpMethod.Delete, endpoint);
+            using HttpRequestMessage request = CreateAuthenticatedRequest(HttpMethod.Delete, endpoint);
             if (content is not null)
             {
                 request.Content = new StringContent(content, Encoding.UTF8, "application/json");
@@ -1070,15 +1221,6 @@ public abstract class BaseService
         }
 
         return default!;
-    }
-
-    private void ApplyOptionalHeader(string headerName, string? headerValue)
-    {
-        HttpClient.DefaultRequestHeaders.Remove(headerName);
-        if (!string.IsNullOrWhiteSpace(headerValue))
-        {
-            HttpClient.DefaultRequestHeaders.Add(headerName, headerValue);
-        }
     }
 
     /// <summary>

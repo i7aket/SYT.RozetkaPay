@@ -324,7 +324,9 @@ HTTP response, so its class name alone does not make it retriable.
 A repeat is the **same** request: same verb, same concrete request target including query values, same body
 bytes, same content type, same authentication mode. The SDK never changes route, verb, or body between
 attempts, and never follows a redirect it was told to return. Each attempt builds and releases its own
-`HttpRequestMessage` and `HttpResponseMessage`, so nothing is carried over from a spent attempt.
+`HttpRequestMessage` and `HttpResponseMessage`, so nothing is carried over from a spent attempt — and each
+fresh message is given the same authentication and configured headers, rather than picking them up from the
+client's defaults (see [Supplying your own `HttpClient`](#supplying-your-own-httpclient)).
 
 #### How long it waits
 
@@ -337,6 +339,12 @@ strategies:
 | `Linear` | `BaseDelay × n` |
 | `Exponential` | `BaseDelay × 2^(n-1)`, capped at `MaxDelay` |
 | `ExponentialWithJitter` (default) | as `Exponential`, ±25 % random jitter |
+
+Jitter is drawn from the runtime's shared random source (`Random.Shared`). Once that shared instance has
+been initialized by the runtime, computing a delay no longer allocates a new generator per retry — the
+previous implementation constructed one on every jittered delay — and `Random.Shared` is documented as safe
+to use from multiple threads, so concurrent retries can compute delays at the same time. The band is ±25 % of
+the already capped delay, and the result is never negative.
 
 A `429` is the one case where the provider decides. If the response carries a `Retry-After` header the SDK
 honours it **instead of** the backoff:
@@ -572,6 +580,31 @@ using IRozetkaPayClient client = RozetkaPayClient.Create(
 
 var paymentInfo = await client.Payments.GetInfoAsync("external-order-id");
 ```
+
+### Supplying your own `HttpClient`
+
+You can hand the SDK a client you own — one from your own `IHttpClientFactory`, one you share with other
+services, or one wired to a test handler.
+
+**The SDK does not write to its `DefaultRequestHeaders`.** Authentication (`Authorization`), the configured
+`User-Agent`, and the optional `X-ON-BEHALF-OF` / `X-CUSTOMER-AUTH` headers are attached to each
+`HttpRequestMessage` the SDK builds, and rebuilt for every retry attempt. That means:
+
+- **your defaults survive.** A header you set on the client — including your own `Authorization` or
+  `User-Agent` — is still there after construction and after every call. Nothing is cleared or removed;
+- **no duplicates on the wire.** For a name the SDK sets on the request, the request value wins outright:
+  `HttpClient` merges a default only for names the request does not already carry. The provider sees exactly
+  one `Authorization` and one `User-Agent`;
+- **your headers still flow.** Any name the SDK does *not* set — tracing, correlation, anything of your
+  own — is merged onto the request as usual. If you configure no `OnBehalfOf` or `CustomerAuth`, a default of
+  that name on your client is left alone and keeps being sent;
+- **services do not fight over the client.** `RozetkaPayClient` builds every service over one client; two
+  services configured differently over the same client each send their own credentials, including
+  concurrently. Construction order does not change what anything sends.
+
+Two properties are still set on a client you supply: `BaseAddress` and `Timeout` are taken from the SDK
+configuration, so the endpoint and the timeout cannot disagree with the validated options. Everything else,
+including the client's lifetime, stays yours — `RozetkaPayClient` disposes only a client it created itself.
 
 ## Request Encoding
 
