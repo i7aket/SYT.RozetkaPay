@@ -12,9 +12,10 @@ namespace SYT.RozetkaPay.Services;
 /// <remarks>
 /// <para>
 /// The two official operations differ in authentication, so this service holds two HTTP clients.
-/// <see cref="CreateAsync"/> uses the ordinary authenticated client configured by
-/// <see cref="BaseService"/>. <see cref="DeclineAsync"/> uses a second client that carries no
-/// RozetkaPay credential and whose primary handler has <c>AllowAutoRedirect = false</c>.
+/// <see cref="CreateAsync"/> uses the ordinary authenticated transport of <see cref="BaseService"/>, which
+/// attaches the configured credentials to each request it builds. <see cref="DeclineAsync"/> uses a second
+/// client that carries no RozetkaPay credential and whose primary handler has
+/// <c>AllowAutoRedirect = false</c>; its requests never go through the authenticated request factory.
 /// </para>
 /// <para>
 /// The split is not a convenience. <see cref="HttpClient"/> has no per-request redirect switch, so the
