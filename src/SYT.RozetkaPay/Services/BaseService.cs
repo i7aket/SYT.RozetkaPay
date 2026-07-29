@@ -73,6 +73,18 @@ public abstract class BaseService
     protected readonly HttpClient HttpClient;
 
     /// <summary>
+    /// The configured endpoint, resolved once. Request targets are built against this rather than
+    /// against <see cref="HttpClient.BaseAddress"/>, which belongs to whoever owns the client.
+    /// </summary>
+    private readonly Uri _baseAddress;
+
+    /// <summary>
+    /// The configured per-request timeout, applied through a linked token rather than through
+    /// <see cref="HttpClient.Timeout"/>.
+    /// </summary>
+    private readonly TimeSpan _timeout;
+
+    /// <summary>
     /// Optional logger instance.
     /// </summary>
     protected readonly ILogger? Logger;
@@ -138,9 +150,13 @@ public abstract class BaseService
                 nameof(configuration));
         }
 
-        // Endpoint and timeout only. Header state belongs to the request, below.
-        HttpClient.BaseAddress = new Uri(Configuration.BaseUrl);
-        HttpClient.Timeout = Configuration.Timeout;
+        // Snapshotted, never written to the client. The client may belong to the consumer and be
+        // pooled by IHttpClientFactory, and HttpClient forbids both writes once it has served a
+        // request - so the previous form silently reconfigured someone else's client at best, and
+        // threw InvalidOperationException at worst. Each request now carries its own absolute target
+        // and its own timeout.
+        _baseAddress = new Uri(Configuration.BaseUrl);
+        _timeout = Configuration.Timeout;
 
         _authorization = AuthenticationHeaderValue.Parse(Configuration.GetBasicAuthenticationHeader());
 
@@ -234,7 +250,7 @@ public abstract class BaseService
     /// <returns>A fresh request owned by the caller, which disposes it together with any content.</returns>
     private HttpRequestMessage CreateAuthenticatedRequest(HttpMethod method, string endpoint)
     {
-        HttpRequestMessage request = new(method, endpoint);
+        HttpRequestMessage request = new(method, new Uri(_baseAddress, endpoint));
 
         request.Headers.Authorization = _authorization;
 
@@ -254,6 +270,67 @@ public abstract class BaseService
         }
 
         return request;
+    }
+
+    /// <summary>
+    /// Send a request under the configured timeout, keeping cancellation the caller's.
+    /// </summary>
+    /// <remarks>
+    /// The timeout is a token linked to the caller's, so a cancelled caller and an expired timeout both
+    /// surface as <see cref="OperationCanceledException"/> carrying the <em>linked</em> token. That would
+    /// break the contract EXP-357 established: the caller's own token must reach the caller, so that
+    /// <c>catch (OperationCanceledException e) when (e.CancellationToken == myToken)</c> keeps working.
+    /// When the caller cancelled, the caller's token is thrown; a timeout is left exactly as it was.
+    /// </remarks>
+    private async Task<HttpResponseMessage> SendUnderTimeoutAsync(
+        HttpRequestMessage request,
+        CancellationToken timeoutToken,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await HttpClient.SendAsync(request, timeoutToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Read a response body under the same timeout, with the same cancellation translation.
+    /// </summary>
+    private static async Task<string> ReadBodyUnderTimeoutAsync(
+        HttpResponseMessage response,
+        CancellationToken timeoutToken,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await response.Content.ReadAsStringAsync(timeoutToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// A token that trips at the configured timeout, linked to the caller's own.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="HttpClient.Timeout"/> is not used: it belongs to whoever owns the client, and cannot
+    /// be set at all once that client has served a request. Linking keeps cancellation the caller's:
+    /// when the caller cancels, the exception carries the caller's token, and only a genuine timeout
+    /// carries this one.
+    /// </remarks>
+    private CancellationTokenSource CreateTimeoutScope(CancellationToken cancellationToken)
+    {
+        CancellationTokenSource scope = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        scope.CancelAfter(_timeout);
+        return scope;
     }
 
     /// <summary>
@@ -293,10 +370,15 @@ public abstract class BaseService
             // The response owns its content, and on a real handler the connection behind it, until it is
             // disposed. The body is read into a string first, so disposing here releases both - including
             // when HandleErrorResponse throws on the way out.
-            using HttpResponseMessage response = await HttpClient
-                .SendAsync(message, cancellationToken)
-                .ConfigureAwait(false);
-            string content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            using CancellationTokenSource timeoutScope = CreateTimeoutScope(cancellationToken);
+            using HttpResponseMessage response = await SendUnderTimeoutAsync(
+                message,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
+            string content = await ReadBodyUnderTimeoutAsync(
+                response,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
 
@@ -354,10 +436,15 @@ public abstract class BaseService
             using HttpRequestMessage message = CreateAuthenticatedRequest(HttpMethod.Post, endpoint);
             message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            using HttpResponseMessage response = await HttpClient
-                .SendAsync(message, cancellationToken)
-                .ConfigureAwait(false);
-            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            using CancellationTokenSource timeoutScope = CreateTimeoutScope(cancellationToken);
+            using HttpResponseMessage response = await SendUnderTimeoutAsync(
+                message,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
+            string responseContent = await ReadBodyUnderTimeoutAsync(
+                response,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
 
@@ -420,10 +507,15 @@ public abstract class BaseService
             using HttpRequestMessage message = CreateAuthenticatedRequest(HttpMethod.Post, endpoint);
             message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            using HttpResponseMessage response = await HttpClient
-                .SendAsync(message, cancellationToken)
-                .ConfigureAwait(false);
-            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            using CancellationTokenSource timeoutScope = CreateTimeoutScope(cancellationToken);
+            using HttpResponseMessage response = await SendUnderTimeoutAsync(
+                message,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
+            string responseContent = await ReadBodyUnderTimeoutAsync(
+                response,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
 
@@ -488,10 +580,15 @@ public abstract class BaseService
             // The response owns its content, and on a real handler the connection behind it, until it is
             // disposed. The body is read into a string first, so disposing here releases both - including
             // when HandleErrorResponse throws on the way out.
-            using HttpResponseMessage response = await HttpClient
-                .SendAsync(message, cancellationToken)
-                .ConfigureAwait(false);
-            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            using CancellationTokenSource timeoutScope = CreateTimeoutScope(cancellationToken);
+            using HttpResponseMessage response = await SendUnderTimeoutAsync(
+                message,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
+            string responseContent = await ReadBodyUnderTimeoutAsync(
+                response,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
 
@@ -535,10 +632,15 @@ public abstract class BaseService
             using HttpRequestMessage request = CreateAuthenticatedRequest(HttpMethod.Post, endpoint);
 
             // Disposed on every path, including when HandleErrorResponse throws below.
-            using HttpResponseMessage response = await HttpClient
-                .SendAsync(request, cancellationToken)
-                .ConfigureAwait(false);
-            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            using CancellationTokenSource timeoutScope = CreateTimeoutScope(cancellationToken);
+            using HttpResponseMessage response = await SendUnderTimeoutAsync(
+                request,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
+            string responseContent = await ReadBodyUnderTimeoutAsync(
+                response,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
 
@@ -634,10 +736,15 @@ public abstract class BaseService
             }
 
             // Disposed on every path, including when HandleErrorResponse throws below.
-            using HttpResponseMessage response = await HttpClient
-                .SendAsync(request, cancellationToken)
-                .ConfigureAwait(false);
-            string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            using CancellationTokenSource timeoutScope = CreateTimeoutScope(cancellationToken);
+            using HttpResponseMessage response = await SendUnderTimeoutAsync(
+                request,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
+            string responseContent = await ReadBodyUnderTimeoutAsync(
+                response,
+                timeoutScope.Token,
+                cancellationToken).ConfigureAwait(false);
 
             Logger?.LogDebug("Response status: {StatusCode}", response.StatusCode);
 
