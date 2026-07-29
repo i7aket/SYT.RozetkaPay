@@ -341,12 +341,12 @@ internal static class OpenApiOperationManifest
             Body = ContractBodyPolicy.Json,
             Auth = ContractAuthPolicy.Authenticated,
             ExpectedBodyFragments =
-                ["\"batch_external_id\":\"op13-batch-confirm\"", "\"external_id\":\"op13-batch-payment\""],
+                ["\"batch_external_id\":\"op13-batch-confirm\"", "\"currency\":\"UAH\""],
             InvokeAsync = (host, token) => host.BatchPayments.ConfirmBatchPaymentAsync(
                 new ConfirmBatchPaymentRequest
                 {
                     BatchExternalId = "op13-batch-confirm",
-                    ExternalId = "op13-batch-payment"
+                    Currency = "UAH"
                 },
                 token)
         },
@@ -361,9 +361,9 @@ internal static class OpenApiOperationManifest
             ExpectedPathAndQuery = "/api/payments/batch/v1/cancel",
             Body = ContractBodyPolicy.Json,
             Auth = ContractAuthPolicy.Authenticated,
-            ExpectedBodyFragments = ["\"external_id\":\"op14-batch-cancel\""],
+            ExpectedBodyFragments = ["\"batch_external_id\":\"op14-batch-cancel\""],
             InvokeAsync = (host, token) => host.BatchPayments.CancelBatchPaymentAsync(
-                new CancelBatchPaymentRequest { ExternalId = "op14-batch-cancel" },
+                new CancelBatchPaymentRequest { BatchExternalId = "op14-batch-cancel" },
                 token)
         }
     ];

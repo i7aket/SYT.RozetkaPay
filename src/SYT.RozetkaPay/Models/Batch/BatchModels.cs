@@ -35,7 +35,7 @@ public class CreateBatchPaymentRequest
     /// </summary>
     [Required]
     [JsonPropertyName("mode")]
-    public string Mode { get; set; } = "direct";
+    public BatchPaymentMode Mode { get; set; } = BatchPaymentMode.Direct;
 
     /// <summary>
     /// Additional data transmitted with the batch payment request
@@ -68,6 +68,30 @@ public class CreateBatchPaymentRequest
     [Required]
     [JsonPropertyName("batch_external_id")]
     public string BatchExternalId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// URL the payer is returned to after a successful checkout.
+    /// </summary>
+    [JsonPropertyName("result_url_success")]
+    public string? ResultUrlSuccess { get; set; }
+
+    /// <summary>
+    /// URL the payer is returned to after a failed checkout.
+    /// </summary>
+    [JsonPropertyName("result_url_fail")]
+    public string? ResultUrlFail { get; set; }
+
+    /// <summary>
+    /// How long the hosted checkout stays open, in seconds.
+    /// </summary>
+    [JsonPropertyName("checkout_ttl")]
+    public decimal? CheckoutTtl { get; set; }
+
+    /// <summary>
+    /// Campaign the batch belongs to.
+    /// </summary>
+    [JsonPropertyName("campaign_name")]
+    public CampaignName? CampaignName { get; set; }
 }
 
 /// <summary>
@@ -231,11 +255,11 @@ public class ConfirmBatchPaymentRequest
     public List<BatchConfirmOrder>? Orders { get; set; }
 
     /// <summary>
-    /// External identifier from the merchant, one per batch. Unique within the project
+    /// Batch currency. Required by the operation, and absent from this body until now.
     /// </summary>
     [Required]
-    [JsonPropertyName("external_id")]
-    public string ExternalId { get; set; } = string.Empty;
+    [JsonPropertyName("currency")]
+    public string Currency { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -283,11 +307,11 @@ public class CancelBatchPaymentRequest
     public string? Payload { get; set; }
 
     /// <summary>
-    /// External identifier from the merchant, one per batch. Unique within the project
+    /// External identifier of the batch to cancel.
     /// </summary>
     [Required]
-    [JsonPropertyName("external_id")]
-    public string ExternalId { get; set; } = string.Empty;
+    [JsonPropertyName("batch_external_id")]
+    public string BatchExternalId { get; set; } = string.Empty;
 }
 
 /// <summary>
