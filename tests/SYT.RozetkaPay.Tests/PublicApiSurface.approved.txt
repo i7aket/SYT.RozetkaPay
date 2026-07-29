@@ -1,0 +1,3104 @@
+SYT.RozetkaPay.Configuration.BackoffStrategy
+    BackoffStrategy Exponential
+    BackoffStrategy ExponentialWithJitter
+    BackoffStrategy Fixed
+    BackoffStrategy Linear
+    Int32 value__
+SYT.RozetkaPay.Configuration.RetryPolicy
+    .ctor()
+    BackoffStrategy BackoffStrategy { get; set; }
+    Boolean Enabled { get; set; }
+    Boolean ShouldRetry(Exception exception)
+    Boolean ShouldRetry(HttpStatusCode statusCode)
+    HashSet<HttpStatusCode> RetriableStatusCodes { get; set; }
+    Int32 MaxRetryAttempts { get; set; }
+    RetryPolicy Default { get; }
+    RetryPolicy None { get; }
+    RetryPolicy Standard { get; }
+    TimeSpan BaseDelay { get; set; }
+    TimeSpan CalculateDelay(Int32 attempt)
+    TimeSpan MaxDelay { get; set; }
+SYT.RozetkaPay.Configuration.RozetkaPayConfiguration
+    .ctor()
+    Boolean IsValid()
+    RetryPolicy RetryPolicy { get; set; }
+    RozetkaPayTransportSecurity TransportSecurity { get; set; }
+    String BaseUrl { get; set; }
+    String CustomerAuth { get; set; }
+    String GetBasicAuthenticationHeader()
+    String Login { get; set; }
+    String OnBehalfOf { get; set; }
+    String Password { get; set; }
+    String UserAgent { get; set; }
+    TimeSpan Timeout { get; set; }
+SYT.RozetkaPay.Configuration.RozetkaPayEndpointPolicy
+    Boolean IsAcceptable(String endpoint, RozetkaPayTransportSecurity transportSecurity)
+    String DescribeRejection(String settingName)
+SYT.RozetkaPay.Configuration.RozetkaPayEnvironment
+    Int32 value__
+    RozetkaPayEnvironment Production
+    RozetkaPayEnvironment Sandbox
+SYT.RozetkaPay.Configuration.RozetkaPayOptions
+    .ctor()
+    RetryPolicy RetryPolicy { get; set; }
+    RozetkaPayEnvironment Environment { get; set; }
+    RozetkaPayTransportSecurity TransportSecurity { get; set; }
+    String BaseUrl { get; set; }
+    String CustomerAuth { get; set; }
+    String Login { get; set; }
+    String OnBehalfOf { get; set; }
+    String Password { get; set; }
+    String ProductionBaseUrl
+    String SandboxBaseUrl
+    String SectionName
+    String UserAgent { get; set; }
+    TimeSpan Timeout { get; set; }
+SYT.RozetkaPay.Configuration.RozetkaPayTransportSecurity
+    Int32 value__
+    RozetkaPayTransportSecurity AllowClearTextLoopback
+    RozetkaPayTransportSecurity HttpsOnly
+SYT.RozetkaPay.Converters.FlexibleDateTimeConverter
+    .ctor()
+    DateTime Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.FlexibleDecimalConverter
+    .ctor()
+    Decimal? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, Decimal? value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.FlexibleDecimalConverterNonNullable
+    .ctor()
+    Decimal Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, Decimal value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.FlexibleInt32Converter
+    .ctor()
+    Int32 Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, Int32 value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.FlexibleInt64Converter
+    .ctor()
+    Int64 Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, Int64 value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.FlexibleNullableInt32Converter
+    .ctor()
+    Int32? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, Int32? value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.FlexibleNullableInt64Converter
+    .ctor()
+    Int64? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, Int64? value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.NullableFlexibleDateTimeConverter
+    .ctor()
+    DateTime? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+SYT.RozetkaPay.Exceptions.RozetkaPayApiError
+    .ctor(HttpStatusCode statusCode, String code, String requestId, String rawBody)
+    HttpStatusCode StatusCode { get; }
+    String Code { get; }
+    String RawBody { get; }
+    String RequestId { get; }
+SYT.RozetkaPay.Exceptions.RozetkaPayAuthorizationException
+    .ctor()
+    .ctor(String message)
+    .ctor(String message, Exception innerException)
+SYT.RozetkaPay.Exceptions.RozetkaPayException
+    .ctor()
+    .ctor(String message)
+    .ctor(String message, Exception innerException)
+    RozetkaPayApiError ApiError { get; }
+SYT.RozetkaPay.Exceptions.RozetkaPayNotFoundException
+    .ctor()
+    .ctor(String message)
+    .ctor(String message, Exception innerException)
+SYT.RozetkaPay.Exceptions.RozetkaPayRateLimitException
+    .ctor()
+    .ctor(String message)
+    .ctor(String message, Exception innerException)
+SYT.RozetkaPay.Exceptions.RozetkaPayValidationException
+    .ctor()
+    .ctor(String message)
+    .ctor(String message, Exception innerException)
+SYT.RozetkaPay.Extensions.ServiceCollectionExtensions
+    IServiceCollection AddRozetkaPay(IServiceCollection services, Action<RozetkaPayOptions> configure)
+    IServiceCollection AddRozetkaPay(IServiceCollection services, IConfiguration configuration)
+    IServiceCollection AddRozetkaPay(IServiceCollection services, RozetkaPayConfiguration configuration)
+    IServiceCollection AddRozetkaPay(IServiceCollection services, String login, String password, String baseUrl)
+SYT.RozetkaPay.IRozetkaPayClient
+    IAlternativePaymentService AlternativePayments { get; }
+    IBatchPaymentService BatchPayments { get; }
+    ICustomerService Customers { get; }
+    IFinMonService FinMon { get; }
+    IInStorePaymentService InStorePayments { get; }
+    IMerchantService Merchants { get; }
+    IPartnerService Partners { get; }
+    IPayPartsService PayParts { get; }
+    IPaymentInstructionService PaymentInstructions { get; }
+    IPaymentService Payments { get; }
+    IPayoutService Payouts { get; }
+    IReportService Reports { get; }
+    ISubscriptionService Subscriptions { get; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentCallbackOperation
+    AlternativePaymentCallbackOperation Create
+    AlternativePaymentCallbackOperation Refund
+    Int32 value__
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentCallbackResendResponse
+    .ctor()
+    String Message { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentCustomerDetails
+    .ctor()
+    AlternativePaymentMethod PaymentMethod { get; set; }
+    String Address { get; set; }
+    String City { get; set; }
+    String Country { get; set; }
+    String PostalCode { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentInfo
+    .ctor()
+    Decimal? Amount { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethod
+    .ctor()
+    AlternativePaymentMethodType? Type { get; set; }
+    BlikRequestAlternativePaymentMethod Blik { get; set; }
+    Boolean IsActive { get; set; }
+    String Code { get; set; }
+    String LogoUrl { get; set; }
+    String Name { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethodInfo
+    .ctor()
+    Boolean IsActive { get; set; }
+    String Code { get; set; }
+    String LogoUrl { get; set; }
+    String Name { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethodType
+    AlternativePaymentMethodType Blik
+    AlternativePaymentMethodType BlikPaylater
+    AlternativePaymentMethodType Leasing
+    Int32 value__
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethodsResponse
+    .ctor()
+    List<AlternativePaymentMethodInfo> Methods { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationDetails
+    .ctor()
+    AlternativePaymentOperationType? Method { get; set; }
+    Boolean ActionRequired { get; set; }
+    Boolean OneStage { get; set; }
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    OperationStatus? Status { get; set; }
+    ResponseCode? StatusCode { get; set; }
+    String AuthCode { get; set; }
+    String BankName { get; set; }
+    String BillingOrderId { get; set; }
+    String Currency { get; set; }
+    String GatewayOrderId { get; set; }
+    String OperationId { get; set; }
+    String Payload { get; set; }
+    String PaymentMethodType { get; set; }
+    String RRN { get; set; }
+    String ReceiptUrl { get; set; }
+    String StatusDescription { get; set; }
+    String TransactionId { get; set; }
+    UserAction Action { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationResponse
+    .ctor()
+    AlternativePaymentOperationDetails Details { get; set; }
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String PaymentMethod { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationResult
+    .ctor()
+    AlternativePaymentOperationDetails Details { get; set; }
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String PaymentMethod { get; set; }
+    String Status { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationType
+    AlternativePaymentOperationType Create
+    Int32 value__
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationsResponse
+    .ctor()
+    Int32? Count { get; set; }
+    Int32? Total { get; set; }
+    List<AlternativePaymentOperationResult> Operations { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationsResult
+    .ctor()
+    Boolean? Purchased { get; set; }
+    Boolean? Refunded { get; set; }
+    CustomerInfo Customer { get; set; }
+    Int32? Count { get; set; }
+    Int32? Total { get; set; }
+    List<AlternativePaymentOperationDetails> PurchaseDetails { get; set; }
+    List<AlternativePaymentOperationDetails> RefundDetails { get; set; }
+    List<AlternativePaymentOperationResult> Operations { get; set; }
+    String Amount { get; set; }
+    String AmountRefunded { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentProduct
+    .ctor()
+    String ImageUrl { get; set; }
+    String TaxCategory { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentProvider
+    AlternativePaymentProvider Imoje
+    AlternativePaymentProvider LeaseLink
+    AlternativePaymentProvider Przelewy24
+    AlternativePaymentProvider Santander
+    Int32 value__
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentResponse
+    .ctor()
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String PaymentMethod { get; set; }
+    String PaymentUrl { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentStatusResponse
+    .ctor()
+    String Id { get; set; }
+    String Status { get; set; }
+    String StatusDetails { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.BlikRequestAlternativePaymentMethod
+    .ctor()
+    String BlikCode { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.CreateAlternativePayment
+    .ctor()
+    AlternativePaymentCustomerDetails Customer { get; set; }
+    AlternativePaymentProvider Provider { get; set; }
+    Decimal Amount { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    List<AlternativePaymentProduct> Products { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+    String ResultUrl { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.GetAlternativePaymentOperationsRequest
+    .ctor()
+    Int32? Limit { get; set; }
+    Int32? Offset { get; set; }
+    String DateFrom { get; set; }
+    String DateTo { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.RefundAlternativePaymentRequest
+    .ctor()
+    Decimal? Amount { get; set; }
+    String ExternalId { get; set; }
+    String ExternalRefundId { get; set; }
+    String Reason { get; set; }
+SYT.RozetkaPay.Models.AlternativePayments.ResendAlternativePaymentCallbackRequest
+    .ctor()
+    AlternativePaymentCallbackOperation? Operation { get; set; }
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchConfirmOrder
+    .ctor()
+    Decimal? Amount { get; set; }
+    String ApiKey { get; set; }
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchCustomer
+    .ctor()
+    BrowserFingerprint Fingerprint { get; set; }
+    PaymentMethod PaymentMethod { get; set; }
+    String Address { get; set; }
+    String City { get; set; }
+    String Country { get; set; }
+    String Email { get; set; }
+    String ExternalId { get; set; }
+    String FirstName { get; set; }
+    String LastName { get; set; }
+    String Locale { get; set; }
+    String Patronym { get; set; }
+    String Phone { get; set; }
+    String PostalCode { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchCustomerRequestUserDetails
+    .ctor()
+    BrowserFingerprint Fingerprint { get; set; }
+    CheckoutColorMode? ColorMode { get; set; }
+    CustomerCheckoutLocale? Locale { get; set; }
+    CustomerRequestPaymentMethod PaymentMethod { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchDetails
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    String AuthCode { get; set; }
+    String BankName { get; set; }
+    String Comment { get; set; }
+    String Currency { get; set; }
+    String Mid { get; set; }
+    String Payload { get; set; }
+    String Rrn { get; set; }
+    String TerminalName { get; set; }
+    String Tid { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchFee
+    .ctor()
+    Decimal? Amount { get; set; }
+    Decimal? Rate { get; set; }
+    String Currency { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchOrder
+    .ctor()
+    Boolean? InitRecurrent { get; set; }
+    Decimal Amount { get; set; }
+    List<Product> Products { get; set; }
+    String AccountToRefill { get; set; }
+    String ApiKey { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchOrderDetail
+    .ctor()
+    BatchMethodType? Method { get; set; }
+    Decimal? Amount { get; set; }
+    FeeDetails Fee { get; set; }
+    OperationStatus? Status { get; set; }
+    ResponseCode? StatusCode { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String OperationId { get; set; }
+    String Payload { get; set; }
+    String RecipientIban { get; set; }
+    String RecurrentId { get; set; }
+    String StatusDescription { get; set; }
+    String TransactionId { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchOrderDetails
+    .ctor()
+    BatchFee Fee { get; set; }
+    Decimal? Amount { get; set; }
+    Int32? StatusCode { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Method { get; set; }
+    String OperationId { get; set; }
+    String Status { get; set; }
+    String StatusDescription { get; set; }
+    String TransactionId { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchPaymentMode
+    BatchPaymentMode Direct
+    BatchPaymentMode Hosted
+    Int32 value__
+SYT.RozetkaPay.Models.Batch.BatchPaymentOperationResult
+    .ctor()
+    BatchDetails BatchDetails { get; set; }
+    Boolean ActionRequired { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    List<BatchOrderDetail> OrderDetails { get; set; }
+    ResultPaymentMethod PaymentMethod { get; set; }
+    String BatchExternalId { get; set; }
+    String Id { get; set; }
+    String ReceiptUrl { get; set; }
+    UserAction Action { get; set; }
+SYT.RozetkaPay.Models.Batch.BatchPaymentResponse
+    .ctor()
+    BatchDetails BatchDetails { get; set; }
+    Boolean? ActionRequired { get; set; }
+    List<BatchOrderDetails> OrderDetails { get; set; }
+    PaymentMethodResponse PaymentMethod { get; set; }
+    String BatchExternalId { get; set; }
+    String Id { get; set; }
+    String ReceiptUrl { get; set; }
+    UserAction Action { get; set; }
+SYT.RozetkaPay.Models.Batch.CancelBatchPaymentRequest
+    .ctor()
+    String BatchExternalId { get; set; }
+    String CallbackUrl { get; set; }
+    String Payload { get; set; }
+SYT.RozetkaPay.Models.Batch.ConfirmBatchPaymentRequest
+    .ctor()
+    List<BatchConfirmOrder> Orders { get; set; }
+    String BatchExternalId { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Payload { get; set; }
+SYT.RozetkaPay.Models.Batch.CreateBatchPaymentRequest
+    .ctor()
+    BatchCustomer Customer { get; set; }
+    BatchPaymentMode Mode { get; set; }
+    Boolean Confirm { get; set; }
+    CampaignName? CampaignName { get; set; }
+    Decimal? CheckoutTtl { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    List<BatchOrder> Orders { get; set; }
+    String BatchExternalId { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Payload { get; set; }
+    String ResultUrl { get; set; }
+    String ResultUrlFail { get; set; }
+    String ResultUrlSuccess { get; set; }
+SYT.RozetkaPay.Models.Batch.PaymentMethodResponse
+    .ctor()
+    String Brand { get; set; }
+    String MaskedCard { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Common.ActionType
+    ActionType Url
+    Int32 value__
+SYT.RozetkaPay.Models.Common.BaseRequestUserDetails
+    .ctor()
+    String Address { get; set; }
+    String City { get; set; }
+    String Country { get; set; }
+    String Email { get; set; }
+    String ExternalId { get; set; }
+    String FirstName { get; set; }
+    String LastName { get; set; }
+    String Patronym { get; set; }
+    String Phone { get; set; }
+    String PostalCode { get; set; }
+SYT.RozetkaPay.Models.Common.BatchMethodType
+    BatchMethodType Cancel
+    BatchMethodType Confirm
+    BatchMethodType Create
+    BatchMethodType Refund
+    Int32 value__
+SYT.RozetkaPay.Models.Common.BrowserFingerprint
+    .ctor()
+    String BrowserAcceptHeader { get; set; }
+    String BrowserColorDepth { get; set; }
+    String BrowserIpAddress { get; set; }
+    String BrowserJavaEnabled { get; set; }
+    String BrowserLanguage { get; set; }
+    String BrowserScreenHeight { get; set; }
+    String BrowserScreenWidth { get; set; }
+    String BrowserTimeZone { get; set; }
+    String BrowserTimeZoneOffset { get; set; }
+    String BrowserUserAgent { get; set; }
+SYT.RozetkaPay.Models.Common.CampaignName
+    CampaignName DiiaCard
+    CampaignName RCard
+    Int32 value__
+SYT.RozetkaPay.Models.Common.CheckoutColorMode
+    CheckoutColorMode Dark
+    CheckoutColorMode White
+    Int32 value__
+SYT.RozetkaPay.Models.Common.Customer
+    .ctor()
+    String BrowserUserAgent { get; set; }
+    String Email { get; set; }
+    String FirstName { get; set; }
+    String IpAddress { get; set; }
+    String LastName { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.Common.CustomerCheckoutLocale
+    CustomerCheckoutLocale EN
+    CustomerCheckoutLocale PL
+    CustomerCheckoutLocale UK
+    Int32 value__
+SYT.RozetkaPay.Models.Common.CustomerDecryptedApplePayRequestPaymentMethod
+    .ctor()
+    Boolean? Use3dsFlow { get; set; }
+    String ApplicationExpirationDate { get; set; }
+    String ApplicationPrimaryAccountNumber { get; set; }
+    String CurrencyCode { get; set; }
+    String DeviceManufacturerIdentifier { get; set; }
+    String EciIndicator { get; set; }
+    String EphemeralPublicKey { get; set; }
+    String OnlinePaymentCryptogram { get; set; }
+    String PublicKeyHash { get; set; }
+    String TransactionId { get; set; }
+SYT.RozetkaPay.Models.Common.CustomerDecryptedGooglePayRequestPaymentMethod
+    .ctor()
+    Boolean? Use3dsFlow { get; set; }
+    Int32? ExpMonth { get; set; }
+    Int32? ExpYear { get; set; }
+    String AuthMethod { get; set; }
+    String Cryptogram { get; set; }
+    String EciIndicator { get; set; }
+    String GatewayMerchantId { get; set; }
+    String MessageExpiration { get; set; }
+    String MessageId { get; set; }
+    String Pan { get; set; }
+    String PaymentMethod { get; set; }
+    String ProtocolVersion { get; set; }
+SYT.RozetkaPay.Models.Common.DefaultResponse
+    .ctor()
+    String Message { get; set; }
+SYT.RozetkaPay.Models.Common.ErrorResponse
+    .ctor()
+    ErrorType? Type { get; set; }
+    ResponseCode? Code { get; set; }
+    String ErrorId { get; set; }
+    String Message { get; set; }
+    String Param { get; set; }
+    String PaymentId { get; set; }
+SYT.RozetkaPay.Models.Common.ErrorType
+    ErrorType ApiError
+    ErrorType CustomerError
+    ErrorType InvalidRequestError
+    ErrorType PaymentError
+    ErrorType PaymentMethodError
+    ErrorType PaymentSettingsError
+    Int32 value__
+SYT.RozetkaPay.Models.Common.FeeDetails
+    .ctor()
+    Decimal? Amount { get; set; }
+    Decimal? Rate { get; set; }
+    String Currency { get; set; }
+SYT.RozetkaPay.Models.Common.FeeItem
+    .ctor()
+    Decimal? Fix { get; set; }
+    Decimal? Max { get; set; }
+    Decimal? Min { get; set; }
+    Decimal? Percent { get; set; }
+SYT.RozetkaPay.Models.Common.Fiscalization
+    .ctor()
+    Int32? StatusCode { get; set; }
+    String FiscalId { get; set; }
+    String FiscalUrl { get; set; }
+    String Status { get; set; }
+    String StatusDescription { get; set; }
+SYT.RozetkaPay.Models.Common.MetadataLimitsAttribute
+    .ctor()
+    Int32 MaxEntries
+    Int32 MaxKeyLength
+    Int32 MaxValueLength
+SYT.RozetkaPay.Models.Common.OperationStatus
+    Int32 value__
+    OperationStatus Failure
+    OperationStatus Init
+    OperationStatus Pending
+    OperationStatus Success
+SYT.RozetkaPay.Models.Common.OperationType
+    Int32 value__
+    OperationType Cancel
+    OperationType Confirm
+    OperationType Lookup
+    OperationType Payment
+    OperationType Recurrent
+    OperationType Refund
+SYT.RozetkaPay.Models.Common.PartnersFeeDetails
+    .ctor()
+    FeeItem InnerFee { get; set; }
+    FeeItem OuterFee { get; set; }
+SYT.RozetkaPay.Models.Common.PartnersTransactionDetails
+    .ctor()
+    String CardMask { get; set; }
+    String MerchantEntityId { get; set; }
+    String MerchantFeeAmount { get; set; }
+    String MerchantOrderId { get; set; }
+    String Method { get; set; }
+    String OrderDescription { get; set; }
+    String OrderId { get; set; }
+    String PayWay { get; set; }
+    String PaymentAmount { get; set; }
+    String PaymentOriginalAmount { get; set; }
+    String PaymentRecipientAmount { get; set; }
+    String ProcessedAt { get; set; }
+    String RecipientCardMask { get; set; }
+    String Status { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Common.PayPartsPaymentMethod
+    .ctor()
+    CustomerCCTokenRequestPaymentMethod CcToken { get; set; }
+    PayPartsCardPaymentMethod Card { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Common.PaymentMethodType
+    Int32 value__
+    PaymentMethodType ApplePay
+    PaymentMethodType CCNumber
+    PaymentMethodType CCToken
+    PaymentMethodType Card
+    PaymentMethodType GooglePay
+    PaymentMethodType Wallet
+SYT.RozetkaPay.Models.Common.PaymentMode
+    Int32 value__
+    PaymentMode Direct
+    PaymentMode ExpressCheckout
+    PaymentMode Hosted
+SYT.RozetkaPay.Models.Common.Product
+    .ctor()
+    Decimal? Price { get; set; }
+    Int32? Quantity { get; set; }
+    Int32? TaxGroup { get; set; }
+    String Category { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String Id { get; set; }
+    String Image { get; set; }
+    String Name { get; set; }
+    String NetAmount { get; set; }
+    String Sku { get; set; }
+    String Url { get; set; }
+    String VatAmount { get; set; }
+SYT.RozetkaPay.Models.Common.RecipientIbanRequestPaymentMethod
+    .ctor()
+    String Iban { get; set; }
+SYT.RozetkaPay.Models.Common.ResponseCode
+    Int32 value__
+    ResponseCode AccessError
+    ResponseCode AccessNotAllowed
+    ResponseCode AccountNumberAndPhonePassed
+    ResponseCode AcsServiceUnavailable
+    ResponseCode ActionAlreadyDone
+    ResponseCode ActionNotAllowed
+    ResponseCode AdditionalInformationIsPending
+    ResponseCode AgreementsServiceUnavailable
+    ResponseCode AmountWasSuccessfullyBlocked
+    ResponseCode AntiFraudCheck
+    ResponseCode AuthorizationError
+    ResponseCode AuthorizationFailed
+    ResponseCode BalancesLimitation
+    ResponseCode BankIsNotSupported
+    ResponseCode BankingApplicationIsNotInstalled
+    ResponseCode CallbackUrlMissing
+    ResponseCode CancelSuccessful
+    ResponseCode CancelTransfer
+    ResponseCode CardBinNotFound
+    ResponseCode CardBranchDailyLimitReached
+    ResponseCode CardBranchIsBlocked
+    ResponseCode CardExpired
+    ResponseCode CardHasConstraints
+    ResponseCode CardIsLostOrStolen
+    ResponseCode CardNotFound
+    ResponseCode CardNotSupported
+    ResponseCode CardTypeIsNotSupported
+    ResponseCode CardVerificationRequired
+    ResponseCode ChargebackFailed
+    ResponseCode ChargebackSuccessful
+    ResponseCode CompletionLimitReached
+    ResponseCode ConfirmAmountCannotBeMoreThanTheTransactionAmount
+    ResponseCode ConfirmRequired
+    ResponseCode ConfirmationRequired
+    ResponseCode ConfirmationTimeout
+    ResponseCode ContractWasSignedOnClientSide
+    ResponseCode CountryNotSupported
+    ResponseCode CreditLimitExceeded
+    ResponseCode CurrencyRateNotFound
+    ResponseCode CustomerAuthNotFound
+    ResponseCode CustomerAuthTokenExpiredOrInvalid
+    ResponseCode CustomerEmailNotAllowed
+    ResponseCode CustomerIdNotPassed
+    ResponseCode CustomerProfileNotFound
+    ResponseCode CvvIsRequired
+    ResponseCode DailyCardUsageLimitReached
+    ResponseCode DataNotFound
+    ResponseCode EntityAgreementNotFound
+    ResponseCode EntityBlocked
+    ResponseCode EntityContractTerminated
+    ResponseCode EntityNotActive
+    ResponseCode EntitySuspended
+    ResponseCode ExpiredOrInvalidToken
+    ResponseCode FailedAsPartOfFailedBatch
+    ResponseCode FailedToCreateTransaction
+    ResponseCode FailedToFetchRecipientDataFromDiia
+    ResponseCode FailedToFinishTransaction
+    ResponseCode FailedToLoadWallet
+    ResponseCode FailedToSendSms
+    ResponseCode FailedToVerifyCard
+    ResponseCode FeeNotFound
+    ResponseCode FinmonPayerValidationFailed
+    ResponseCode FinmonRecipientValidationFailed
+    ResponseCode FinmonValidationFailed
+    ResponseCode FreeBankDetailsLimit
+    ResponseCode HoldCancelledByBank
+    ResponseCode IncorrectRefundSumOrCurrency
+    ResponseCode InsufficientFunds
+    ResponseCode InsufficientFundsForRefund
+    ResponseCode InternalError
+    ResponseCode InvalidApplePayToken
+    ResponseCode InvalidCardData
+    ResponseCode InvalidCardToken
+    ResponseCode InvalidCurrency
+    ResponseCode InvalidData
+    ResponseCode InvalidGooglePayToken
+    ResponseCode InvalidOperation
+    ResponseCode InvalidPhoneNumber
+    ResponseCode InvalidRecipientName
+    ResponseCode InvalidRequestBody
+    ResponseCode InvalidToken
+    ResponseCode InvalidTransactionAmount
+    ResponseCode InvalidTransactionStatus
+    ResponseCode InvalidTransactionType
+    ResponseCode InvalidVerificationCode
+    ResponseCode MissedPayoutMethodData
+    ResponseCode MissingRoute
+    ResponseCode NoDiscountFound
+    ResponseCode OperationNotAllowed
+    ResponseCode OperationNotFound
+    ResponseCode OrderCanceled
+    ResponseCode OrderExpired
+    ResponseCode OrderIsDuplicated
+    ResponseCode PartnerAccountCheckFailed
+    ResponseCode PartnerAccountNotFound
+    ResponseCode PayerCardError
+    ResponseCode PaymentCardHasInvalidStatus
+    ResponseCode PaymentFlowNotSupported
+    ResponseCode PaymentMethodAlreadyConfirmed
+    ResponseCode PaymentMethodNotAllowed
+    ResponseCode PaymentMethodNotFound
+    ResponseCode PaymentMethodVerificationFailed
+    ResponseCode PaymentProviderFailure
+    ResponseCode PaymentSettingsNotFound
+    ResponseCode PaymentSystemNotSupported
+    ResponseCode PaymentWasRefunded
+    ResponseCode Pending
+    ResponseCode PinDataRequired
+    ResponseCode PinTriesExceeded
+    ResponseCode PlanNotActive
+    ResponseCode PlanNotFound
+    ResponseCode PlanProjectMissing
+    ResponseCode PreauthNotAllowed
+    ResponseCode PublicKeyNotFound
+    ResponseCode ReachedTheLimitOfAttemptsForIp
+    ResponseCode ReceiverCardError
+    ResponseCode ReceiverInfoError
+    ResponseCode RecipientPaymentMethodNotFound
+    ResponseCode RecurrentNotFound
+    ResponseCode RecurringTransactionsNotAllowed
+    ResponseCode RefundIsCancelledByInitiator
+    ResponseCode RefundIsCancelledBySystem
+    ResponseCode RefundPending
+    ResponseCode RefundPeriodIsExpired
+    ResponseCode RefundSuccessful
+    ResponseCode RefundTransactionBankDailyLimitExceeded
+    ResponseCode RejectedByBank
+    ResponseCode RepresentmentFailed
+    ResponseCode RepresentmentSuccessful
+    ResponseCode RequestFailed
+    ResponseCode RestrictedIp
+    ResponseCode SenderInfoRequired
+    ResponseCode SessionExpired
+    ResponseCode SimultaneousOpenOrdersNotSupportedByBank
+    ResponseCode StoreIsBlocked
+    ResponseCode StoreIsNotActive
+    ResponseCode SubscriptionAlreadyExists
+    ResponseCode SubscriptionAutoRenewLocked
+    ResponseCode SubscriptionNotActive
+    ResponseCode SubscriptionNotFound
+    ResponseCode SubscriptionSuccessful
+    ResponseCode TerminalNotFound
+    ResponseCode TestTransaction
+    ResponseCode ThreeDsNotSupported
+    ResponseCode ThreeDsRequired
+    ResponseCode ThreeDsVerificationFailed
+    ResponseCode Timeout
+    ResponseCode TokenDoesNotExist
+    ResponseCode TooManyRequests
+    ResponseCode TransactionAlreadyPaid
+    ResponseCode TransactionAmountLimit
+    ResponseCode TransactionCannotBeProcessed
+    ResponseCode TransactionCreated
+    ResponseCode TransactionDeclined
+    ResponseCode TransactionIsCanceled
+    ResponseCode TransactionIsCanceledByPayer
+    ResponseCode TransactionIsNotRecurring
+    ResponseCode TransactionLimitExceeded
+    ResponseCode TransactionNotFound
+    ResponseCode TransactionNotSupported
+    ResponseCode TransactionRejected
+    ResponseCode TransactionSuccessPrimaryNotFound
+    ResponseCode TransactionSuccessful
+    ResponseCode UnknownEntity
+    ResponseCode UnsubscribedSuccessfully
+    ResponseCode UserCollisionByFinancialNumber
+    ResponseCode UserNotFound
+    ResponseCode WaitingForComplete
+    ResponseCode WaitingForRedirect
+    ResponseCode WaitingForVerification
+    ResponseCode WalletNotConfigured
+    ResponseCode WrongAccountNumber
+    ResponseCode WrongAmount
+    ResponseCode WrongAuthorizationCode
+    ResponseCode WrongCardNumber
+    ResponseCode WrongCavv
+    ResponseCode WrongCooperationType
+    ResponseCode WrongCvv
+    ResponseCode WrongOtpCode
+    ResponseCode WrongPaymentCount
+    ResponseCode WrongPaypartsPeriod
+    ResponseCode WrongPin
+    ResponseCode WrongProjectSettings
+    ResponseCode WrongSmsPassword
+SYT.RozetkaPay.Models.Common.SubscriptionPaymentMeta
+    .ctor()
+    SubscriptionPaymentMetaPaymentMethod PaymentMethod { get; set; }
+SYT.RozetkaPay.Models.Common.SubscriptionPaymentMetaPaymentMethod
+    .ctor()
+    DateTime? ExpiresAt { get; set; }
+    PaymentMethodType? Type { get; set; }
+    String BankShortName { get; set; }
+    String Mask { get; set; }
+SYT.RozetkaPay.Models.Common.TooManyRequestsResponse
+    .ctor()
+    String Code { get; set; }
+    String ErrorId { get; set; }
+    String Message { get; set; }
+    String Param { get; set; }
+    String PaymentId { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Common.UserAction
+    .ctor()
+    String Type { get; set; }
+    String Value { get; set; }
+SYT.RozetkaPay.Models.Common.UserInfo
+    .ctor()
+    String BrowserUserAgent { get; set; }
+    String Email { get; set; }
+    String ExternalId { get; set; }
+    String FirstName { get; set; }
+    String IpAddress { get; set; }
+    String LastName { get; set; }
+    String Patronym { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.Customers.AddCardToWalletRequest
+    .ctor()
+    Boolean SetAsDefault { get; set; }
+    Int32? VerificationAmount { get; set; }
+    WalletCardDetails Card { get; set; }
+SYT.RozetkaPay.Models.Customers.AddCardToWalletResponse
+    .ctor()
+    Boolean? VerificationRequired { get; set; }
+    String CardId { get; set; }
+    String Status { get; set; }
+    WalletCard Card { get; set; }
+SYT.RozetkaPay.Models.Customers.AddCustomerCCToken
+    .ctor()
+    Boolean? Use3DSFlow { get; set; }
+    DateTime ExpiresAt { get; set; }
+    String Mask { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Customers.AddCustomerEncryptedCCToken
+    .ctor()
+    Boolean? Use3DSFlow { get; set; }
+    String Data { get; set; }
+SYT.RozetkaPay.Models.Customers.AddCustomerPaymentMethod
+    .ctor()
+    AddCustomerCCToken CCToken { get; set; }
+    AddCustomerEncryptedCCToken EncryptedCCToken { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Customers.AddCustomerPaymentRequest
+    .ctor()
+    AddCustomerPaymentMethod PaymentMethod { get; set; }
+    Boolean MakeDefault { get; set; }
+    BrowserFingerprint Fingerprint { get; set; }
+    PaymentMode Mode { get; set; }
+    String CallbackUrl { get; set; }
+    String ResultUrl { get; set; }
+SYT.RozetkaPay.Models.Customers.AddCustomerPaymentResult
+    .ctor()
+    Boolean ActionRequired { get; set; }
+    CustomerInfo Customer { get; set; }
+    DateTime CreatedAt { get; set; }
+    OperationStatus Status { get; set; }
+    String Operation { get; set; }
+    UserAction Action { get; set; }
+    WalletItem PaymentMethod { get; set; }
+SYT.RozetkaPay.Models.Customers.CardConfirmationStatusResponse
+    .ctor()
+    Boolean? ConfirmationRequired { get; set; }
+    Int32? VerificationAmount { get; set; }
+    String CardId { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Customers.CustomerCardsResponse
+    .ctor()
+    Int32? TotalCount { get; set; }
+    List<WalletCard> Cards { get; set; }
+    String CustomerId { get; set; }
+SYT.RozetkaPay.Models.Customers.CustomerWalletResponse
+    .ctor()
+    List<WalletCard> Cards { get; set; }
+    String CustomerId { get; set; }
+    String DefaultCardId { get; set; }
+SYT.RozetkaPay.Models.Customers.DeleteCardFromWalletResponse
+    .ctor()
+    String Message { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Customers.DeleteCustomerPaymentRequest
+    .ctor()
+    String OptionId { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Customers.DeleteCustomerPaymentResult
+    .ctor()
+    Boolean Delete { get; set; }
+    PaymentMethodType Type { get; set; }
+    String OptionId { get; set; }
+SYT.RozetkaPay.Models.Customers.SetDefaultCardRequest
+    .ctor()
+    Guid OptionId { get; set; }
+    WalletOptionType Type { get; set; }
+SYT.RozetkaPay.Models.Customers.SetDefaultCardResponse
+    .ctor()
+    Boolean? Success { get; set; }
+    Guid? OptionId { get; set; }
+    String DefaultCardId { get; set; }
+    String Message { get; set; }
+    String Status { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Customers.WalletCard
+    .ctor()
+    Boolean? IsDefault { get; set; }
+    DateTime? CreatedAt { get; set; }
+    String BankName { get; set; }
+    String Id { get; set; }
+    String Mask { get; set; }
+    String PaymentSystem { get; set; }
+    String Status { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Customers.WalletCardDetails
+    .ctor()
+    String Cvv { get; set; }
+    String ExpMonth { get; set; }
+    String ExpYear { get; set; }
+    String HolderName { get; set; }
+    String Number { get; set; }
+SYT.RozetkaPay.Models.Customers.WalletItemResponse
+    .ctor()
+    List<WalletTransaction> Transactions { get; set; }
+    WalletCard Card { get; set; }
+SYT.RozetkaPay.Models.Customers.WalletOptionType
+    Int32 value__
+    WalletOptionType Card
+SYT.RozetkaPay.Models.Customers.WalletTransaction
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+    String Id { get; set; }
+    String Status { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.FinMon.FinMonCard
+    .ctor()
+    String Bin { get; set; }
+    String Brand { get; set; }
+    String CardType { get; set; }
+    String IssuingCountry { get; set; }
+    String LastFour { get; set; }
+SYT.RozetkaPay.Models.FinMon.FinMonCustomer
+    .ctor()
+    DateTime? RegistrationDate { get; set; }
+    String CustomerId { get; set; }
+    String Email { get; set; }
+    String IpAddress { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.FinMon.FinMonP2PPaymentPreLimitsResponse
+    .ctor()
+    Decimal? AmountLeft { get; set; }
+    Int32? CardOnlyCountLeft { get; set; }
+    Int32? TotalCountLeft { get; set; }
+    String RecipientIpn { get; set; }
+SYT.RozetkaPay.Models.FinMon.FinMonRule
+    .ctor()
+    Boolean IsActive { get; set; }
+    List<RuleCondition> Conditions { get; set; }
+    String Category { get; set; }
+    String Description { get; set; }
+    String Id { get; set; }
+    String Name { get; set; }
+    String Severity { get; set; }
+SYT.RozetkaPay.Models.FinMon.FinMonRulesResponse
+    .ctor()
+    Int32? Total { get; set; }
+    List<FinMonRule> Rules { get; set; }
+SYT.RozetkaPay.Models.FinMon.FinMonStatusResponse
+    .ctor()
+    DateTime? UpdatedAt { get; set; }
+    List<StatusHistoryItem> StatusHistory { get; set; }
+    String Status { get; set; }
+    String TransactionId { get; set; }
+SYT.RozetkaPay.Models.FinMon.FinMonTransactionRequest
+    .ctor()
+    DateTime? Timestamp { get; set; }
+    Decimal Amount { get; set; }
+    FinMonCard Card { get; set; }
+    FinMonCustomer Customer { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String TransactionType { get; set; }
+SYT.RozetkaPay.Models.FinMon.FinMonTransactionResponse
+    .ctor()
+    Decimal? RiskScore { get; set; }
+    List<TriggeredRule> TriggeredRules { get; set; }
+    String Details { get; set; }
+    String RecommendedAction { get; set; }
+    String RiskLevel { get; set; }
+    String Status { get; set; }
+    String TransactionId { get; set; }
+SYT.RozetkaPay.Models.FinMon.RuleCondition
+    .ctor()
+    String Field { get; set; }
+    String Operator { get; set; }
+    String Value { get; set; }
+SYT.RozetkaPay.Models.FinMon.StatusHistoryItem
+    .ctor()
+    DateTime? Timestamp { get; set; }
+    String Comment { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.FinMon.SubmitFinMonTransactionRequest
+    .ctor()
+    DateTime? Timestamp { get; set; }
+    Decimal Amount { get; set; }
+    FinMonCard Card { get; set; }
+    FinMonCustomer Customer { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String TransactionType { get; set; }
+SYT.RozetkaPay.Models.FinMon.TriggeredRule
+    .ctor()
+    String Description { get; set; }
+    String RuleId { get; set; }
+    String RuleName { get; set; }
+    String Severity { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentConfirmReceiptData
+    .ctor()
+    String AddressSalePoint { get; set; }
+    String BankAcquirer { get; set; }
+    String BankEdrpou { get; set; }
+    String Description { get; set; }
+    String EdrpouIpn { get; set; }
+    String FcId { get; set; }
+    String FcName { get; set; }
+    String Iban { get; set; }
+    String MerchantName { get; set; }
+    String PaymentInstructionDate { get; set; }
+    String PaymentInstructionId { get; set; }
+    String PaymentSystem { get; set; }
+    String PosTerminalId { get; set; }
+    String Rrn { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentConfirmRequest
+    .ctor()
+    String Amount { get; set; }
+    String AuthorizationCode { get; set; }
+    String BankAcquirer { get; set; }
+    String CardNumber { get; set; }
+    String Description { get; set; }
+    String EncryptedTrack2 { get; set; }
+    String ExternalId { get; set; }
+    String FiscalId { get; set; }
+    String FiscalReceipt { get; set; }
+    String MerchantId { get; set; }
+    String OrderId { get; set; }
+    String PaymentSystem { get; set; }
+    String PosPaymentStatus { get; set; }
+    String PosStatusDescription { get; set; }
+    String PosTerminalId { get; set; }
+    String Rrn { get; set; }
+    String TerminalSn { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentConfirmResponse
+    .ctor()
+    InStorePaymentConfirmReceiptData ReceiptData { get; set; }
+    String Amount { get; set; }
+    String ExternalId { get; set; }
+    String FcId { get; set; }
+    String FinalisedAt { get; set; }
+    String FiscalReceipt { get; set; }
+    String OrderId { get; set; }
+    String TransactionStatus { get; set; }
+    String TransactionStatusCode { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentCreateReceiptData
+    .ctor()
+    String Address { get; set; }
+    String Amount { get; set; }
+    String Description { get; set; }
+    String EdrpouIpn { get; set; }
+    String FcName { get; set; }
+    String FeeAmount { get; set; }
+    String Iban { get; set; }
+    String IdNbu { get; set; }
+    String License { get; set; }
+    String MerchantName { get; set; }
+    String PaymentInstructionDate { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentCreateRequest
+    .ctor()
+    InStorePaymentCurrency Currency { get; set; }
+    String Amount { get; set; }
+    String BatchId { get; set; }
+    String ExternalId { get; set; }
+    String MerchantId { get; set; }
+    String OrderId { get; set; }
+    String PosTerminalId { get; set; }
+    String Stan { get; set; }
+    String TerminalSn { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentCreateResponse
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    InStorePaymentCreateReceiptData ReceiptData { get; set; }
+    String Amount { get; set; }
+    String ExternalId { get; set; }
+    String FcId { get; set; }
+    String OrderId { get; set; }
+    String TransactionStatus { get; set; }
+    String TransactionStatusCode { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentCurrency
+    InStorePaymentCurrency Uah
+    Int32 value__
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentInfoResponse
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    String FcId { get; set; }
+    String TransactionStatus { get; set; }
+    String TransactionStatusCode { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentRefundReceiptData
+    .ctor()
+    String AddressSalePoint { get; set; }
+    String BankAcquirer { get; set; }
+    String BankEdrpou { get; set; }
+    String Description { get; set; }
+    String EdrpouIpn { get; set; }
+    String FcId { get; set; }
+    String Iban { get; set; }
+    String MerchantName { get; set; }
+    String PaymentInstructionDate { get; set; }
+    String PaymentInstructionId { get; set; }
+    String PaymentSystem { get; set; }
+    String PosTerminalId { get; set; }
+    String Rrn { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentRefundRequest
+    .ctor()
+    String Amount { get; set; }
+    String AuthorizationCode { get; set; }
+    String BankAcquirer { get; set; }
+    String CardNumber { get; set; }
+    String Description { get; set; }
+    String EncryptedTrack2 { get; set; }
+    String FiscalId { get; set; }
+    String FiscalReceipt { get; set; }
+    String MerchantId { get; set; }
+    String OrderId { get; set; }
+    String PaymentExternalId { get; set; }
+    String PaymentSystem { get; set; }
+    String PosPaymentStatus { get; set; }
+    String PosStatusDescription { get; set; }
+    String PosTerminalId { get; set; }
+    String RefundExternalId { get; set; }
+    String Rrn { get; set; }
+    String TerminalSn { get; set; }
+SYT.RozetkaPay.Models.InStorePayments.InStorePaymentRefundResponse
+    .ctor()
+    InStorePaymentRefundReceiptData ReceiptData { get; set; }
+    String Amount { get; set; }
+    String ExternalId { get; set; }
+    String FcId { get; set; }
+    String FinalisedAt { get; set; }
+    String OrderId { get; set; }
+    String TransactionStatus { get; set; }
+    String TransactionStatusCode { get; set; }
+SYT.RozetkaPay.Models.Merchants.CommissionRate
+    .ctor()
+    Decimal? FixedFee { get; set; }
+    Decimal? Rate { get; set; }
+    String Currency { get; set; }
+    String PaymentMethod { get; set; }
+SYT.RozetkaPay.Models.Merchants.CommissionRatesResponse
+    .ctor()
+    List<CommissionRate> Rates { get; set; }
+SYT.RozetkaPay.Models.Merchants.EntityStatusDetails
+    .ctor()
+    String BankDetailsNumber { get; set; }
+    String BusinessRegistrationNumber { get; set; }
+    String Id { get; set; }
+    String Name { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Merchants.EntryStatusDetails
+    .ctor()
+    String Id { get; set; }
+    String Name { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Merchants.FeeDetailsResponse
+    .ctor()
+    PartnersFeeDetails Online { get; set; }
+    PartnersFeeDetails Pnfp { get; set; }
+SYT.RozetkaPay.Models.Merchants.FeeInfo
+    .ctor()
+    Decimal? Amount { get; set; }
+    Decimal? Percentage { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Merchants.GetMerchantBalanceResponse
+    .ctor()
+    Decimal? AvailableAmount { get; set; }
+    Decimal? CommitmentAmount { get; set; }
+SYT.RozetkaPay.Models.Merchants.KeysValidationResult
+    .ctor()
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Merchants.MerchantContact
+    .ctor()
+    String ContactPerson { get; set; }
+    String Email { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.Merchants.MerchantInfoResponse
+    .ctor()
+    DateTime? RegisteredAt { get; set; }
+    MerchantContact Contact { get; set; }
+    String MerchantId { get; set; }
+    String Name { get; set; }
+    String Status { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Merchants.MerchantSettingsResponse
+    .ctor()
+    List<PaymentMethodConfig> PaymentMethods { get; set; }
+    NotificationSettings Notifications { get; set; }
+    SecuritySettings Security { get; set; }
+SYT.RozetkaPay.Models.Merchants.MerchantStatus
+    Int32 value__
+    MerchantStatus Activated
+    MerchantStatus Blocked
+    MerchantStatus ExternalMerchant
+    MerchantStatus Onboarding
+SYT.RozetkaPay.Models.Merchants.MerchantStatusResponse
+    .ctor()
+    EntityStatusDetails Entity { get; set; }
+    EntryStatusDetails Project { get; set; }
+    MerchantStatus? Status { get; set; }
+SYT.RozetkaPay.Models.Merchants.MerchantValidationResponse
+    .ctor()
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Merchants.NotificationSettings
+    .ctor()
+    Boolean? EmailNotifications { get; set; }
+    Boolean? SmsNotifications { get; set; }
+    String WebhookUrl { get; set; }
+SYT.RozetkaPay.Models.Merchants.PartnersFeeDetails
+    .ctor()
+    Decimal? Fix { get; set; }
+    Decimal? Max { get; set; }
+    Decimal? Min { get; set; }
+    Decimal? Percent { get; set; }
+SYT.RozetkaPay.Models.Merchants.PartnersTransactionDetails
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Merchants.PaymentMethodConfig
+    .ctor()
+    Boolean? Enabled { get; set; }
+    Decimal? CommissionRate { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Merchants.SecuritySettings
+    .ctor()
+    Boolean? Require3DS { get; set; }
+    List<String> IpWhitelist { get; set; }
+SYT.RozetkaPay.Models.Merchants.TransactionDetailsListResponse
+    .ctor()
+    List<PartnersTransactionDetails> Transactions { get; set; }
+SYT.RozetkaPay.Models.Merchants.UpdateMerchantSettingsRequest
+    .ctor()
+    List<PaymentMethodConfig> PaymentMethods { get; set; }
+    NotificationSettings Notifications { get; set; }
+    SecuritySettings Security { get; set; }
+SYT.RozetkaPay.Models.Partners.PartnerFeeDetails
+    .ctor()
+    FeeItem InnerFee { get; set; }
+    FeeItem OuterFee { get; set; }
+SYT.RozetkaPay.Models.Partners.PartnerFeeDetailsResponse
+    .ctor()
+    PartnerFeeDetails Online { get; set; }
+    PartnerFeeDetails Pnfp { get; set; }
+SYT.RozetkaPay.Models.Partners.PartnerMerchantStatusOptions
+    .ctor()
+    String MerchantEntityId { get; set; }
+    String MerchantProjectId { get; set; }
+SYT.RozetkaPay.Models.Partners.PartnerTransactionDetails
+    .ctor()
+    String CardMask { get; set; }
+    String MerchantEntityId { get; set; }
+    String MerchantFeeAmount { get; set; }
+    String MerchantOrderId { get; set; }
+    String Method { get; set; }
+    String OrderDescription { get; set; }
+    String OrderId { get; set; }
+    String PayWay { get; set; }
+    String PaymentAmount { get; set; }
+    String PaymentOriginalAmount { get; set; }
+    String PaymentRecipientAmount { get; set; }
+    String ProcessedAt { get; set; }
+    String RecipientCardMask { get; set; }
+    String Status { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Partners.PartnerTransactionDetailsListResponse
+    .ctor()
+    List<PartnerTransactionDetails> Transactions { get; set; }
+SYT.RozetkaPay.Models.Partners.PartnerTransactionDetailsOptions
+    .ctor()
+    String MerchantOrderId { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.PayParts.CancelPayPartsRequest
+    .ctor()
+    String CallbackUrl { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+SYT.RozetkaPay.Models.PayParts.CancelRefundPPayRequest
+    .ctor()
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.PayParts.ConfirmPayPartsRequest
+    .ctor()
+    String CallbackUrl { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+SYT.RozetkaPay.Models.PayParts.CreatePayPartsOrder
+    .ctor()
+    Boolean AutoConfirmAfterSuccess { get; set; }
+    Decimal Amount { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    Int32 PartsCount { get; set; }
+    List<PayPartsDelivery> Deliveries { get; set; }
+    List<PayPartsProduct> Products { get; set; }
+    PayPartsCustomer Customer { get; set; }
+    PayPartsPaymentMode Mode { get; set; }
+    String BankName { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+    String ResultUrl { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.PayParts.CreatePayPartsOrderRequest
+    .ctor()
+    Decimal Amount { get; set; }
+    Dictionary<String, Object> Metadata { get; set; }
+    Int32 PartsCount { get; set; }
+    List<PayPartsProduct> Products { get; set; }
+    PayPartsCustomer Customer { get; set; }
+    String Bank { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String FailureUrl { get; set; }
+    String MerchantId { get; set; }
+    String SuccessUrl { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsBankInfo
+    .ctor()
+    List<Int32> AvailablePeriods { get; set; }
+    List<PayPartsPeriodInfo> Periods { get; set; }
+    PayPartsBankLimits Limits { get; set; }
+    String LogoUrl { get; set; }
+    String Name { get; set; }
+    String ProductName { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsBankLimits
+    .ctor()
+    Decimal? MaxAmount { get; set; }
+    Decimal? MinAmount { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsBanksInfo
+    .ctor()
+    List<PayPartsBankInfo> Banks { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsBanksResponse
+    .ctor()
+    Int32? TotalCount { get; set; }
+    List<PayPartsBankInfo> Banks { get; set; }
+    String Message { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsCardPaymentMethod
+    .ctor()
+    Int32 ExpirationMonth { get; set; }
+    Int32 ExpirationYear { get; set; }
+    String Cvv { get; set; }
+    String Number { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsCustomer
+    .ctor()
+    BrowserFingerprint Fingerprint { get; set; }
+    DateTime? BirthDate { get; set; }
+    PayPartsPaymentMethod PaymentMethod { get; set; }
+    String AccountNumber { get; set; }
+    String Email { get; set; }
+    String FirstName { get; set; }
+    String LastName { get; set; }
+    String Patronym { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsDelivery
+    .ctor()
+    Boolean? IsOtherPerson { get; set; }
+    PayPartsDeliveryOtherPerson OtherPerson { get; set; }
+    String City { get; set; }
+    String Flat { get; set; }
+    String House { get; set; }
+    String MethodId { get; set; }
+    String ServiceId { get; set; }
+    String Street { get; set; }
+    String Time { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsDeliveryOtherPerson
+    .ctor()
+    String FirstName { get; set; }
+    String LastName { get; set; }
+    String MiddleName { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsError
+    .ctor()
+    String Code { get; set; }
+    String Description { get; set; }
+    String Message { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsLimits
+    .ctor()
+    Int32? MaxAmount { get; set; }
+    Int32? MaxParts { get; set; }
+    Int32? MinAmount { get; set; }
+    Int32? MinParts { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsOperationDetails
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Fiscalization Fiscalization { get; set; }
+    OperationStatus? Status { get; set; }
+    PayPartsOperationType? Method { get; set; }
+    ResponseCode? StatusCode { get; set; }
+    String AuthCode { get; set; }
+    String BankKey { get; set; }
+    String BankName { get; set; }
+    String BillingOrderId { get; set; }
+    String Currency { get; set; }
+    String GatewayOrderId { get; set; }
+    String OperationId { get; set; }
+    String Payload { get; set; }
+    String RRN { get; set; }
+    String StatusDescription { get; set; }
+    String TransactionId { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsOperationResponse
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Int32? PartsCount { get; set; }
+    PayPartsCustomer Customer { get; set; }
+    String Bank { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String Status { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsOperationResult
+    .ctor()
+    Boolean ActionRequired { get; set; }
+    Boolean IsSuccess { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    PayPartsOperationDetails Details { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String ReceiptUrl { get; set; }
+    String UnifiedExternalId { get; set; }
+    UserAction Action { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsOperationType
+    Int32 value__
+    PayPartsOperationType Cancel
+    PayPartsOperationType Confirm
+    PayPartsOperationType Create
+    PayPartsOperationType Refund
+SYT.RozetkaPay.Models.PayParts.PayPartsOperationsListRequest
+    .ctor()
+    DateTime? DateFrom { get; set; }
+    DateTime? DateTo { get; set; }
+    Int32? Limit { get; set; }
+    Int32? Offset { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsOperationsListResponse
+    .ctor()
+    Int32? Count { get; set; }
+    Int32? Offset { get; set; }
+    Int32? Total { get; set; }
+    List<PayPartsOperationResponse> Operations { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsOperationsResult
+    .ctor()
+    Boolean ActionRequired { get; set; }
+    Boolean Canceled { get; set; }
+    Boolean Confirmed { get; set; }
+    Boolean Purchased { get; set; }
+    Boolean Refunded { get; set; }
+    CustomerInfo Customer { get; set; }
+    DateTime? CreatedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Decimal? AmountCanceled { get; set; }
+    Decimal? AmountConfirmed { get; set; }
+    Decimal? AmountRefunded { get; set; }
+    ExpressCheckoutDeliveryDetails DeliveryDetails { get; set; }
+    ExpressCheckoutRecipient OrderRecipient { get; set; }
+    List<PayPartsOperationDetails> CancellationDetails { get; set; }
+    List<PayPartsOperationDetails> ConfirmationDetails { get; set; }
+    List<PayPartsOperationDetails> RefundDetails { get; set; }
+    PayPartsOperationDetails PurchaseDetails { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String ReceiptUrl { get; set; }
+    String UnifiedExternalId { get; set; }
+    UserAction Action { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsOrderResponse
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Int32? PartsCount { get; set; }
+    List<PayPartsProduct> Products { get; set; }
+    PayPartsCustomer Customer { get; set; }
+    PayPartsError Error { get; set; }
+    String Bank { get; set; }
+    String CheckoutUrl { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String QrCode { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsPaymentMode
+    Int32 value__
+    PayPartsPaymentMode Direct
+    PayPartsPaymentMode Hosted
+SYT.RozetkaPay.Models.PayParts.PayPartsPeriodInfo
+    .ctor()
+    Decimal? Fee { get; set; }
+    Int32? Period { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsProduct
+    .ctor()
+    Decimal Price { get; set; }
+    Int32 Quantity { get; set; }
+    Int32? TaxGroup { get; set; }
+    String Category { get; set; }
+    String CategoryName { get; set; }
+    String ExternalId { get; set; }
+    String Name { get; set; }
+    String SecondCategoryName { get; set; }
+    String Url { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsRefundResponse
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+    String ExternalRefundId { get; set; }
+    String Reason { get; set; }
+    String RefundId { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsResendCallbackRequest
+    .ctor()
+    String CallbackUrl { get; set; }
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.PayParts.PayPartsResendCallbackResponse
+    .ctor()
+    String Message { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.PayParts.RefundPPayRequest
+    .ctor()
+    Decimal? Amount { get; set; }
+    List<PayPartsProduct> Products { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+SYT.RozetkaPay.Models.PayParts.RefundPayPartsOrderRequest
+    .ctor()
+    Decimal? Amount { get; set; }
+    String ExternalId { get; set; }
+    String ExternalRefundId { get; set; }
+    String Reason { get; set; }
+SYT.RozetkaPay.Models.PayParts.RetryRefundPPayRequest
+    .ctor()
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.PaymentInstructions.CreatePaymentInstructionsRequest
+    .ctor()
+    List<PaymentInstructionOrder> Orders { get; set; }
+    PaymentInstructionMethod Method { get; set; }
+    PaymentInstructionPayer Payer { get; set; }
+    PaymentInstructionProcessingType ProcessingType { get; set; }
+    String BatchExternalId { get; set; }
+    String Currency { get; set; }
+SYT.RozetkaPay.Models.PaymentInstructions.PaymentInstruction
+    .ctor()
+    Decimal? Number { get; set; }
+    String DownloadUrl { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String ProjectId { get; set; }
+    String Url { get; set; }
+SYT.RozetkaPay.Models.PaymentInstructions.PaymentInstructionDeclineResult
+    .ctor(HttpStatusCode StatusCode, Uri Location)
+    Boolean Equals(Object obj)
+    Boolean Equals(PaymentInstructionDeclineResult other)
+    HttpStatusCode StatusCode { get; set; }
+    Int32 GetHashCode()
+    PaymentInstructionDeclineResult <Clone>$()
+    String ToString()
+    Uri Location { get; set; }
+    Void Deconstruct(HttpStatusCode& StatusCode, Uri& Location)
+SYT.RozetkaPay.Models.PaymentInstructions.PaymentInstructionMethod
+    Int32 value__
+    PaymentInstructionMethod Auth
+    PaymentInstructionMethod Purchase
+SYT.RozetkaPay.Models.PaymentInstructions.PaymentInstructionOrder
+    .ctor()
+    Decimal Amount { get; set; }
+    String ApiKey { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.PaymentInstructions.PaymentInstructionPayer
+    .ctor()
+    String FirstName { get; set; }
+    String LastName { get; set; }
+    String Patronym { get; set; }
+    String Tin { get; set; }
+SYT.RozetkaPay.Models.PaymentInstructions.PaymentInstructionProcessingType
+    Int32 value__
+    PaymentInstructionProcessingType CardPay
+    PaymentInstructionProcessingType PPay
+SYT.RozetkaPay.Models.PaymentInstructions.PaymentInstructionsResult
+    .ctor()
+    List<PaymentInstruction> Instructions { get; set; }
+    String BatchDownloadUrl { get; set; }
+    String BatchExternalId { get; set; }
+    String BatchUrl { get; set; }
+    String Currency { get; set; }
+SYT.RozetkaPay.Models.Payments.ApplePayResponsePaymentMethod
+    .ctor()
+    DateTime? ExpiresAt { get; set; }
+    String BankShortName { get; set; }
+    String BinCountry { get; set; }
+    String Mask { get; set; }
+    String PaymentSystem { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.ApplePayToken
+    .ctor()
+    String Data { get; set; }
+SYT.RozetkaPay.Models.Payments.BinInfo
+    .ctor()
+    String BankName { get; set; }
+    String Country { get; set; }
+    String CountryName { get; set; }
+    String PaymentSystem { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Payments.CCTokenResponsePaymentMethod
+    .ctor()
+    Boolean? SavedCard { get; set; }
+    DateTime? ExpiresAt { get; set; }
+    String BankShortName { get; set; }
+    String BinCountry { get; set; }
+    String Mask { get; set; }
+    String PaymentSystem { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.CallbackInfo
+    .ctor()
+    DateTime? LastAttemptAt { get; set; }
+    DateTime? NextAttemptAt { get; set; }
+    Int32? Attempts { get; set; }
+    String Status { get; set; }
+    String Url { get; set; }
+SYT.RozetkaPay.Models.Payments.CallbackResendResponse
+    .ctor()
+    String Message { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Payments.CancelPaymentRequest
+    .ctor()
+    Decimal? Amount { get; set; }
+    List<Product> Products { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+SYT.RozetkaPay.Models.Payments.CancelRefundRequest
+    .ctor()
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Payments.CardDetails
+    .ctor()
+    Int32? ExpirationMonth { get; set; }
+    Int32? ExpirationYear { get; set; }
+    String CVV { get; set; }
+    String HolderName { get; set; }
+    String Number { get; set; }
+SYT.RozetkaPay.Models.Payments.CardInfo
+    .ctor()
+    String BankName { get; set; }
+    String Bin { get; set; }
+    String Country { get; set; }
+    String Mask { get; set; }
+    String PaymentSystem { get; set; }
+    String Token { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Payments.CardItemDetails
+    .ctor()
+    DateTime? ExpiresAt { get; set; }
+    String BankShortName { get; set; }
+    String Brand { get; set; }
+    String CardArtUrl { get; set; }
+    String FullNumber { get; set; }
+    String Mask { get; set; }
+    String PaymentSystem { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.CardLookupRequest
+    .ctor()
+    String CardNumber { get; set; }
+SYT.RozetkaPay.Models.Payments.CardLookupResponse
+    .ctor()
+    List<String> PaymentMethods { get; set; }
+    String Bin { get; set; }
+SYT.RozetkaPay.Models.Payments.ConfirmPaymentRequest
+    .ctor()
+    Decimal? Amount { get; set; }
+    List<Product> Products { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+SYT.RozetkaPay.Models.Payments.CreateLookupRequest
+    .ctor()
+    CustomerRequestUserDetails Customer { get; set; }
+    PaymentMode Mode { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String Payload { get; set; }
+    String ResultUrl { get; set; }
+SYT.RozetkaPay.Models.Payments.CreatePaymentRequest
+    .ctor()
+    Boolean Confirm { get; set; }
+    Boolean? InitRecurrentPayment { get; set; }
+    Boolean? UseCustomFreeAmount { get; set; }
+    CustomerInfo Customer { get; set; }
+    Decimal Amount { get; set; }
+    Decimal? CheckoutTtl { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    List<Product> Products { get; set; }
+    PaymentMode Mode { get; set; }
+    RecipientRequestUserDetails Recipient { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+    String ResultUrl { get; set; }
+    String ResultUrlFail { get; set; }
+    String ResultUrlSuccess { get; set; }
+    String SubscriptionId { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Payments.CreateRecurrentPaymentRequest
+    .ctor()
+    Boolean? Confirm { get; set; }
+    Decimal Amount { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    Guid? DelegateApiKey { get; set; }
+    String CallbackUrl { get; set; }
+    String ExternalId { get; set; }
+    String Payload { get; set; }
+    String RecurrentId { get; set; }
+    String SubscriptionId { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerAddress
+    .ctor()
+    String City { get; set; }
+    String Country { get; set; }
+    String PostalCode { get; set; }
+    String Street { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerAppleGooglePayRequestPaymentMethod
+    .ctor()
+    Boolean? Use3DSFlow { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerCCRequestPaymentMethod
+    .ctor()
+    Boolean? Use3DSFlow { get; set; }
+    Int32 ExpirationMonth { get; set; }
+    Int32 ExpirationYear { get; set; }
+    String CVV { get; set; }
+    String Number { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerCCTokenRequestPaymentMethod
+    .ctor()
+    Boolean SaveToWallet { get; set; }
+    Boolean? Use3DSFlow { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerInfo
+    .ctor()
+    BrowserFingerprint Fingerprint { get; set; }
+    CheckoutColorMode? ColorMode { get; set; }
+    CustomerCheckoutLocale? Locale { get; set; }
+    CustomerRequestPaymentMethod PaymentMethod { get; set; }
+    CustomerUserInfo UserInfo { get; set; }
+    String AccountNumber { get; set; }
+    String BrowserUserAgent { get; set; }
+    String IpAddress { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerRequestPaymentMethod
+    .ctor()
+    CustomerAppleGooglePayRequestPaymentMethod ApplePay { get; set; }
+    CustomerAppleGooglePayRequestPaymentMethod GooglePay { get; set; }
+    CustomerCCRequestPaymentMethod Card { get; set; }
+    CustomerCCTokenRequestPaymentMethod CCToken { get; set; }
+    CustomerDecryptedApplePayRequestPaymentMethod DecryptedApplePay { get; set; }
+    CustomerDecryptedGooglePayRequestPaymentMethod DecryptedGooglePay { get; set; }
+    CustomerWalletRequestPaymentMethod Wallet { get; set; }
+    String ApplePayToken { get; set; }
+    String GooglePayToken { get; set; }
+    String Type { get; set; }
+    String WalletToken { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerRequestUserDetails
+    .ctor()
+    BrowserFingerprint Fingerprint { get; set; }
+    CheckoutColorMode? ColorMode { get; set; }
+    CustomerCheckoutLocale? Locale { get; set; }
+    CustomerRequestPaymentMethod PaymentMethod { get; set; }
+    String AccountNumber { get; set; }
+    String IpAddress { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerUserInfo
+    .ctor()
+    CustomerCheckoutLocale? Locale { get; set; }
+SYT.RozetkaPay.Models.Payments.CustomerWalletRequestPaymentMethod
+    .ctor()
+    Boolean? Use3DSFlow { get; set; }
+    String OptionId { get; set; }
+SYT.RozetkaPay.Models.Payments.ExpressCheckoutDeliveryDetails
+    .ctor()
+    String Apartment { get; set; }
+    String City { get; set; }
+    String DeliveryType { get; set; }
+    String House { get; set; }
+    String Provider { get; set; }
+    String Street { get; set; }
+    String WarehouseNumber { get; set; }
+SYT.RozetkaPay.Models.Payments.ExpressCheckoutOrderDetails
+    .ctor()
+    ExpressCheckoutDeliveryDetails DeliveryDetails { get; set; }
+    ExpressCheckoutRecipient OrderRecipient { get; set; }
+SYT.RozetkaPay.Models.Payments.ExpressCheckoutRecipient
+    .ctor()
+    String LastName { get; set; }
+    String MiddleName { get; set; }
+    String Name { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.Payments.GetPaymentStatus
+    .ctor()
+    Boolean IsConfirmed { get; set; }
+    CardItemDetails Card { get; set; }
+    OperationStatus Status { get; set; }
+    String OptionId { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Payments.GooglePayResponsePaymentMethod
+    .ctor()
+    DateTime? ExpiresAt { get; set; }
+    String BankShortName { get; set; }
+    String BinCountry { get; set; }
+    String Mask { get; set; }
+    String PaymentSystem { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.GooglePayToken
+    .ctor()
+    String Data { get; set; }
+SYT.RozetkaPay.Models.Payments.P2PConfirmationRequest
+    .ctor()
+    Decimal Amount { get; set; }
+    String CallbackUrl { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Payments.PartnerDetails
+    .ctor()
+    String TransactionId { get; set; }
+SYT.RozetkaPay.Models.Payments.PayPartsConfig
+    .ctor()
+    Int32? PartsCount { get; set; }
+    String Bank { get; set; }
+    String MerchantId { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentCustomer
+    .ctor()
+    String Email { get; set; }
+    String FirstName { get; set; }
+    String Ip { get; set; }
+    String LastName { get; set; }
+    String Patronym { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentDetails
+    .ctor()
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+    String PaymentMethod { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentError
+    .ctor()
+    String Code { get; set; }
+    String Description { get; set; }
+    String Message { get; set; }
+    String Source { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentListRequest
+    .ctor()
+    DateTime? DateFrom { get; set; }
+    DateTime? DateTo { get; set; }
+    Int32? Limit { get; set; }
+    Int32? Offset { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentListResponse
+    .ctor()
+    Int32? Count { get; set; }
+    Int32? Offset { get; set; }
+    List<PaymentResponse> Payments { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentMethod
+    .ctor()
+    CardDetails Card { get; set; }
+    PaymentMethodType? Type { get; set; }
+    String ApplePayToken { get; set; }
+    String CCToken { get; set; }
+    String GooglePayToken { get; set; }
+    String WalletToken { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentMethodInfo
+    .ctor()
+    String PaymentSystem { get; set; }
+    String Title { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentOperationResult
+    .ctor()
+    Boolean ActionRequired { get; set; }
+    Boolean IsSuccess { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
+    OperationType? Operation { get; set; }
+    ResultPaymentMethod PaymentMethod { get; set; }
+    ResultUserDetails Customer { get; set; }
+    String BatchExternalId { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String ProjectId { get; set; }
+    String ReceiptUrl { get; set; }
+    String UnifiedExternalId { get; set; }
+    TransactionDetails Details { get; set; }
+    UserAction Action { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentReceiptResponse
+    .ctor()
+    String ReceiptHtml { get; set; }
+    String ReceiptPdf { get; set; }
+    String ReceiptUrl { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentReceiptResult
+    .ctor()
+    String ProjectId { get; set; }
+    String Receipt { get; set; }
+    String ReceiptUrl { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentResponse
+    .ctor()
+    Boolean? ActionRequired { get; set; }
+    Boolean? Canceled { get; set; }
+    Boolean? Confirm { get; set; }
+    Boolean? Confirmed { get; set; }
+    Boolean? Purchased { get; set; }
+    Boolean? Refunded { get; set; }
+    CallbackInfo Callback { get; set; }
+    CardInfo Card { get; set; }
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    DateTime? UpdatedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Decimal? AmountCanceled { get; set; }
+    Decimal? AmountConfirmed { get; set; }
+    Decimal? AmountRefunded { get; set; }
+    Dictionary<String, Object> Metadata { get; set; }
+    Int32? StatusCode { get; set; }
+    List<String> Actions { get; set; }
+    List<TransactionDetails> CancellationDetails { get; set; }
+    List<TransactionDetails> ConfirmationDetails { get; set; }
+    List<TransactionDetails> PurchaseDetails { get; set; }
+    List<TransactionDetails> RefundDetails { get; set; }
+    PaymentCustomer Customer { get; set; }
+    PaymentDetails Details { get; set; }
+    PaymentError Error { get; set; }
+    PaymentMethodInfo PaymentMethod { get; set; }
+    String AuthCode { get; set; }
+    String BatchExternalId { get; set; }
+    String CheckoutUrl { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String Mode { get; set; }
+    String QrCodeUrl { get; set; }
+    String ReceiptUrl { get; set; }
+    String RecurrentId { get; set; }
+    String RecurrentToken { get; set; }
+    String Rrn { get; set; }
+    String Status { get; set; }
+    String StatusDescription { get; set; }
+    String TransactionId { get; set; }
+    String UnifiedExternalId { get; set; }
+    ThreeDsInfo ThreeDs { get; set; }
+    UserAction Action { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentSearchList
+    .ctor()
+    Boolean? HasMore { get; set; }
+    Int32? Count { get; set; }
+    Int32? Total { get; set; }
+    List<PaymentSearchResult> Payments { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentSearchResult
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String ProjectId { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentStatusResult
+    .ctor()
+    Boolean? ActionRequired { get; set; }
+    Boolean? Canceled { get; set; }
+    Boolean? Confirmed { get; set; }
+    Boolean? Purchased { get; set; }
+    Boolean? Refunded { get; set; }
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    ExpressCheckoutDeliveryDetails DeliveryDetails { get; set; }
+    ExpressCheckoutRecipient OrderRecipient { get; set; }
+    List<TransactionDetails> CancellationDetails { get; set; }
+    List<TransactionDetails> ConfirmationDetails { get; set; }
+    List<TransactionDetails> PurchaseDetails { get; set; }
+    List<TransactionDetails> RefundDetails { get; set; }
+    PartnerDetails PartnerDetails { get; set; }
+    ResultUserDetails Customer { get; set; }
+    String AmountCanceled { get; set; }
+    String AmountConfirmed { get; set; }
+    String AmountRefunded { get; set; }
+    String BatchExternalId { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String ReceiptUrl { get; set; }
+    String Status { get; set; }
+    String UnifiedExternalId { get; set; }
+    UserAction Action { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentWebhook
+    .ctor()
+    Boolean ActionRequired { get; set; }
+    Boolean IsSuccess { get; set; }
+    PaymentWebhookDetails Details { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String Operation { get; set; }
+    String ProjectId { get; set; }
+    String ReceiptUrl { get; set; }
+    String UnifiedExternalId { get; set; }
+    UserAction Action { get; set; }
+    WebhookCustomer Customer { get; set; }
+    WebhookPaymentMethod PaymentMethod { get; set; }
+SYT.RozetkaPay.Models.Payments.PaymentWebhookDetails
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    String AuthCode { get; set; }
+    String BankName { get; set; }
+    String BillingOrderId { get; set; }
+    String Comment { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String GatewayOrderId { get; set; }
+    String Method { get; set; }
+    String OperationId { get; set; }
+    String Payload { get; set; }
+    String PaymentId { get; set; }
+    String RecipientCardMask { get; set; }
+    String Rrn { get; set; }
+    String Status { get; set; }
+    String StatusCode { get; set; }
+    String StatusDescription { get; set; }
+    String TerminalName { get; set; }
+    String TransactionId { get; set; }
+    WebhookFee Fee { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientCCNumberRequestPaymentMethod
+    .ctor()
+    Int32 ExpirationMonth { get; set; }
+    Int32 ExpirationYear { get; set; }
+    String Number { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientCCTokenRequestPaymentMethod
+    .ctor()
+    String CVV { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientCardNumber
+    .ctor()
+    Int32? ExpirationMonth { get; set; }
+    Int32? ExpirationYear { get; set; }
+    String Number { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientCardToken
+    .ctor()
+    String CVV { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientInfo
+    .ctor()
+    Decimal? Amount { get; set; }
+    RecipientPaymentMethod PaymentMethod { get; set; }
+    String Currency { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientPaymentMethod
+    .ctor()
+    RecipientCardNumber CardNumber { get; set; }
+    RecipientCardToken CardToken { get; set; }
+    RecipientWallet Wallet { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientRequestPaymentMethod
+    .ctor()
+    RecipientCCNumberRequestPaymentMethod CardNumber { get; set; }
+    RecipientCCNumberRequestPaymentMethod CcNumber { get; set; }
+    RecipientCCTokenRequestPaymentMethod CardToken { get; set; }
+    RecipientCCTokenRequestPaymentMethod CcToken { get; set; }
+    RecipientIbanRequestPaymentMethod Iban { get; set; }
+    RecipientWalletRequestPaymentMethod Wallet { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientRequestUserDetails
+    .ctor()
+    Decimal? Amount { get; set; }
+    RecipientRequestPaymentMethod PaymentMethod { get; set; }
+    String Currency { get; set; }
+    String Rid { get; set; }
+    String Tin { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientWallet
+    .ctor()
+    String Id { get; set; }
+    String Provider { get; set; }
+SYT.RozetkaPay.Models.Payments.RecipientWalletRequestPaymentMethod
+    .ctor()
+    String OptionId { get; set; }
+SYT.RozetkaPay.Models.Payments.RefundPaymentRequest
+    .ctor()
+    Decimal? Amount { get; set; }
+    String CallbackUrl { get; set; }
+    String ExternalId { get; set; }
+    String ExternalRefundId { get; set; }
+    String Reason { get; set; }
+SYT.RozetkaPay.Models.Payments.ResendCallbackRequest
+    .ctor()
+    OperationType? Operation { get; set; }
+    String CallbackUrl { get; set; }
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Payments.ResultPaymentMethod
+    .ctor()
+    ApplePayResponsePaymentMethod ApplePay { get; set; }
+    CCTokenResponsePaymentMethod CcToken { get; set; }
+    GooglePayResponsePaymentMethod GooglePay { get; set; }
+    String PaymentSystem { get; set; }
+    String Title { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Payments.ResultUserDetails
+    .ctor()
+    ResultPaymentMethod PaymentMethod { get; set; }
+    String AccountNumber { get; set; }
+SYT.RozetkaPay.Models.Payments.RetryRefundRequest
+    .ctor()
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Payments.ThreeDsInfo
+    .ctor()
+    String AcsUrl { get; set; }
+    String CReq { get; set; }
+    String PaReq { get; set; }
+    String Status { get; set; }
+    String TermUrl { get; set; }
+    String Version { get; set; }
+SYT.RozetkaPay.Models.Payments.TransactionDetails
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    FeeDetails Fee { get; set; }
+    Fiscalization Fiscalization { get; set; }
+    ResponseCode? StatusCode { get; set; }
+    String AuthCode { get; set; }
+    String BankName { get; set; }
+    String BillingOrderId { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String GatewayOrderId { get; set; }
+    String Method { get; set; }
+    String Mid { get; set; }
+    String OperationId { get; set; }
+    String Payload { get; set; }
+    String PaymentId { get; set; }
+    String RecipientIban { get; set; }
+    String RecurrentId { get; set; }
+    String Rrn { get; set; }
+    String Status { get; set; }
+    String StatusDescription { get; set; }
+    String SubscriptionId { get; set; }
+    String TerminalName { get; set; }
+    String Tid { get; set; }
+    String TransactionId { get; set; }
+SYT.RozetkaPay.Models.Payments.WalletItem
+    .ctor()
+    Boolean? IsDefault { get; set; }
+    CardItemDetails Card { get; set; }
+    String Name { get; set; }
+    String OptionId { get; set; }
+    String Type { get; set; }
+SYT.RozetkaPay.Models.Payments.WebhookCardToken
+    .ctor()
+    DateTime? ExpiresAt { get; set; }
+    String BankShortName { get; set; }
+    String Mask { get; set; }
+    String PaymentSystem { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payments.WebhookCustomer
+    .ctor()
+    String Address { get; set; }
+    String BrowserUserAgent { get; set; }
+    String City { get; set; }
+    String Country { get; set; }
+    String Email { get; set; }
+    String Fingerprint { get; set; }
+    String FirstName { get; set; }
+    String IpAddress { get; set; }
+    String LastName { get; set; }
+    String Patronym { get; set; }
+    String Phone { get; set; }
+    String PostalCode { get; set; }
+SYT.RozetkaPay.Models.Payments.WebhookFee
+    .ctor()
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+SYT.RozetkaPay.Models.Payments.WebhookPaymentMethod
+    .ctor()
+    String Type { get; set; }
+    WebhookCardToken CardToken { get; set; }
+SYT.RozetkaPay.Models.Payouts.BalanceResponse
+    .ctor()
+    Decimal? TotalBalance { get; set; }
+    List<CurrencyBalance> Balances { get; set; }
+    String BaseCurrency { get; set; }
+SYT.RozetkaPay.Models.Payouts.CancelCashPayoutRequest
+    .ctor()
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Payouts.CardData
+    .ctor()
+    String Number { get; set; }
+    String OptionId { get; set; }
+    String Token { get; set; }
+SYT.RozetkaPay.Models.Payouts.CardRecipient
+    .ctor()
+    CardData CardData { get; set; }
+SYT.RozetkaPay.Models.Payouts.CashRecipient
+    .ctor()
+    CardData CardData { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.Payouts.CreatePayoutRequest
+    .ctor()
+    Decimal Amount { get; set; }
+    PayoutRecipient Recipient { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Payouts.CurrencyBalance
+    .ctor()
+    Decimal? Available { get; set; }
+    Decimal? Pending { get; set; }
+    Decimal? Reserved { get; set; }
+    String Currency { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayerAccount
+    .ctor()
+    String EntityId { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutBalanceResponse
+    .ctor()
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutCallbackResendResponse
+    .ctor()
+    String Message { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutError
+    .ctor()
+    String Code { get; set; }
+    String Message { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutListRequest
+    .ctor()
+    Int32? Limit { get; set; }
+    Int32? Offset { get; set; }
+    String DateFrom { get; set; }
+    String DateTo { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutListResponse
+    .ctor()
+    Int32? Count { get; set; }
+    Int32? Total { get; set; }
+    List<PayoutResponse> Payouts { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutOrderDetails
+    .ctor()
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String OriginalAmount { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutPayer
+    .ctor()
+    String EntityId { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutRecipient
+    .ctor()
+    CardRecipient Card { get; set; }
+    CashRecipient Cash { get; set; }
+    PayoutType PayoutType { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutResponse
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    PayoutError Error { get; set; }
+    PayoutRecipient Recipient { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Id { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutTransactionResult
+    .ctor()
+    Decimal? OriginalAmount { get; set; }
+    Decimal? PayerAmount { get; set; }
+    Decimal? PayerOuterFee { get; set; }
+    Int32? FcId { get; set; }
+    OperationStatus? Status { get; set; }
+    PayerAccount PayerAccount { get; set; }
+    RecipientUser RecipientUser { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String PartnerKeyId { get; set; }
+    String PaymentType { get; set; }
+    String PayoutType { get; set; }
+    String ReceiptUrl { get; set; }
+    String StatusCode { get; set; }
+    String StatusCodeDescription { get; set; }
+    String TransactionId { get; set; }
+SYT.RozetkaPay.Models.Payouts.PayoutType
+    Int32 value__
+    PayoutType Card
+    PayoutType Cash
+SYT.RozetkaPay.Models.Payouts.RecipientUser
+    .ctor()
+    String Email { get; set; }
+    String ExternalId { get; set; }
+    String FirstName { get; set; }
+    String Ipn { get; set; }
+    String LastName { get; set; }
+    String MiddleName { get; set; }
+    String Phone { get; set; }
+    String Rid { get; set; }
+SYT.RozetkaPay.Models.Payouts.RequestPayoutRequest
+    .ctor()
+    PayoutOrderDetails Order { get; set; }
+    PayoutPayer Payer { get; set; }
+    PayoutRecipient Recipient { get; set; }
+SYT.RozetkaPay.Models.Payouts.ResendPayoutCallbackRequest
+    .ctor()
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Reports.PaymentReportItem
+    .ctor()
+    DateTime? PayoutDate { get; set; }
+    DateTime? ProcessingDate { get; set; }
+    Decimal? Amount { get; set; }
+    Decimal? InternalCommission { get; set; }
+    Decimal? PayerExternalFee { get; set; }
+    Decimal? PayoutAmount { get; set; }
+    Int32? PaymentPayParts { get; set; }
+    String CardPan { get; set; }
+    String ClientEmail { get; set; }
+    String ClientFirstName { get; set; }
+    String ClientLastName { get; set; }
+    String ClientPatronym { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String PaymentId { get; set; }
+    String PaymentMethod { get; set; }
+    String PaymentSystem { get; set; }
+    String PaymentType { get; set; }
+    String ProjectName { get; set; }
+SYT.RozetkaPay.Models.Reports.PaymentsReportRequest
+    .ctor()
+    DateOnly DateFrom { get; set; }
+    DateOnly DateTo { get; set; }
+    List<String> Fields { get; set; }
+    String RegisterType { get; set; }
+    String Scope { get; set; }
+SYT.RozetkaPay.Models.Reports.PaymentsReportResponse
+    .ctor()
+    List<PaymentsReportRow> Payments { get; set; }
+SYT.RozetkaPay.Models.Reports.PaymentsReportRow
+    .ctor()
+    Decimal? Amount { get; set; }
+    Decimal? InternalCommission { get; set; }
+    Decimal? PayerExternalFee { get; set; }
+    Decimal? PayoutAmount { get; set; }
+    Int32? PaymentPayParts { get; set; }
+    String CardPan { get; set; }
+    String ClientEmail { get; set; }
+    String ClientFirstName { get; set; }
+    String ClientLastName { get; set; }
+    String ClientPatronym { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String PaymentId { get; set; }
+    String PaymentMethod { get; set; }
+    String PaymentSystem { get; set; }
+    String PaymentType { get; set; }
+    String PayoutDate { get; set; }
+    String ProcessingDate { get; set; }
+    String ProjectName { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Reports.TransactionReportItem
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? MerchantFee { get; set; }
+    Decimal? OriginalAmount { get; set; }
+    Decimal? PayerAmount { get; set; }
+    Decimal? PayerFee { get; set; }
+    Int32? StatusCode { get; set; }
+    String AuthCode { get; set; }
+    String BinCountryDigitCode { get; set; }
+    String BinPaymentSystem { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String OperationType { get; set; }
+    String OrderDescription { get; set; }
+    String OrderId { get; set; }
+    String PayerBankName { get; set; }
+    String PayerCardMask { get; set; }
+    String PayerIp { get; set; }
+    String PaymentMethod { get; set; }
+    String ProjectName { get; set; }
+    String Rrn { get; set; }
+    String Status { get; set; }
+    String TransactionId { get; set; }
+SYT.RozetkaPay.Models.Reports.TransactionsReportRequest
+    .ctor()
+    DateOnly DateFrom { get; set; }
+    DateOnly DateTo { get; set; }
+    List<String> OperationTypes { get; set; }
+    List<String> Statuses { get; set; }
+    String RegisterType { get; set; }
+SYT.RozetkaPay.Models.Reports.TransactionsReportResponse
+    .ctor()
+    List<TransactionsReportRow> Transactions { get; set; }
+SYT.RozetkaPay.Models.Reports.TransactionsReportRow
+    .ctor()
+    Decimal? MerchantFee { get; set; }
+    Decimal? OriginalAmount { get; set; }
+    Decimal? PayerAmount { get; set; }
+    Decimal? PayerFee { get; set; }
+    Int32? StatusCode { get; set; }
+    String AuthCode { get; set; }
+    String BinCountryDigitCode { get; set; }
+    String BinPaymentSystem { get; set; }
+    String CreatedAt { get; set; }
+    String Currency { get; set; }
+    String ExternalId { get; set; }
+    String OperationType { get; set; }
+    String OrderDescription { get; set; }
+    String OrderId { get; set; }
+    String PayerBankName { get; set; }
+    String PayerCardMask { get; set; }
+    String PayerIp { get; set; }
+    String PaymentMethod { get; set; }
+    String ProcessedAt { get; set; }
+    String ProjectName { get; set; }
+    String Rrn { get; set; }
+    String Status { get; set; }
+    String TransactionId { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.CancelCustomerSubscriptionOptions
+    .ctor()
+    Boolean? Refund { get; set; }
+    String ExternalId { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.CancelSubscriptionRequest
+    .ctor()
+    Boolean Immediate { get; set; }
+    String ExternalId { get; set; }
+    String Reason { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.CreatePlanRequest
+    .ctor()
+    Decimal Frequency { get; set; }
+    Decimal Price { get; set; }
+    Int32 DurationPeriods { get; set; }
+    List<PlanCallbackRequest> Callbacks { get; set; }
+    List<String> Platforms { get; set; }
+    PlanFrequencyType FrequencyType { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String EndDate { get; set; }
+    String Name { get; set; }
+    String StartDate { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.CreateSubscriptionPlanRequest
+    .ctor()
+    Decimal Amount { get; set; }
+    Int32? TrialDays { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String Frequency { get; set; }
+    String Name { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.CreateSubscriptionRequest
+    .ctor()
+    Boolean? AutoRenew { get; set; }
+    Boolean? TrialPeriodicPayments { get; set; }
+    Boolean? UsePlanPriceOnAutoRenew { get; set; }
+    CustomerRequestUserDetails Customer { get; set; }
+    Decimal? GiftedPeriods { get; set; }
+    Decimal? TrialPeriods { get; set; }
+    Int32? Price { get; set; }
+    String CallbackUrl { get; set; }
+    String DelegateApiKey { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String ExternalPremiumId { get; set; }
+    String PlanId { get; set; }
+    String RecurrentId { get; set; }
+    String ResultUrl { get; set; }
+    String StartDate { get; set; }
+    String UnifiedExternalId { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.CreateSubscriptionResponse
+    .ctor()
+    Subscription Subscription { get; set; }
+    SubscriptionPayment Payment { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.CustomerSubscriptionsResponse
+    .ctor()
+    Int32? Count { get; set; }
+    Int32? Total { get; set; }
+    List<SubscriptionResponse> Subscriptions { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.GiftSubscriptionRequest
+    .ctor()
+    Boolean? AutoRenew { get; set; }
+    Boolean? UsePlanPriceOnAutoRenew { get; set; }
+    Decimal? Price { get; set; }
+    Int32? GiftedPeriods { get; set; }
+    Int32? TrialPeriods { get; set; }
+    String CallbackUrl { get; set; }
+    String DelegateApiKey { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String ExternalPremiumId { get; set; }
+    String GiftedUnifiedExternalId { get; set; }
+    String PlanId { get; set; }
+    String RecurrentId { get; set; }
+    String ResultUrl { get; set; }
+    String StartDate { get; set; }
+    String UnifiedExternalId { get; set; }
+    SubscriptionCustomer Customer { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.Plan
+    .ctor()
+    Decimal? Price { get; set; }
+    Int32? DurationPeriods { get; set; }
+    Int32? Frequency { get; set; }
+    List<String> Platforms { get; set; }
+    PlanState? State { get; set; }
+    String CreatedAt { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String EndDate { get; set; }
+    String FrequencyType { get; set; }
+    String Id { get; set; }
+    String Name { get; set; }
+    String StartDate { get; set; }
+    String UpdatedAt { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.PlanCallbackRequest
+    .ctor()
+    String ApiKey { get; set; }
+    String Url { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.PlanFrequencyType
+    Int32 value__
+    PlanFrequencyType Daily
+    PlanFrequencyType Monthly
+    PlanFrequencyType Weekly
+    PlanFrequencyType Yearly
+SYT.RozetkaPay.Models.Subscriptions.PlanList
+    .ctor()
+    List<Plan> Plans { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.PlanState
+    Int32 value__
+    PlanState Active
+    PlanState Inactive
+SYT.RozetkaPay.Models.Subscriptions.Subscription
+    .ctor()
+    Boolean AutoRenew { get; set; }
+    Boolean UsePlanPriceOnAutoRenew { get; set; }
+    Boolean? Gifted { get; set; }
+    Boolean? IsRetrying { get; set; }
+    Boolean? TrialPeriodicPayments { get; set; }
+    DateTime? AutoRenewLockedUntil { get; set; }
+    DateTime? CreatedAt { get; set; }
+    DateTime? FinalExpirationDate { get; set; }
+    DateTime? GiftedFrom { get; set; }
+    DateTime? GiftedUntil { get; set; }
+    DateTime? TimeOfDay { get; set; }
+    DateTime? TrialUntil { get; set; }
+    DateTime? UpdatedAt { get; set; }
+    Decimal? Price { get; set; }
+    Decimal? TrialPeriods { get; set; }
+    Guid? DelegateApiKey { get; set; }
+    Guid? ProjectId { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
+    String CustomerId { get; set; }
+    String Description { get; set; }
+    String DueDate { get; set; }
+    String ExternalId { get; set; }
+    String ExternalPremiumId { get; set; }
+    String GiftedUnifiedExternalId { get; set; }
+    String Id { get; set; }
+    String NextNotificationDate { get; set; }
+    String NextPaymentDate { get; set; }
+    String PlanId { get; set; }
+    String RecurrentId { get; set; }
+    String ResultUrl { get; set; }
+    String StartDate { get; set; }
+    String UnifiedExternalId { get; set; }
+    SubscriptionState? State { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionCallbackType
+    Int32 value__
+    SubscriptionCallbackType PaymentFailed
+    SubscriptionCallbackType PaymentProcessed
+    SubscriptionCallbackType SubscriptionCancelled
+    SubscriptionCallbackType SubscriptionCustomerIdUpdated
+    SubscriptionCallbackType SubscriptionDeactivated
+    SubscriptionCallbackType SubscriptionPaymentMethodChanged
+    SubscriptionCallbackType SubscriptionRefundFailed
+    SubscriptionCallbackType SubscriptionRefunded
+    SubscriptionCallbackType SubscriptionRenewed
+    SubscriptionCallbackType SubscriptionUpdated
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionCard
+    .ctor()
+    Int32 ExpirationMonth { get; set; }
+    Int32 ExpirationYear { get; set; }
+    String CVV { get; set; }
+    String HolderName { get; set; }
+    String Number { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionCustomer
+    .ctor()
+    String Email { get; set; }
+    String FirstName { get; set; }
+    String LastName { get; set; }
+    String Phone { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionError
+    .ctor()
+    String Code { get; set; }
+    String Message { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionInitialPayment
+    .ctor()
+    Decimal? Amount { get; set; }
+    SubscriptionPaymentMethod PaymentMethod { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionList
+    .ctor()
+    List<Subscription> Subscriptions { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionListRequest
+    .ctor()
+    Int32? Limit { get; set; }
+    Int32? Offset { get; set; }
+    String CustomerId { get; set; }
+    String DateFrom { get; set; }
+    String DateTo { get; set; }
+    String Email { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionListResponse
+    .ctor()
+    Int32? Count { get; set; }
+    Int32? Total { get; set; }
+    List<SubscriptionResponse> Subscriptions { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPayment
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Guid? SubscriptionId { get; set; }
+    String Currency { get; set; }
+    String Id { get; set; }
+    String Status { get; set; }
+    SubscriptionPaymentDetails Details { get; set; }
+    UserAction UserAction { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentDetails
+    .ctor()
+    Boolean? RefundOnProcessed { get; set; }
+    DateTime? CreatedAt { get; set; }
+    DateTime? NextProcessingDate { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    DateTime? UpdatedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Guid? TransactionId { get; set; }
+    Int32? RetryCount { get; set; }
+    ResponseCode? StatusCode { get; set; }
+    String AuthCode { get; set; }
+    String BankName { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String Id { get; set; }
+    String Mid { get; set; }
+    String RecipientIban { get; set; }
+    String Rrn { get; set; }
+    String Status { get; set; }
+    String StatusDescription { get; set; }
+    String TerminalName { get; set; }
+    String Tid { get; set; }
+    SubscriptionPaymentMeta Meta { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentInfo
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? ProcessedAt { get; set; }
+    Decimal? Amount { get; set; }
+    String Currency { get; set; }
+    String Id { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentList
+    .ctor()
+    List<SubscriptionPayment> Payments { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentMethod
+    .ctor()
+    CustomerAppleGooglePayRequestPaymentMethod ApplePay { get; set; }
+    CustomerAppleGooglePayRequestPaymentMethod GooglePay { get; set; }
+    CustomerCCTokenRequestPaymentMethod CcToken { get; set; }
+    CustomerWalletRequestPaymentMethod Wallet { get; set; }
+    String RecurrentId { get; set; }
+    String RecurrentToken { get; set; }
+    String Type { get; set; }
+    SubscriptionCard Card { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentMethodUpdate
+    .ctor()
+    CustomerAppleGooglePayRequestPaymentMethod ApplePay { get; set; }
+    CustomerAppleGooglePayRequestPaymentMethod GooglePay { get; set; }
+    CustomerCCTokenRequestPaymentMethod CcToken { get; set; }
+    CustomerWalletRequestPaymentMethod Wallet { get; set; }
+    SubscriptionPaymentMethodUpdateType Type { get; set; }
+    SubscriptionRecurrentIdPaymentMethod RecurrentId { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentMethodUpdateType
+    Int32 value__
+    SubscriptionPaymentMethodUpdateType ApplePay
+    SubscriptionPaymentMethodUpdateType CcToken
+    SubscriptionPaymentMethodUpdateType GooglePay
+    SubscriptionPaymentMethodUpdateType RecurrentId
+    SubscriptionPaymentMethodUpdateType Wallet
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentState
+    Int32 value__
+    SubscriptionPaymentState Failed
+    SubscriptionPaymentState Processed
+    SubscriptionPaymentState Processing
+    SubscriptionPaymentState Unprocessed
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentsResponse
+    .ctor()
+    Int32? Count { get; set; }
+    Int32? Total { get; set; }
+    List<SubscriptionPaymentInfo> Payments { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPlanResponse
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    DateTime? UpdatedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Int32? TrialDays { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String Frequency { get; set; }
+    String Id { get; set; }
+    String Name { get; set; }
+    String Status { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionPlansResponse
+    .ctor()
+    Int32? Count { get; set; }
+    Int32? Total { get; set; }
+    List<SubscriptionPlanResponse> Plans { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionRecurrentIdPaymentMethod
+    .ctor()
+    String RecurrentId { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionResponse
+    .ctor()
+    DateTime? CreatedAt { get; set; }
+    Decimal? Amount { get; set; }
+    Int32? CompletedPayments { get; set; }
+    Int32? PeriodCount { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String ExternalId { get; set; }
+    String Frequency { get; set; }
+    String Id { get; set; }
+    String NextPaymentDate { get; set; }
+    String Status { get; set; }
+    SubscriptionCustomer Customer { get; set; }
+    SubscriptionError Error { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.SubscriptionState
+    Int32 value__
+    SubscriptionState Active
+    SubscriptionState Inactive
+    SubscriptionState Init
+    SubscriptionState Pending
+    SubscriptionState Processing
+SYT.RozetkaPay.Models.Subscriptions.UpdatePlanRequest
+    .ctor()
+    Int32? DurationPeriods { get; set; }
+    Int32? Frequency { get; set; }
+    Int32? Price { get; set; }
+    List<PlanCallbackRequest> Callbacks { get; set; }
+    List<String> Platforms { get; set; }
+    PlanFrequencyType? FrequencyType { get; set; }
+    String Description { get; set; }
+    String EndDate { get; set; }
+    String Name { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.UpdateSubscriptionPaymentMethodRequest
+    .ctor()
+    Boolean? AutoRenew { get; set; }
+    BrowserFingerprint Fingerprint { get; set; }
+    String ExternalId { get; set; }
+    String ResultUrl { get; set; }
+    SubscriptionPaymentMethodUpdate PaymentMethod { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.UpdateSubscriptionPaymentMethodResponse
+    .ctor()
+    String Message { get; set; }
+    UserAction UserAction { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.UpdateSubscriptionPlanRequest
+    .ctor()
+    Decimal? Amount { get; set; }
+    Int32? TrialDays { get; set; }
+    String Currency { get; set; }
+    String Description { get; set; }
+    String Frequency { get; set; }
+    String Name { get; set; }
+SYT.RozetkaPay.Models.Subscriptions.UpdateSubscriptionRequest
+    .ctor()
+    Boolean? AutoRenew { get; set; }
+    String GiftedUntil { get; set; }
+SYT.RozetkaPay.RozetkaPayClient
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger<RozetkaPayClient> logger)
+    AlternativePaymentService AlternativePayments { get; }
+    BatchPaymentService BatchPayments { get; }
+    CustomerService Customers { get; }
+    FinMonService FinMon { get; }
+    InStorePaymentService InStorePayments { get; }
+    MerchantService Merchants { get; }
+    PartnerService Partners { get; }
+    PayPartsService PayParts { get; }
+    PaymentInstructionService PaymentInstructions { get; }
+    PaymentService Payments { get; }
+    PayoutService Payouts { get; }
+    ReportService Reports { get; }
+    RozetkaPayClient Create(String baseUrl, String login, String password, HttpClient httpClient, ILogger<RozetkaPayClient> logger)
+    SubscriptionService Subscriptions { get; }
+    Void Dispose()
+SYT.RozetkaPay.Security.IRozetkaPayWebhookSignatureVerifier
+    Boolean Verify(ReadOnlyMemory<Byte> payload, String signature)
+    Boolean Verify(String payload, String signature)
+SYT.RozetkaPay.Security.RozetkaPayWebhookSignatureVerifier
+    .ctor(String password)
+    Boolean Verify(ReadOnlyMemory<Byte> payload, String signature)
+    Boolean Verify(String payload, String signature)
+    String SignatureHeaderName
+SYT.RozetkaPay.Serialization.SdkSerializerOptions
+    JsonSerializerOptions Value { get; }
+SYT.RozetkaPay.Services.AlternativePaymentService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<AlternativePaymentCallbackResendResponse> ResendCallbackAsync(ResendAlternativePaymentCallbackRequest request, CancellationToken cancellationToken)
+    Task<AlternativePaymentMethodsResponse> GetAvailableMethodsAsync(CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationResponse> GetOperationInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationsResponse> GetOperationsAsync(GetAlternativePaymentOperationsRequest request, CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
+    Task<AlternativePaymentResponse> RefundAsync(RefundAlternativePaymentRequest request, CancellationToken cancellationToken)
+    Task<AlternativePaymentStatusResponse> GetStatusAsync(String paymentId, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.BaseService
+SYT.RozetkaPay.Services.BatchPaymentService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<BatchPaymentResponse> CancelBatchPaymentAsync(CancelBatchPaymentRequest request, CancellationToken cancellationToken)
+    Task<BatchPaymentResponse> ConfirmBatchPaymentAsync(ConfirmBatchPaymentRequest request, CancellationToken cancellationToken)
+    Task<BatchPaymentResponse> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.CustomerService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<AddCardToWalletResponse> AddCardToWalletAsync(String customerId, AddCardToWalletRequest request, CancellationToken cancellationToken)
+    Task<CardConfirmationStatusResponse> GetCardConfirmationStatusAsync(String customerId, String cardId, CancellationToken cancellationToken)
+    Task<CustomerCardsResponse> GetCustomerCardsAsync(String customerId, CancellationToken cancellationToken)
+    Task<CustomerWalletResponse> GetCustomerWalletAsync(String customerId, CancellationToken cancellationToken)
+    Task<DeleteCardFromWalletResponse> DeletePaymentFromWalletAsync(String customerId, String cardId, CancellationToken cancellationToken)
+    Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
+    Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(String externalId, DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
+    Task<SetDefaultCardResponse> SetDefaultCardAsync(String customerId, SetDefaultCardRequest request, CancellationToken cancellationToken)
+    Task<WalletItemResponse> GetWalletItemAsync(String customerId, String cardId, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.FinMonService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(Int32 recipientIpn, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IAlternativePaymentService
+    Task<AlternativePaymentCallbackResendResponse> ResendCallbackAsync(ResendAlternativePaymentCallbackRequest request, CancellationToken cancellationToken)
+    Task<AlternativePaymentMethodsResponse> GetAvailableMethodsAsync(CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationResponse> GetOperationInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationsResponse> GetOperationsAsync(GetAlternativePaymentOperationsRequest request, CancellationToken cancellationToken)
+    Task<AlternativePaymentOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
+    Task<AlternativePaymentResponse> RefundAsync(RefundAlternativePaymentRequest request, CancellationToken cancellationToken)
+    Task<AlternativePaymentStatusResponse> GetStatusAsync(String paymentId, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IBatchPaymentService
+    Task<BatchPaymentResponse> CancelBatchPaymentAsync(CancelBatchPaymentRequest request, CancellationToken cancellationToken)
+    Task<BatchPaymentResponse> ConfirmBatchPaymentAsync(ConfirmBatchPaymentRequest request, CancellationToken cancellationToken)
+    Task<BatchPaymentResponse> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.ICustomerService
+    Task<AddCardToWalletResponse> AddCardToWalletAsync(String customerId, AddCardToWalletRequest request, CancellationToken cancellationToken)
+    Task<CardConfirmationStatusResponse> GetCardConfirmationStatusAsync(String customerId, String cardId, CancellationToken cancellationToken)
+    Task<CustomerCardsResponse> GetCustomerCardsAsync(String customerId, CancellationToken cancellationToken)
+    Task<CustomerWalletResponse> GetCustomerWalletAsync(String customerId, CancellationToken cancellationToken)
+    Task<DeleteCardFromWalletResponse> DeletePaymentFromWalletAsync(String customerId, String cardId, CancellationToken cancellationToken)
+    Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
+    Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(String externalId, DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
+    Task<SetDefaultCardResponse> SetDefaultCardAsync(String customerId, SetDefaultCardRequest request, CancellationToken cancellationToken)
+    Task<WalletItemResponse> GetWalletItemAsync(String customerId, String cardId, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IFinMonService
+    Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(Int32 recipientIpn, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IInStorePaymentService
+    Task<InStorePaymentConfirmResponse> ConfirmAsync(InStorePaymentConfirmRequest request, CancellationToken cancellationToken)
+    Task<InStorePaymentCreateResponse> CreateAsync(InStorePaymentCreateRequest request, CancellationToken cancellationToken)
+    Task<InStorePaymentInfoResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<InStorePaymentRefundResponse> RefundAsync(InStorePaymentRefundRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IMerchantService
+    Task<CommissionRatesResponse> GetCommissionRatesAsync(CancellationToken cancellationToken)
+    Task<MerchantSettingsResponse> GetSettingsAsync(CancellationToken cancellationToken)
+    Task<MerchantSettingsResponse> UpdateSettingsAsync(UpdateMerchantSettingsRequest request, CancellationToken cancellationToken)
+    Task<MerchantValidationResponse> GetInfoAsync(CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IPartnerService
+    Task<MerchantStatusResponse> GetMerchantStatusAsync(CancellationToken cancellationToken)
+    Task<MerchantStatusResponse> GetMerchantStatusAsync(PartnerMerchantStatusOptions options, CancellationToken cancellationToken)
+    Task<PartnerFeeDetailsResponse> GetFeeDetailsAsync(CancellationToken cancellationToken)
+    Task<PartnerFeeDetailsResponse> GetFeeDetailsAsync(String merchantProjectId, CancellationToken cancellationToken)
+    Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(String merchantEntityId, CancellationToken cancellationToken)
+    Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(String merchantEntityId, PartnerTransactionDetailsOptions options, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IPayPartsService
+    Task<PayPartsBanksResponse> GetBanksAsync(CancellationToken cancellationToken)
+    Task<PayPartsOperationResponse> GetOperationInfoAsync(String operationId, CancellationToken cancellationToken)
+    Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
+    Task<PayPartsOperationResult> RetryRefundAsync(RetryRefundPPayRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOperationsListResponse> GetOperationsAsync(PayPartsOperationsListRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken)
+    Task<PayPartsRefundResponse> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken)
+    Task<PayPartsResendCallbackResponse> ResendCallbackAsync(PayPartsResendCallbackRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IPaymentInstructionService
+    Task<PaymentInstructionDeclineResult> DeclineAsync(String projectId, String paymentInstructionId, CancellationToken cancellationToken)
+    Task<PaymentInstructionsResult> CreateAsync(CreatePaymentInstructionsRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IPaymentService
+    Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
+    Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken)
+    Task<PaymentListResponse> GetListAsync(PaymentListRequest request, CancellationToken cancellationToken)
+    Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)
+    Task<PaymentOperationResult> RetryRefundAsync(RetryRefundRequest request, CancellationToken cancellationToken)
+    Task<PaymentReceiptResponse> GetReceiptAsync(String externalId, CancellationToken cancellationToken)
+    Task<PaymentResponse> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> ConfirmP2PAsync(String externalId, Decimal? amount, CancellationToken cancellationToken)
+    Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<PaymentResponse> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IPayoutService
+    Task<BalanceResponse> GetAccountBalanceAsync(String merchantEntityId, CancellationToken cancellationToken)
+    Task<BalanceResponse> GetBalanceAsync(CancellationToken cancellationToken)
+    Task<PayoutCallbackResendResponse> ResendCallbackAsync(ResendPayoutCallbackRequest request, CancellationToken cancellationToken)
+    Task<PayoutListResponse> GetListAsync(PayoutListRequest request, CancellationToken cancellationToken)
+    Task<PayoutResponse> CreateAsync(CreatePayoutRequest request, CancellationToken cancellationToken)
+    Task<PayoutResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<PayoutTransactionResult> CancelCashPayoutAsync(CancelCashPayoutRequest request, CancellationToken cancellationToken)
+    Task<PayoutTransactionResult> RequestPayoutAsync(RequestPayoutRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.IReportService
+    Task<PaymentsReportResponse> GetPaymentsReportAsync(PaymentsReportRequest request, CancellationToken cancellationToken)
+    Task<TransactionsReportResponse> GetTransactionsReportAsync(TransactionsReportRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.ISubscriptionService
+    Task CancelAsync(String subscriptionId, CancelSubscriptionRequest request, CancellationToken cancellationToken)
+    Task DeactivateAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task DeactivatePlanAsync(String planId, CancellationToken cancellationToken)
+    Task<CreateSubscriptionResponse> GiftAsync(GiftSubscriptionRequest request, CancellationToken cancellationToken)
+    Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(String customerId, CancellationToken cancellationToken)
+    Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken)
+    Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<SubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken)
+    Task<SubscriptionList> GetSubscriptionsAsync(String externalId, CancellationToken cancellationToken)
+    Task<SubscriptionPaymentsResponse> GetPaymentsAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<SubscriptionPlanResponse> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken)
+    Task<SubscriptionPlanResponse> GetPlanAsync(String planId, CancellationToken cancellationToken)
+    Task<SubscriptionPlanResponse> UpdatePlanAsync(String planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken)
+    Task<SubscriptionPlansResponse> GetPlansAsync(CancellationToken cancellationToken)
+    Task<SubscriptionResponse> CreateAsync(CreateSubscriptionRequest request, CancellationToken cancellationToken)
+    Task<SubscriptionResponse> GetAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<SubscriptionResponse> UpdateAsync(String subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken)
+    Task<UpdateSubscriptionPaymentMethodResponse> UpdatePaymentMethodAsync(String subscriptionId, UpdateSubscriptionPaymentMethodRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.InStorePaymentService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<InStorePaymentConfirmResponse> ConfirmAsync(InStorePaymentConfirmRequest request, CancellationToken cancellationToken)
+    Task<InStorePaymentCreateResponse> CreateAsync(InStorePaymentCreateRequest request, CancellationToken cancellationToken)
+    Task<InStorePaymentInfoResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<InStorePaymentRefundResponse> RefundAsync(InStorePaymentRefundRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.MerchantService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<CommissionRatesResponse> GetCommissionRatesAsync(CancellationToken cancellationToken)
+    Task<MerchantSettingsResponse> GetSettingsAsync(CancellationToken cancellationToken)
+    Task<MerchantSettingsResponse> UpdateSettingsAsync(UpdateMerchantSettingsRequest request, CancellationToken cancellationToken)
+    Task<MerchantValidationResponse> GetInfoAsync(CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.PartnerService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<MerchantStatusResponse> GetMerchantStatusAsync(CancellationToken cancellationToken)
+    Task<MerchantStatusResponse> GetMerchantStatusAsync(PartnerMerchantStatusOptions options, CancellationToken cancellationToken)
+    Task<PartnerFeeDetailsResponse> GetFeeDetailsAsync(CancellationToken cancellationToken)
+    Task<PartnerFeeDetailsResponse> GetFeeDetailsAsync(String merchantProjectId, CancellationToken cancellationToken)
+    Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(String merchantEntityId, CancellationToken cancellationToken)
+    Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(String merchantEntityId, PartnerTransactionDetailsOptions options, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.PayPartsService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<PayPartsBanksResponse> GetBanksAsync(CancellationToken cancellationToken)
+    Task<PayPartsOperationResponse> GetOperationInfoAsync(String operationId, CancellationToken cancellationToken)
+    Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
+    Task<PayPartsOperationResult> RetryRefundAsync(RetryRefundPPayRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOperationsListResponse> GetOperationsAsync(PayPartsOperationsListRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken)
+    Task<PayPartsRefundResponse> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken)
+    Task<PayPartsResendCallbackResponse> ResendCallbackAsync(PayPartsResendCallbackRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.PaymentInstructionService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, HttpClient declineHttpClient, ILogger logger)
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<PaymentInstructionDeclineResult> DeclineAsync(String projectId, String paymentInstructionId, CancellationToken cancellationToken)
+    Task<PaymentInstructionsResult> CreateAsync(CreatePaymentInstructionsRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.PaymentService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    CreatePaymentRequest BuildP2PRequest(Decimal amount, String currency, String externalId, String recipientCardNumber, String recipientExpMonth, String recipientExpYear, String description)
+    Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
+    Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken)
+    Task<PaymentListResponse> GetListAsync(PaymentListRequest request, CancellationToken cancellationToken)
+    Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)
+    Task<PaymentOperationResult> RetryRefundAsync(RetryRefundRequest request, CancellationToken cancellationToken)
+    Task<PaymentReceiptResponse> GetReceiptAsync(String externalId, CancellationToken cancellationToken)
+    Task<PaymentResponse> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> ConfirmP2PAsync(String externalId, Decimal? amount, CancellationToken cancellationToken)
+    Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken)
+    Task<PaymentResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<PaymentResponse> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.PayoutService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<BalanceResponse> GetAccountBalanceAsync(String merchantEntityId, CancellationToken cancellationToken)
+    Task<BalanceResponse> GetBalanceAsync(CancellationToken cancellationToken)
+    Task<PayoutCallbackResendResponse> ResendCallbackAsync(ResendPayoutCallbackRequest request, CancellationToken cancellationToken)
+    Task<PayoutListResponse> GetListAsync(PayoutListRequest request, CancellationToken cancellationToken)
+    Task<PayoutResponse> CreateAsync(CreatePayoutRequest request, CancellationToken cancellationToken)
+    Task<PayoutResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
+    Task<PayoutTransactionResult> CancelCashPayoutAsync(CancelCashPayoutRequest request, CancellationToken cancellationToken)
+    Task<PayoutTransactionResult> RequestPayoutAsync(RequestPayoutRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.ReportService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task<PaymentsReportResponse> GetPaymentsReportAsync(PaymentsReportRequest request, CancellationToken cancellationToken)
+    Task<TransactionsReportResponse> GetTransactionsReportAsync(TransactionsReportRequest request, CancellationToken cancellationToken)
+SYT.RozetkaPay.Services.SubscriptionService
+    .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
+    Task CancelAsync(String subscriptionId, CancelSubscriptionRequest request, CancellationToken cancellationToken)
+    Task DeactivateAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task DeactivatePlanAsync(String planId, CancellationToken cancellationToken)
+    Task<CreateSubscriptionResponse> GiftAsync(GiftSubscriptionRequest request, CancellationToken cancellationToken)
+    Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(String customerId, CancellationToken cancellationToken)
+    Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken)
+    Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<SubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken)
+    Task<SubscriptionList> GetSubscriptionsAsync(String externalId, CancellationToken cancellationToken)
+    Task<SubscriptionPaymentsResponse> GetPaymentsAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<SubscriptionPlanResponse> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken)
+    Task<SubscriptionPlanResponse> GetPlanAsync(String planId, CancellationToken cancellationToken)
+    Task<SubscriptionPlanResponse> UpdatePlanAsync(String planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken)
+    Task<SubscriptionPlansResponse> GetPlansAsync(CancellationToken cancellationToken)
+    Task<SubscriptionResponse> CreateAsync(CreateSubscriptionRequest request, CancellationToken cancellationToken)
+    Task<SubscriptionResponse> GetAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<SubscriptionResponse> UpdateAsync(String subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken)
+    Task<UpdateSubscriptionPaymentMethodResponse> UpdatePaymentMethodAsync(String subscriptionId, UpdateSubscriptionPaymentMethodRequest request, CancellationToken cancellationToken)
