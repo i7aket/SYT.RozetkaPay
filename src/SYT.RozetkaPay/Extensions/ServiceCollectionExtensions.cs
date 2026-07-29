@@ -275,6 +275,17 @@ public static class ServiceCollectionExtensions
                     client.DefaultRequestHeaders.UserAgent.ParseAdd(config.UserAgent);
                 }
             })
+            // A redirect is never followed on an authenticated transport. HttpClient drops
+            // Authorization when a redirect crosses an origin, but forwards every other header
+            // verbatim - and X-ON-BEHALF-OF and X-CUSTOMER-AUTH are merchant secrets in their own
+            // right, so a host answering with a Location it controls would harvest both. Which
+            // headers a given runtime strips is an implementation detail; refusing the redirect is
+            // the only form of this guarantee that does not depend on it.
+            //
+            // The decline client below has carried this setting since it was introduced. The
+            // authenticated client - the one that actually carries the secrets - did not, which is
+            // the defect being closed here.
+            .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler { AllowAutoRedirect = false })
             .RemoveAllLoggers();
 
         // The decline client shares the validated endpoint, the timeout snapshot and the user agent, and

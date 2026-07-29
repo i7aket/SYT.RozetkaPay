@@ -69,11 +69,14 @@ internal sealed class RozetkaPayOptionsValidator : IValidateOptions<RozetkaPayOp
         {
             // The endpoint comes from the environment. Verifying the resolved URL as well keeps the rule that
             // whatever the SDK ends up calling is an absolute http(s) address, whichever path produced it.
-            if (environmentIsUsable && !IsAbsoluteHttpUrl(RozetkaPayOptionsMapper.ResolveBaseUrl(options)))
+            if (environmentIsUsable &&
+                !RozetkaPayEndpointPolicy.IsAcceptable(
+                    RozetkaPayOptionsMapper.ResolveBaseUrl(options),
+                    options.TransportSecurity))
             {
                 failures.Add(
                     $"{Key(nameof(RozetkaPayOptions.Environment))} resolves to an endpoint that is not an " +
-                    "absolute http or https URL.");
+                    "absolute https URL.");
             }
 
             return;
@@ -87,9 +90,10 @@ internal sealed class RozetkaPayOptionsValidator : IValidateOptions<RozetkaPayOp
             return;
         }
 
-        if (!IsAbsoluteHttpUrl(options.BaseUrl))
+        if (!RozetkaPayEndpointPolicy.IsAcceptable(options.BaseUrl, options.TransportSecurity))
         {
-            failures.Add($"{Key(nameof(RozetkaPayOptions.BaseUrl))} must be an absolute http or https URL.");
+            failures.Add(
+                RozetkaPayEndpointPolicy.DescribeRejection(Key(nameof(RozetkaPayOptions.BaseUrl))));
         }
     }
 
@@ -146,14 +150,6 @@ internal sealed class RozetkaPayOptionsValidator : IValidateOptions<RozetkaPayOp
         }
     }
 
-    /// <summary>
-    /// Reject relative URLs, and absolute URLs the SDK cannot speak, before the first request is attempted.
-    /// </summary>
-    private static bool IsAbsoluteHttpUrl(string value)
-    {
-        return Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) &&
-               (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
-    }
 
     private static string Key(string property)
     {

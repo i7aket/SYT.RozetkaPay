@@ -782,6 +782,10 @@ public class PaymentInstructionServiceTests
         configuration.BaseUrl = declineServer.BaseUrl;
         configuration.OnBehalfOf = "on-behalf-placeholder-not-a-real-value-EXP354";
 
+        // A loopback stub with no certificate: the one case the SDK speaks clear text for, and only
+        // when asked. Without this the service constructor refuses the endpoint, which is the point.
+        configuration.TransportSecurity = RozetkaPayTransportSecurity.AllowClearTextLoopback;
+
         using HttpClient authenticated = new() { BaseAddress = new Uri(declineServer.BaseUrl) };
 
         // The ordinary constructor: the service builds its own non-redirecting decline client.
