@@ -24,11 +24,11 @@ public class CreateBatchPaymentRequest
     public string Currency { get; set; } = string.Empty;
 
     /// <summary>
-    /// Payer customer data
+    /// Payer customer data. Optional: the document does not list it among the required fields, and a
+    /// hosted batch does not carry it.
     /// </summary>
-    [Required]
     [JsonPropertyName("customer")]
-    public BatchCustomer Customer { get; set; } = new();
+    public BatchCustomer? Customer { get; set; }
 
     /// <summary>
     /// Describes the way of the integration: direct - requires customer's payment details in request
@@ -92,6 +92,18 @@ public class CreateBatchPaymentRequest
     /// </summary>
     [JsonPropertyName("campaign_name")]
     public CampaignName? CampaignName { get; set; }
+
+    /// <summary>
+    /// Additional merchant-defined data associated with the payment.
+    /// </summary>
+    /// <remarks>
+    /// At most ten entries; each key up to 30 characters and each value up to 200. The limits are the
+    /// provider's, and <see cref="MetadataLimitsAttribute"/> enforces them before a
+    /// request is sent rather than leaving the gateway to reject it.
+    /// </remarks>
+    [MetadataLimits]
+    [JsonPropertyName("metadata")]
+    public Dictionary<string, string>? Metadata { get; set; }
 }
 
 /// <summary>
@@ -733,4 +745,16 @@ public class BatchPaymentOperationResult
     /// </summary>
     [JsonPropertyName("receipt_url")]
     public string? ReceiptUrl { get; set; }
+
+    /// <summary>
+    /// Additional merchant-defined data associated with the payment.
+    /// </summary>
+    /// <remarks>
+    /// At most ten entries; each key up to 30 characters and each value up to 200. The limits are the
+    /// provider's, and <see cref="MetadataLimitsAttribute"/> enforces them before a
+    /// request is sent rather than leaving the gateway to reject it.
+    /// </remarks>
+    [MetadataLimits]
+    [JsonPropertyName("metadata")]
+    public Dictionary<string, string>? Metadata { get; set; }
 } 
