@@ -57,7 +57,10 @@ public class FlexibleDateTimeConverter : JsonConverter<DateTime>
             case JsonTokenType.Number:
                 // Handle Unix timestamp (seconds since epoch)
                 long unixTime = reader.GetInt64();
-                return DateTimeOffset.FromUnixTimeSeconds(unixTime).DateTime;
+
+                // .DateTime yields Kind=Unspecified, which then serialized back out as if it were UTC
+                // without ever having been converted. .UtcDateTime states what the value actually is.
+                return DateTimeOffset.FromUnixTimeSeconds(unixTime).UtcDateTime;
         }
         
         throw new JsonException($"Unexpected token type: {reader.TokenType}");
@@ -71,8 +74,16 @@ public class FlexibleDateTimeConverter : JsonConverter<DateTime>
     /// <param name="options">Serializer options.</param>
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
     {
-        // Write as ISO 8601 format
-        writer.WriteStringValue(value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
+        // The trailing 'Z' asserts UTC, so the value has to actually be UTC. Appending it to a local
+        // time shifted the instant by the machine's offset and then called the result universal - a bug
+        // invisible on a UTC build agent and wrong everywhere else.
+        //
+        // Unspecified is treated as already-UTC rather than as local. The API only ever emits UTC, so a
+        // value that lost its Kind passing through a serialization layer is UTC; guessing "local" would
+        // corrupt it. A local value, by contrast, states what it is and is converted.
+        DateTime utc = value.Kind == DateTimeKind.Local ? value.ToUniversalTime() : value;
+
+        writer.WriteStringValue(utc.ToString("yyyy-MM-ddTHH:mm:ss.fff'Z'", CultureInfo.InvariantCulture));
     }
 }
 
