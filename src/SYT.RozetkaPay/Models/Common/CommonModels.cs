@@ -475,6 +475,47 @@ public class Product
     /// </summary>
     [JsonPropertyName("category")]
     public string? Category { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;currency&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;description&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;id&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;image&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("image")]
+    public string? Image { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;net_amount&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("net_amount")]
+    public string? NetAmount { get; set; }
+    /// <summary>
+    /// Tax group is required for projects with enabled fiscalization.
+    /// </summary>
+    [JsonPropertyName("tax_group")]
+    public int? TaxGroup { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;url&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;vat_amount&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("vat_amount")]
+    public string? VatAmount { get; set; }
 }
 
 /// <summary>

@@ -493,6 +493,22 @@ public class SetDefaultCardResponse
     /// </summary>
     [JsonPropertyName("message")]
     public string? Message { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;option_id&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("option_id")]
+    public Guid? OptionId { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;success&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("success")]
+    public bool? Success { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;type&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
 }
 
 // ===================== CUSTOMER CARDS MODELS =====================

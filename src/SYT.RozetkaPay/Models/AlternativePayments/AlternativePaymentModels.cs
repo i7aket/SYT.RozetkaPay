@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 using SYT.RozetkaPay.Converters;
 using SYT.RozetkaPay.Models.Common;
 
+using SYT.RozetkaPay.Models.Payments;
+
 namespace SYT.RozetkaPay.Models.AlternativePayments;
 
 /// <summary>
@@ -192,6 +194,17 @@ public class AlternativePaymentCustomerDetails : UserInfo
     /// </summary>
     [JsonPropertyName("postal_code")]
     public string? PostalCode { get; set; }
+
+    /// <summary>
+    /// Customer address.
+    /// </summary>
+    [JsonPropertyName("address")]
+    public string? Address { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;payment_method&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("payment_method")]
+    public AlternativePaymentMethod? PaymentMethod { get; set; }
 }
 
 /// <summary>
@@ -222,6 +235,17 @@ public class AlternativePaymentMethod
     /// </summary>
     [JsonPropertyName("is_active")]
     public bool IsActive { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;blik&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("blik")]
+    public BlikRequestAlternativePaymentMethod? Blik { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;type&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("type")]
+    public AlternativePaymentMethodType? Type { get; set; }
 }
 
 /// <summary>
@@ -229,17 +253,18 @@ public class AlternativePaymentMethod
 /// </summary>
 public class AlternativePaymentProduct : Product
 {
-    /// <summary>
-    /// Product URL (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("url")]
-    public string? Url { get; set; }
 
     /// <summary>
     /// Product image URL (JSON string as per CDN documentation)
     /// </summary>
     [JsonPropertyName("image_url")]
     public string? ImageUrl { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;tax_category&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("tax_category")]
+    public string? TaxCategory { get; set; }
 }
 
 /// <summary>
@@ -461,6 +486,17 @@ public class AlternativePaymentOperationResult
     [MetadataLimits]
     [JsonPropertyName("metadata")]
     public Dictionary<string, string>? Metadata { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;details&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("details")]
+    public AlternativePaymentOperationDetails? Details { get; set; }
+    /// <summary>
+    /// Unified id
+    /// </summary>
+    [JsonPropertyName("unified_external_id")]
+    public string? UnifiedExternalId { get; set; }
 }
 
 /// <summary>
@@ -485,6 +521,57 @@ public class AlternativePaymentOperationsResult
     /// </summary>
     [JsonPropertyName("count")]
     public int? Count { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;amount&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("amount")]
+    public string? Amount { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;amount_refunded&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("amount_refunded")]
+    public string? AmountRefunded { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;customer&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("customer")]
+    public CustomerInfo? Customer { get; set; }
+    /// <summary>
+    /// Merchant's transaction id
+    /// </summary>
+    [JsonPropertyName("external_id")]
+    public string? ExternalId { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;id&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+    /// <summary>
+    /// List of primary operations
+    /// </summary>
+    [JsonPropertyName("purchase_details")]
+    public List<AlternativePaymentOperationDetails>? PurchaseDetails { get; set; }
+    /// <summary>
+    /// A boolean flag which indicates if payment was successful
+    /// </summary>
+    [JsonPropertyName("purchased")]
+    public bool? Purchased { get; set; }
+    /// <summary>
+    /// List of refund operations
+    /// </summary>
+    [JsonPropertyName("refund_details")]
+    public List<AlternativePaymentOperationDetails>? RefundDetails { get; set; }
+    /// <summary>
+    /// A boolean flag which indicates if order was refunded
+    /// </summary>
+    [JsonPropertyName("refunded")]
+    public bool? Refunded { get; set; }
+    /// <summary>
+    /// Unified external id
+    /// </summary>
+    [JsonPropertyName("unified_external_id")]
+    public string? UnifiedExternalId { get; set; }
 }
 
 /// <summary>

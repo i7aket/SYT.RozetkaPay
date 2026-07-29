@@ -167,6 +167,12 @@ public class PaymentsReportRow
     /// </summary>
     [JsonPropertyName("client_patronym")]
     public string? ClientPatronym { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;unified_external_id&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("unified_external_id")]
+    public string? UnifiedExternalId { get; set; }
 }
 
 /// <summary>
@@ -491,6 +497,12 @@ public class TransactionsReportRow
     /// </summary>
     [JsonPropertyName("processed_at")]
     public string? ProcessedAt { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;unified_external_id&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("unified_external_id")]
+    public string? UnifiedExternalId { get; set; }
 }
 
 /// <summary>

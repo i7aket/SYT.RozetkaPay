@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Converters;
 
+using SYT.RozetkaPay.Models.Common;
+
 namespace SYT.RozetkaPay.Models.Subscriptions;
 
 /// <summary>
@@ -454,6 +456,33 @@ public class SubscriptionPaymentMethod
     /// </summary>
     [JsonPropertyName("recurrent_token")]
     public string? RecurrentToken { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;apple_pay&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("apple_pay")]
+    public CustomerAppleGooglePayRequestPaymentMethod? ApplePay { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;cc_token&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("cc_token")]
+    public CustomerCCTokenRequestPaymentMethod? CcToken { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;google_pay&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("google_pay")]
+    public CustomerAppleGooglePayRequestPaymentMethod? GooglePay { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;wallet&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("wallet")]
+    public CustomerWalletRequestPaymentMethod? Wallet { get; set; }
+
+    /// <summary>
+    /// Recurrent payment identifier, required when the type is a recurrent mandate.
+    /// </summary>
+    [JsonPropertyName("recurrent_id")]
+    public string? RecurrentId { get; set; }
 }
 
 /// <summary>
@@ -598,6 +627,97 @@ public class Subscription
     /// </summary>
     [JsonPropertyName("use_plan_price_on_auto_renew")]
     public bool UsePlanPriceOnAutoRenew { get; set; }
+
+    /// <summary>
+    /// The next date-time when the subscription auto_renew param can be changed.
+    /// </summary>
+    [JsonPropertyName("auto_renew_locked_until")]
+    public DateTime? AutoRenewLockedUntil { get; set; }
+    /// <summary>
+    /// Customer identifier. May hold RID value.
+    /// </summary>
+    [JsonPropertyName("customer_id")]
+    public string? CustomerId { get; set; }
+    /// <summary>
+    /// Project API key where recurrent payments are delegated.
+    /// </summary>
+    [JsonPropertyName("delegate_api_key")]
+    public Guid? DelegateApiKey { get; set; }
+    /// <summary>
+    /// Identifier to link the subscription within partner system. Currently used by Rozetka only.
+    /// </summary>
+    [JsonPropertyName("external_id")]
+    public string? ExternalId { get; set; }
+    /// <summary>
+    /// Identifier to link the subscription within partner system. Currently used by Rozetka only.
+    /// </summary>
+    [JsonPropertyName("external_premium_id")]
+    public string? ExternalPremiumId { get; set; }
+    /// <summary>
+    /// The date-time when the subscription will finally expire
+    /// </summary>
+    [JsonPropertyName("final_expiration_date")]
+    public DateTime? FinalExpirationDate { get; set; }
+    /// <summary>
+    /// A marker that indicates whether the subscription is currently a gift subscription.
+    /// </summary>
+    [JsonPropertyName("gifted")]
+    public bool? Gifted { get; set; }
+    /// <summary>
+    /// The start date of the gift subscription.
+    /// </summary>
+    [JsonPropertyName("gifted_from")]
+    public DateTime? GiftedFrom { get; set; }
+    /// <summary>
+    /// Identifier to link the gifted subscription within partner system.
+    /// </summary>
+    [JsonPropertyName("gifted_unified_external_id")]
+    public string? GiftedUnifiedExternalId { get; set; }
+    /// <summary>
+    /// The end date of the gift subscription.
+    /// </summary>
+    [JsonPropertyName("gifted_until")]
+    public DateTime? GiftedUntil { get; set; }
+    /// <summary>
+    /// Shows whether the subscription in currently retrying its renew payment.
+    /// </summary>
+    [JsonPropertyName("is_retrying")]
+    public bool? IsRetrying { get; set; }
+    /// <summary>
+    /// Source project for the current subscription.
+    /// </summary>
+    [JsonPropertyName("project_id")]
+    public Guid? ProjectId { get; set; }
+    /// <summary>
+    /// The recurrent id for the subscription payments.
+    /// </summary>
+    [JsonPropertyName("recurrent_id")]
+    public string? RecurrentId { get; set; }
+    /// <summary>
+    /// The time of day component for the params that have date specified only.
+    /// </summary>
+    [JsonPropertyName("time_of_day")]
+    public DateTime? TimeOfDay { get; set; }
+    /// <summary>
+    /// Specifies, whether to apply periodic payments for trial subscription
+    /// </summary>
+    [JsonPropertyName("trial_periodic_payments")]
+    public bool? TrialPeriodicPayments { get; set; }
+    /// <summary>
+    /// The amount of trial periods assigned to the subscription.
+    /// </summary>
+    [JsonPropertyName("trial_periods")]
+    public decimal? TrialPeriods { get; set; }
+    /// <summary>
+    /// The end date-time of the subscription trial.
+    /// </summary>
+    [JsonPropertyName("trial_until")]
+    public DateTime? TrialUntil { get; set; }
+    /// <summary>
+    /// Identifier to link the subscription within partner system. Currently used by Rozetka only.
+    /// </summary>
+    [JsonPropertyName("unified_external_id")]
+    public string? UnifiedExternalId { get; set; }
 }
 
 /// <summary>
@@ -1201,6 +1321,12 @@ public class Plan
     /// </summary>
     [JsonPropertyName("updated_at")]
     public string? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// The number of frequency_types in a plan duration period.
+    /// </summary>
+    [JsonPropertyName("duration_periods")]
+    public int? DurationPeriods { get; set; }
 }
 
 /// <summary>
@@ -1245,6 +1371,87 @@ public class SubscriptionPaymentDetails
     [JsonPropertyName("processed_at")]
     [JsonConverter(typeof(NullableFlexibleDateTimeConverter))]
     public DateTime? ProcessedAt { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;auth_code&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("auth_code")]
+    public string? AuthCode { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;bank_name&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("bank_name")]
+    public string? BankName { get; set; }
+    /// <summary>
+    /// Description for the plan.
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;meta&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("meta")]
+    public SubscriptionPaymentMeta? Meta { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;mid&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("mid")]
+    public string? Mid { get; set; }
+    /// <summary>
+    /// Date-time of next payment processing attempt in RFC3339 format.
+    /// </summary>
+    [JsonPropertyName("next_processing_date")]
+    public DateTime? NextProcessingDate { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;recipient_iban&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("recipient_iban")]
+    public string? RecipientIban { get; set; }
+    /// <summary>
+    /// True when this payment is a verify-only payment-method-change charge.
+    /// </summary>
+    [JsonPropertyName("refund_on_processed")]
+    public bool? RefundOnProcessed { get; set; }
+    /// <summary>
+    /// The count of payment retries performed after failed first attempt.
+    /// </summary>
+    [JsonPropertyName("retry_count")]
+    public int? RetryCount { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;rrn&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("rrn")]
+    public string? Rrn { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;status_code&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("status_code")]
+    public ResponseCode? StatusCode { get; set; }
+    /// <summary>
+    /// Description of status_code value.
+    /// </summary>
+    [JsonPropertyName("status_description")]
+    public string? StatusDescription { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;terminal_name&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("terminal_name")]
+    public string? TerminalName { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;tid&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("tid")]
+    public string? Tid { get; set; }
+    /// <summary>
+    /// Unique transaction id for payment (null for a gifted subscription or failed payment operation)
+    /// </summary>
+    [JsonPropertyName("transaction_id")]
+    public Guid? TransactionId { get; set; }
+    /// <summary>
+    /// Last date-time of payment data update in RFC3339 format.
+    /// </summary>
+    [JsonPropertyName("updated_at")]
+    public DateTime? UpdatedAt { get; set; }
 }
 
 /// <summary>
@@ -1289,6 +1496,22 @@ public class SubscriptionPayment
     [JsonPropertyName("processed_at")]
     [JsonConverter(typeof(NullableFlexibleDateTimeConverter))]
     public DateTime? ProcessedAt { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;details&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("details")]
+    public SubscriptionPaymentDetails? Details { get; set; }
+    /// <summary>
+    /// Subscription identifier.
+    /// </summary>
+    [JsonPropertyName("subscription_id")]
+    public Guid? SubscriptionId { get; set; }
+    /// <summary>
+    /// Object which contains information about required post-request action. Will be null if action not required.
+    /// </summary>
+    [JsonPropertyName("user_action")]
+    public UserAction? UserAction { get; set; }
 }
 
 /// <summary>

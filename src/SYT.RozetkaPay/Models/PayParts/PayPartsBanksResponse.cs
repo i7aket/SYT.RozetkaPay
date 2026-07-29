@@ -60,6 +60,17 @@ public class PayPartsBankInfo
     /// </summary>
     [JsonPropertyName("periods")]
     public List<PayPartsPeriodInfo>? Periods { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;logo_url&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("logo_url")]
+    public string? LogoUrl { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;product_name&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("product_name")]
+    public string? ProductName { get; set; }
 }
 
 /// <summary>
