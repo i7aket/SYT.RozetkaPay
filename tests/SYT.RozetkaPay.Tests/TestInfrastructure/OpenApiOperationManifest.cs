@@ -669,7 +669,10 @@ internal static class OpenApiOperationManifest
                     Amount = 130.30m,
                     Currency = "UAH",
                     ExternalId = "op30-alternative-create",
-                    Provider = AlternativePaymentProvider.Imoje
+                    Provider = AlternativePaymentProvider.Imoje,
+                    Description = "op30 alternative payment",
+                    Customer = new AlternativePaymentCustomerDetails(),
+                    Products = []
                 },
                 token)
         },

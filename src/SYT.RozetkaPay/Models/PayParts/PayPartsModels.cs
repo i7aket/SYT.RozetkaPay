@@ -260,7 +260,6 @@ public class PayPartsCustomer
     /// <summary>
     /// Customer phone number
     /// </summary>
-    [Required]
     [JsonPropertyName("phone")]
     public required string Phone { get; set; }
 
@@ -315,6 +314,7 @@ public class PayPartsProduct
     /// <summary>
     /// Product quantity
     /// </summary>
+    [Required]
     [JsonPropertyName("quantity")]
     public int Quantity { get; set; } = 1;
 

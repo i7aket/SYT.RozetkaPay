@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
@@ -273,6 +274,58 @@ public abstract class BaseService
     }
 
     /// <summary>
+    /// Serialize a request body, rejecting one that does not satisfy its own annotations first.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The models have carried <see cref="System.ComponentModel.DataAnnotations.RequiredAttribute"/> and
+    /// friends since they were written, and nothing ever read them: 202 annotations, zero calls to
+    /// <see cref="Validator"/>. They documented an intention the SDK did not act on, which is worse than
+    /// having none — a reader reasonably assumes a marked field is checked.
+    /// </para>
+    /// <para>
+    /// They are read now. The alternative is a round trip that ends in a <c>400</c> naming neither the
+    /// field nor the rule, and for a payment API that round trip may not be free.
+    /// </para>
+    /// <para>
+    /// This lands only after every request body was reconciled with the published document, in that
+    /// order deliberately: sixteen annotations contradicted it, so switching validation on first would
+    /// have started rejecting requests the provider accepts.
+    /// </para>
+    /// </remarks>
+    /// <typeparam name="TRequest">Body type.</typeparam>
+    /// <param name="request">Body to validate and serialize.</param>
+    /// <returns>The serialized body.</returns>
+    /// <exception cref="RozetkaPayValidationException">
+    /// The body violates its own annotations. Thrown before any request is built, so nothing reaches
+    /// the provider.
+    /// </exception>
+    private static string SerializeValidatedRequest<TRequest>(TRequest request)
+    {
+        if (request is not null)
+        {
+            List<ValidationResult> failures = [];
+            if (!Validator.TryValidateObject(
+                    request,
+                    new ValidationContext(request),
+                    failures,
+                    validateAllProperties: true))
+            {
+                // Member names and rule text only. A validation message never carries the offending
+                // value, which may be a card number or a customer's details.
+                string detail = string.Join(
+                    "; ",
+                    failures.Select(static failure => failure.ErrorMessage).Where(static m => m is not null));
+
+                throw new RozetkaPayValidationException(
+                    $"The request does not satisfy the contract: {detail}");
+            }
+        }
+
+        return JsonSerializer.Serialize(request, SdkSerializerOptions.Value);
+    }
+
+    /// <summary>
     /// Send a request under the configured timeout, keeping cancellation the caller's.
     /// </summary>
     /// <remarks>
@@ -428,7 +481,7 @@ public abstract class BaseService
     {
         return await ExecuteWithRetryAsync(async () =>
         {
-            string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
+            string json = SerializeValidatedRequest(request);
             Logger?.LogInformation("Making POST request to {Endpoint}", endpointForLogging);
 
             // Body and request are built inside the attempt and owned by it: disposing the request disposes
@@ -500,7 +553,7 @@ public abstract class BaseService
     {
         return await ExecuteWithRetryAsync(async () =>
         {
-            string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
+            string json = SerializeValidatedRequest(request);
             Logger?.LogInformation("Making POST request to {Endpoint}", endpointForLogging);
 
             // Same per-attempt ownership and per-request headers as the plain POST helper.
@@ -571,7 +624,7 @@ public abstract class BaseService
     {
         return await ExecuteWithRetryAsync(async () =>
         {
-            string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
+            string json = SerializeValidatedRequest(request);
             Logger?.LogInformation("Making PATCH request to {Endpoint}", endpointForLogging);
 
             using HttpRequestMessage message = CreateAuthenticatedRequest(HttpMethod.Patch, endpoint);
@@ -700,7 +753,7 @@ public abstract class BaseService
         // one below would run after the caller's body had already been serialized.
         cancellationToken.ThrowIfCancellationRequested();
 
-        string json = JsonSerializer.Serialize(request, GetJsonSerializerOptions());
+        string json = SerializeValidatedRequest(request);
         return SendDeleteAsync<TResponse>(endpoint, endpointForLogging, json, cancellationToken);
     }
 

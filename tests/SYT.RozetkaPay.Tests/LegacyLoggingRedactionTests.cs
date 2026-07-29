@@ -853,7 +853,7 @@ public class LegacyLoggingRedactionTests
 #pragma warning disable CS0618 // Deliberate regression coverage for the obsolete legacy route.
         await service.CancelAsync(
             LoggingRedactionContext.RawMarker(Row),
-            new CancelSubscriptionRequest());
+            new CancelSubscriptionRequest { ExternalId = "subscription-id-placeholder" });
 #pragma warning restore CS0618
 
         RedactionRequest request = handler.Single;

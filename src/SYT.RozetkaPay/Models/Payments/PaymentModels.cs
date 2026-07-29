@@ -537,6 +537,7 @@ public class CustomerRequestPaymentMethod
     /// <summary>
     /// Payment method type (JSON string as per CDN documentation)
     /// </summary>
+    [Required]
     [JsonPropertyName("type")]
     public string? Type { get; set; }
 
