@@ -182,8 +182,11 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
             $"{DeclineEndpoint}?project_id={Uri.EscapeDataString(projectId)}" +
             $"&payment_instruction_id={Uri.EscapeDataString(paymentInstructionId)}");
 
+        // The decline operation is a GET that only reads the provider's redirect target, so repeating it
+        // creates nothing.
         return await ExecuteWithRetryAsync(
             () => SendDeclineAsync(requestUri, cancellationToken),
+            isIdempotent: true,
             cancellationToken).ConfigureAwait(false);
     }
 

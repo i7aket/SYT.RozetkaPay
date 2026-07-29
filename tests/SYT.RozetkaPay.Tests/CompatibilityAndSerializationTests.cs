@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using SYT.RozetkaPay.Configuration;
+using SYT.RozetkaPay.Exceptions;
 using SYT.RozetkaPay.Models.AlternativePayments;
 using SYT.RozetkaPay.Models.Customers;
 using SYT.RozetkaPay.Models.PayParts;
@@ -14,7 +15,7 @@ namespace SYT.RozetkaPay.Tests;
 public class CompatibilityAndSerializationTests
 {
     [Fact]
-    public async Task PayPartsService_CreateOrder_ShouldFallbackToLegacyEndpointOnNotFound()
+    public async Task PayPartsService_CreateOrder_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
     {
         List<string> calls = new();
         StubHttpMessageHandler handler = new(async (request, _) =>
@@ -32,21 +33,22 @@ public class CompatibilityAndSerializationTests
         });
 
         PayPartsService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await service.CreateOrderAsync(new CreatePayPartsOrderRequest
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.CreateOrderAsync(new CreatePayPartsOrderRequest
         {
             ExternalId = "ext-1",
             Amount = 1000m,
             Currency = "UAH",
             PartsCount = 3
-        });
+        }));
 
-        Assert.Equal(2, calls.Count);
+        // A 404 can mean the resource is absent, not the route. Reinterpreting it as a missing
+        // endpoint hid the real error and sent a second mutation to an unpublished route.
+        Assert.Single(calls);
         Assert.Equal("/api/payparts/v1/order/create", calls[0]);
-        Assert.Equal("/api/payparts/v1/new", calls[1]);
     }
 
     [Fact]
-    public async Task AlternativePaymentService_Create_ShouldFallbackToLegacyEndpointOnNotFound()
+    public async Task AlternativePaymentService_Create_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
     {
         List<string> calls = new();
         StubHttpMessageHandler handler = new(async (request, _) =>
@@ -64,21 +66,22 @@ public class CompatibilityAndSerializationTests
         });
 
         AlternativePaymentService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await service.CreateAsync(new CreateAlternativePaymentRequest
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.CreateAsync(new CreateAlternativePaymentRequest
         {
             Amount = 25m,
             Currency = "PLN",
             ExternalId = "ext-1",
             Provider = AlternativePaymentProvider.Imoje
-        });
+        }));
 
-        Assert.Equal(2, calls.Count);
+        // A 404 can mean the resource is absent, not the route. Reinterpreting it as a missing
+        // endpoint hid the real error and sent a second mutation to an unpublished route.
+        Assert.Single(calls);
         Assert.Equal("/api/alternative-payments/v1/create", calls[0]);
-        Assert.Equal("/api/alternative-payments/v1/new", calls[1]);
     }
 
     [Fact]
-    public async Task CustomerService_GetWallet_ShouldFallbackToLegacyEndpointOnNotFound()
+    public async Task CustomerService_GetWallet_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
     {
         List<string> calls = new();
         StubHttpMessageHandler handler = new(async (request, _) =>
@@ -96,12 +99,13 @@ public class CompatibilityAndSerializationTests
         });
 
         CustomerService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        CustomerWalletResponse response = await service.GetCustomerWalletAsync("customer-1");
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(
+            () => service.GetCustomerWalletAsync("customer-1"));
 
-        Assert.Equal(2, calls.Count);
+        // A 404 can mean the resource is absent, not the route. Reinterpreting it as a missing
+        // endpoint hid the real error and sent a second mutation to an unpublished route.
+        Assert.Single(calls);
         Assert.Equal("/api/customers/v1/wallet?external_id=customer-1", calls[0]);
-        Assert.Equal("/api/customers/v1/customer-1/wallet", calls[1]);
-        Assert.NotNull(response);
     }
 
     [Fact]

@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using SYT.RozetkaPay.Configuration;
+using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Exceptions;
 using SYT.RozetkaPay.Models.PaymentInstructions;
 using SYT.RozetkaPay.Services;
@@ -1200,5 +1201,84 @@ public class RetryStatusCodeContractTests
             Assert.True(response.Disposed, "the SDK must dispose the HttpResponseMessage of every attempt.");
             Assert.True(response.TrackedContent.Disposed, "the SDK must dispose the response content.");
         });
+    }
+
+    // =========================================================================================
+    // Which operations may be repeated at all
+    // =========================================================================================
+
+    /// <summary>
+    /// A mutation the provider makes no at-most-once promise about is attempted exactly once, however
+    /// generous the retry policy is.
+    /// </summary>
+    /// <remarks>
+    /// A <c>503</c> or a timeout can arrive after the gateway has already accepted the operation. Sending
+    /// it again is then a second confirm, cancel or refund, not a retry — and the caller has no way to
+    /// tell that happened. Only reads, and the one create the spec guarantees is at-most-once by
+    /// <c>external_id</c>, are repeated.
+    /// </remarks>
+    [Theory]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.RequestTimeout)]
+    public async Task ANonIdempotentMutation_ShouldBeAttemptedExactlyOnce(HttpStatusCode status)
+    {
+        ScriptedRetryHandler handler = new(
+            RetryOutcomes.Failure(status, RetryContractContext.ErrorBody),
+            RetryOutcomes.Failure(status, RetryContractContext.ErrorBody),
+            RetryOutcomes.Success());
+        RozetkaPayConfiguration configuration = RetryContractContext.Configuration(
+            RetryContractContext.Immediate(maxRetryAttempts: 2));
+
+        PaymentService service = new(configuration, RetryContractContext.Client(handler));
+
+        await Assert.ThrowsAsync<RozetkaPayException>(
+            () => service.ConfirmAsync(new ConfirmPaymentRequest { ExternalId = "order-1" }));
+
+        Assert.Equal(1, handler.AttemptCount);
+    }
+
+    /// <summary>
+    /// Creating a payment is the exception: the provider promises at most one success per
+    /// <c>external_id</c>, so a repeat cannot charge twice.
+    /// </summary>
+    [Fact]
+    public async Task CreatingAPayment_ShouldStillBeRetried()
+    {
+        ScriptedRetryHandler handler = new(
+            RetryOutcomes.Failure(HttpStatusCode.ServiceUnavailable, RetryContractContext.ErrorBody),
+            RetryOutcomes.Success());
+        RozetkaPayConfiguration configuration = RetryContractContext.Configuration(
+            RetryContractContext.Immediate(maxRetryAttempts: 2));
+
+        PaymentService service = new(configuration, RetryContractContext.Client(handler));
+
+        await service.CreateAsync(new CreatePaymentRequest
+        {
+            Amount = 10m,
+            Currency = "UAH",
+            ExternalId = "order-1"
+        });
+
+        Assert.Equal(2, handler.AttemptCount);
+    }
+
+    /// <summary>
+    /// Reads are unaffected: repeating one observes state, it does not change it.
+    /// </summary>
+    [Fact]
+    public async Task AReadOperation_ShouldStillBeRetried()
+    {
+        ScriptedRetryHandler handler = new(
+            RetryOutcomes.Failure(HttpStatusCode.ServiceUnavailable, RetryContractContext.ErrorBody),
+            RetryOutcomes.Success());
+        RozetkaPayConfiguration configuration = RetryContractContext.Configuration(
+            RetryContractContext.Immediate(maxRetryAttempts: 2));
+
+        PaymentService service = new(configuration, RetryContractContext.Client(handler));
+
+        await service.GetInfoAsync("order-1");
+
+        Assert.Equal(2, handler.AttemptCount);
     }
 }

@@ -70,11 +70,9 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <returns>Alternative payment response</returns>
     public async Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsyncWithFallback<CreateAlternativePaymentRequest, AlternativePaymentResponse>(
+        return await PostAsync<CreateAlternativePaymentRequest, AlternativePaymentResponse>(
             CreateEndpoint,
             CreateEndpoint,
-            NewEndpoint,
-            NewEndpoint,
             request,
             cancellationToken);
     }
@@ -88,11 +86,9 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <returns>Alternative payment operation result</returns>
     public async Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsyncWithFallback<CreateAlternativePaymentRequest, AlternativePaymentOperationResult>(
+        return await PostAsync<CreateAlternativePaymentRequest, AlternativePaymentOperationResult>(
             CreateEndpoint,
             CreateEndpoint,
-            NewEndpoint,
-            NewEndpoint,
             request,
             cancellationToken);
     }
@@ -160,13 +156,9 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     {
         string primaryEndpoint =
             $"{InfoOperationEndpoint}?external_id={Uri.EscapeDataString(externalId)}&operation_id={Uri.EscapeDataString(operationId)}";
-        string fallbackEndpoint =
-            $"/api/alternative-payments/v1/operation/{RequestTargetEncoding.EscapePathSegment(externalId, nameof(externalId))}";
-        return await GetAsyncWithFallback<AlternativePaymentOperationResult>(
+        return await GetAsync<AlternativePaymentOperationResult>(
             primaryEndpoint,
             InfoOperationEndpoint,
-            fallbackEndpoint,
-            OperationByExternalIdLogLabel,
             cancellationToken);
     }
 

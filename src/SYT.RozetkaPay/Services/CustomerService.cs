@@ -80,13 +80,9 @@ public class CustomerService : BaseService, ICustomerService
     public async Task<CustomerWalletResponse> GetCustomerWalletAsync(string customerId, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint = $"{WalletEndpoint}?external_id={Uri.EscapeDataString(customerId)}";
-        string fallbackEndpoint =
-            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}/wallet";
-        return await GetAsyncWithFallback<CustomerWalletResponse>(
+        return await GetAsync<CustomerWalletResponse>(
             primaryEndpoint,
             WalletEndpoint,
-            fallbackEndpoint,
-            CustomerWalletLogLabel,
             cancellationToken);
     }
 
@@ -101,13 +97,9 @@ public class CustomerService : BaseService, ICustomerService
     public async Task<AddCardToWalletResponse> AddCardToWalletAsync(string customerId, AddCardToWalletRequest request, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint = $"{WalletEndpoint}?external_id={Uri.EscapeDataString(customerId)}";
-        string fallbackEndpoint =
-            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}/cards";
-        return await PostAsyncWithFallback<AddCardToWalletRequest, AddCardToWalletResponse>(
+        return await PostAsync<AddCardToWalletRequest, AddCardToWalletResponse>(
             primaryEndpoint,
             WalletEndpoint,
-            fallbackEndpoint,
-            CustomerCardsLogLabel,
             request,
             cancellationToken);
     }
@@ -184,14 +176,9 @@ public class CustomerService : BaseService, ICustomerService
     {
         string primaryEndpoint =
             $"{WalletFindEndpoint}?external_id={Uri.EscapeDataString(customerId)}&option_id={Uri.EscapeDataString(cardId)}";
-        string fallbackEndpoint =
-            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}"
-            + $"/cards/{RequestTargetEncoding.EscapePathSegment(cardId, nameof(cardId))}";
-        return await GetAsyncWithFallback<WalletItemResponse>(
+        return await GetAsync<WalletItemResponse>(
             primaryEndpoint,
             WalletFindEndpoint,
-            fallbackEndpoint,
-            CustomerCardLogLabel,
             cancellationToken);
     }
 
@@ -207,14 +194,9 @@ public class CustomerService : BaseService, ICustomerService
     {
         string primaryEndpoint =
             $"{WalletConfirmationStatusEndpoint}?external_id={Uri.EscapeDataString(customerId)}&option_id={Uri.EscapeDataString(cardId)}";
-        string fallbackEndpoint =
-            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}"
-            + $"/cards/{RequestTargetEncoding.EscapePathSegment(cardId, nameof(cardId))}/confirmation";
-        return await GetAsyncWithFallback<CardConfirmationStatusResponse>(
+        return await GetAsync<CardConfirmationStatusResponse>(
             primaryEndpoint,
             WalletConfirmationStatusEndpoint,
-            fallbackEndpoint,
-            CustomerCardConfirmationLogLabel,
             cancellationToken);
     }
 
@@ -229,13 +211,9 @@ public class CustomerService : BaseService, ICustomerService
     public async Task<SetDefaultCardResponse> SetDefaultCardAsync(string customerId, SetDefaultCardRequest request, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint = $"{WalletSettingsSetEndpoint}?external_id={Uri.EscapeDataString(customerId)}";
-        string fallbackEndpoint =
-            $"/api/customers/v1/{RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId))}/cards/default";
-        return await PostAsyncWithFallback<SetDefaultCardRequest, SetDefaultCardResponse>(
+        return await PostAsync<SetDefaultCardRequest, SetDefaultCardResponse>(
             primaryEndpoint,
             WalletSettingsSetEndpoint,
-            fallbackEndpoint,
-            DefaultCardLogLabel,
             request,
             cancellationToken);
     }

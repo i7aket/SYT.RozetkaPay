@@ -36,7 +36,6 @@ namespace SYT.RozetkaPay.Tests;
 /// protects an externally derived service as well as the ones in this assembly;</item>
 /// <item>every internal callsite passes an explicit, compile-time static route template, so route-level
 /// observability survives the fail-closed change;</item>
-/// <item>a fallback log names the two static labels and neither real target;</item>
 /// <item>credentials, request bodies, response bodies, provider error text, raw bodies and the decline
 /// <c>Location</c> are not log fields, and the SDK opens no logging scope;</item>
 /// <item>nothing about the wire changed - the same verb, target, escaping, body and content type.</item>
@@ -58,16 +57,6 @@ public class LegacyLoggingRedactionTests
     private const string PostWithoutBody = "post-bodyless";
     private const string Delete = "delete";
     private const string DeleteWithBody = "delete-body";
-    private const string GetFallback = "get-fallback";
-    private const string PostFallback = "post-fallback";
-    private const string PostAllowingNoContentFallback = "post-204-fallback";
-
-    /// <summary>
-    /// The exact fallback entry a no-label wrapper writes. Asserted verbatim rather than by absence of the
-    /// markers alone, so a regression that logged one real target and one label could not pass.
-    /// </summary>
-    private const string RedactedFallbackMessage =
-        "Primary endpoint [redacted] returned 404. Falling back to [redacted].";
 
     // =========================================================================================
     // 1. BaseService: the no-label overloads fail closed
@@ -75,8 +64,8 @@ public class LegacyLoggingRedactionTests
 
     /// <summary>
     /// Every legacy overload keeps its signature and its wire behaviour, and logs <c>[redacted]</c> instead
-    /// of the target it was given. The primary and fallback targets carry <b>different</b> hostile markers,
-    /// so a wrapper that quoted the wrong request is distinguishable from one that quoted none.
+    /// of the target it was given. The target carries a hostile marker, so a helper that quoted
+    /// the real request is distinguishable from one that quoted the label.
     /// </summary>
     [Theory]
     [InlineData(Get)]
@@ -84,32 +73,18 @@ public class LegacyLoggingRedactionTests
     [InlineData(PostAllowingNoContent)]
     [InlineData(Patch)]
     [InlineData(Delete)]
-    [InlineData(GetFallback)]
-    [InlineData(PostFallback)]
-    [InlineData(PostAllowingNoContentFallback)]
     public async Task NoLabelHelper_ShouldLogRedactedInsteadOfTheRealRequestTarget(string helper)
     {
-        bool fallback = IsFallback(helper);
         (CapturingLoggerProvider logs, ILogger logger) = LoggingRedactionContext.Capture();
-        RedactionHandler handler = fallback ? RedactionHandler.NotFoundThenJson() : RedactionHandler.Json();
+        RedactionHandler handler = RedactionHandler.Json();
         LoggingRedactionProbeService probe = LoggingRedactionContext.Probe(handler, logger);
 
         string primary = PrimaryTarget();
-        string fallbackTarget = FallbackTarget();
 
-        await InvokeNoLabelAsync(probe, helper, primary, fallbackTarget);
+        await InvokeNoLabelAsync(probe, helper, primary);
 
         // The wire is untouched: the exact strings the caller passed, in the expected order.
-        if (fallback)
-        {
-            Assert.Equal(2, handler.Requests.Count);
-            Assert.Equal(primary, handler.Requests[0].Target);
-            Assert.Equal(fallbackTarget, handler.Requests[1].Target);
-        }
-        else
-        {
-            Assert.Equal(primary, handler.Single.Target);
-        }
+        Assert.Equal(primary, handler.Single.Target);
 
         // Neither marker reached any category, message, structured value or scope - in either spelling.
         LoggingRedactionAssert.NotLoggedInEitherSpelling(
@@ -123,12 +98,6 @@ public class LegacyLoggingRedactionTests
 
         LoggingRedactionAssert.Logged(logs, LoggingRedactionContext.RedactedLabel);
         LoggingRedactionAssert.NoScopes(logs);
-
-        if (fallback)
-        {
-            // Both sides of the fallback entry are redacted, not just one.
-            Assert.Contains(RedactedFallbackMessage, logs.Entries.Select(entry => entry.Message));
-        }
     }
 
     // =========================================================================================
@@ -147,31 +116,17 @@ public class LegacyLoggingRedactionTests
     [InlineData(PostWithoutBody)]
     [InlineData(Delete)]
     [InlineData(DeleteWithBody)]
-    [InlineData(GetFallback)]
-    [InlineData(PostFallback)]
-    [InlineData(PostAllowingNoContentFallback)]
     public async Task LabelAwareHelper_ShouldLogTheStaticLabelAndNeverTheRealRequestTarget(string helper)
     {
-        bool fallback = IsFallback(helper);
         (CapturingLoggerProvider logs, ILogger logger) = LoggingRedactionContext.Capture();
-        RedactionHandler handler = fallback ? RedactionHandler.NotFoundThenJson() : RedactionHandler.Json();
+        RedactionHandler handler = RedactionHandler.Json();
         LoggingRedactionProbeService probe = LoggingRedactionContext.Probe(handler, logger);
 
         string primary = PrimaryTarget();
-        string fallbackTarget = FallbackTarget();
 
-        await InvokeWithLabelAsync(probe, helper, primary, fallbackTarget);
+        await InvokeWithLabelAsync(probe, helper, primary);
 
-        if (fallback)
-        {
-            Assert.Equal(2, handler.Requests.Count);
-            Assert.Equal(primary, handler.Requests[0].Target);
-            Assert.Equal(fallbackTarget, handler.Requests[1].Target);
-        }
-        else
-        {
-            Assert.Equal(primary, handler.Single.Target);
-        }
+        Assert.Equal(primary, handler.Single.Target);
 
         LoggingRedactionAssert.NotLoggedInEitherSpelling(
             logs,
@@ -184,17 +139,6 @@ public class LegacyLoggingRedactionTests
 
         LoggingRedactionAssert.Logged(logs, LoggingRedactionContext.ProbeLabel);
         LoggingRedactionAssert.NoScopes(logs);
-
-        if (fallback)
-        {
-            LoggingRedactionAssert.Logged(logs, LoggingRedactionContext.ProbeFallbackLabel);
-
-            // Only the two static labels, and nothing else, describe the fallback decision.
-            Assert.Contains(
-                $"Primary endpoint {LoggingRedactionContext.ProbeLabel} returned 404. " +
-                $"Falling back to {LoggingRedactionContext.ProbeFallbackLabel}.",
-                logs.Entries.Select(entry => entry.Message));
-        }
     }
 
     /// <summary>
@@ -205,16 +149,13 @@ public class LegacyLoggingRedactionTests
     [InlineData(PostAllowingNoContent)]
     [InlineData(Patch)]
     [InlineData(DeleteWithBody)]
-    [InlineData(PostFallback)]
-    [InlineData(PostAllowingNoContentFallback)]
     public async Task BodyCarryingHelper_ShouldSendTheBodyAndNeverLogIt(string helper)
     {
-        bool fallback = IsFallback(helper);
         (CapturingLoggerProvider logs, ILogger logger) = LoggingRedactionContext.Capture();
-        RedactionHandler handler = fallback ? RedactionHandler.NotFoundThenJson() : RedactionHandler.Json();
+        RedactionHandler handler = RedactionHandler.Json();
         LoggingRedactionProbeService probe = LoggingRedactionContext.Probe(handler, logger);
 
-        await InvokeWithLabelAsync(probe, helper, PrimaryTarget(), FallbackTarget());
+        await InvokeWithLabelAsync(probe, helper, PrimaryTarget());
 
         // Every request really carried the body, as JSON.
         Assert.All(handler.Requests, request =>
@@ -416,25 +357,21 @@ public class LegacyLoggingRedactionTests
         const string ExternalRow = "alternative-fallback-external";
         const string OperationRow = "alternative-fallback-operation";
         const string PrimaryLabel = "/api/alternative-payments/v1/info/operation";
-        const string FallbackLabel = "/api/alternative-payments/v1/operation/{external_id}";
 
         (RedactionHandler handler, CapturingLoggerProvider logs, AlternativePaymentService service) =
-            Arrange(static (c, h, l) => new AlternativePaymentService(c, h, l), fallback: true);
+            Arrange(static (c, h, l) => new AlternativePaymentService(c, h, l));
 
         await service.GetOperationInfoAsync(
             LoggingRedactionContext.RawMarker(ExternalRow),
             LoggingRedactionContext.RawMarker(OperationRow));
 
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(handler.Requests);
         Assert.Equal(
             $"{PrimaryLabel}?external_id={LoggingRedactionContext.EncodedMarker(ExternalRow)}" +
             $"&operation_id={LoggingRedactionContext.EncodedMarker(OperationRow)}",
             handler.Requests[0].Target);
-        Assert.Equal(
-            $"/api/alternative-payments/v1/operation/{LoggingRedactionContext.EncodedMarker(ExternalRow)}",
-            handler.Requests[1].Target);
 
-        AssertRedacted(logs, [ExternalRow, OperationRow], PrimaryLabel, FallbackLabel);
+        AssertRedacted(logs, [ExternalRow, OperationRow], PrimaryLabel);
     }
 
     [Fact]
@@ -512,27 +449,23 @@ public class LegacyLoggingRedactionTests
         const string ExternalRow = "payparts-fallback-external";
         const string OperationRow = "payparts-fallback-operation";
         const string PrimaryLabel = "/api/payparts/v1/info/operation";
-        const string FallbackLabel = "/api/payparts/v1/operation/{operation_id}";
 
         (RedactionHandler handler, CapturingLoggerProvider logs, PayPartsService service) =
-            Arrange(static (c, h, l) => new PayPartsService(c, h, l), fallback: true);
+            Arrange(static (c, h, l) => new PayPartsService(c, h, l));
 
         await service.GetOperationInfoAsync(
             LoggingRedactionContext.RawMarker(ExternalRow),
             LoggingRedactionContext.RawMarker(OperationRow));
 
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(handler.Requests);
         Assert.Equal(
             $"{PrimaryLabel}?external_id={LoggingRedactionContext.EncodedMarker(ExternalRow)}" +
             $"&operation_id={LoggingRedactionContext.EncodedMarker(OperationRow)}",
             handler.Requests[0].Target);
 
         // The fallback of this operation is addressed by the operation ID, not the external ID.
-        Assert.Equal(
-            $"/api/payparts/v1/operation/{LoggingRedactionContext.EncodedMarker(OperationRow)}",
-            handler.Requests[1].Target);
 
-        AssertRedacted(logs, [ExternalRow, OperationRow], PrimaryLabel, FallbackLabel);
+        AssertRedacted(logs, [ExternalRow, OperationRow], PrimaryLabel);
     }
 
     [Fact]
@@ -576,13 +509,11 @@ public class LegacyLoggingRedactionTests
     public async Task PayPartsBanks_ShouldLogBothStaticRoutes()
     {
         (RedactionHandler handler, CapturingLoggerProvider logs, PayPartsService service) =
-            Arrange(static (c, h, l) => new PayPartsService(c, h, l), fallback: true);
+            Arrange(static (c, h, l) => new PayPartsService(c, h, l));
 
         await service.GetBanksAsync();
 
-        Assert.Equal(2, handler.Requests.Count);
-        Assert.Equal("/api/payparts/v1/banks/info", handler.Requests[0].Target);
-        Assert.Equal("/api/payparts/v1/banks", handler.Requests[1].Target);
+        Assert.Single(handler.Requests);
 
         LoggingRedactionAssert.Logged(logs, "/api/payparts/v1/banks/info");
         LoggingRedactionAssert.Logged(logs, "/api/payparts/v1/banks");
@@ -597,22 +528,18 @@ public class LegacyLoggingRedactionTests
     {
         const string Row = "customer-wallet";
         const string PrimaryLabel = "/api/customers/v1/wallet";
-        const string FallbackLabel = "/api/customers/v1/{customer_id}/wallet";
 
         (RedactionHandler handler, CapturingLoggerProvider logs, CustomerService service) =
-            Arrange(static (c, h, l) => new CustomerService(c, h, l), fallback: true);
+            Arrange(static (c, h, l) => new CustomerService(c, h, l));
 
         await service.GetCustomerWalletAsync(LoggingRedactionContext.RawMarker(Row));
 
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(handler.Requests);
         Assert.Equal(
             $"{PrimaryLabel}?external_id={LoggingRedactionContext.EncodedMarker(Row)}",
             handler.Requests[0].Target);
-        Assert.Equal(
-            $"/api/customers/v1/{LoggingRedactionContext.EncodedMarker(Row)}/wallet",
-            handler.Requests[1].Target);
 
-        AssertRedacted(logs, [Row], PrimaryLabel, FallbackLabel);
+        AssertRedacted(logs, [Row], PrimaryLabel);
     }
 
     [Fact]
@@ -620,10 +547,9 @@ public class LegacyLoggingRedactionTests
     {
         const string Row = "customer-add-card";
         const string PrimaryLabel = "/api/customers/v1/wallet";
-        const string FallbackLabel = "/api/customers/v1/{customer_id}/cards";
 
         (RedactionHandler handler, CapturingLoggerProvider logs, CustomerService service) =
-            Arrange(static (c, h, l) => new CustomerService(c, h, l), fallback: true);
+            Arrange(static (c, h, l) => new CustomerService(c, h, l));
 
         await service.AddCardToWalletAsync(
             LoggingRedactionContext.RawMarker(Row),
@@ -638,15 +564,12 @@ public class LegacyLoggingRedactionTests
                 }
             });
 
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(handler.Requests);
         Assert.Equal(
             $"{PrimaryLabel}?external_id={LoggingRedactionContext.EncodedMarker(Row)}",
             handler.Requests[0].Target);
-        Assert.Equal(
-            $"/api/customers/v1/{LoggingRedactionContext.EncodedMarker(Row)}/cards",
-            handler.Requests[1].Target);
 
-        AssertRedacted(logs, [Row], PrimaryLabel, FallbackLabel);
+        AssertRedacted(logs, [Row], PrimaryLabel);
     }
 
     /// <summary>
@@ -684,26 +607,21 @@ public class LegacyLoggingRedactionTests
         const string CustomerRow = "wallet-item-customer";
         const string CardRow = "wallet-item-card";
         const string PrimaryLabel = "/api/customers/v1/wallet/find";
-        const string FallbackLabel = "/api/customers/v1/{customer_id}/cards/{card_id}";
 
         (RedactionHandler handler, CapturingLoggerProvider logs, CustomerService service) =
-            Arrange(static (c, h, l) => new CustomerService(c, h, l), fallback: true);
+            Arrange(static (c, h, l) => new CustomerService(c, h, l));
 
         await service.GetWalletItemAsync(
             LoggingRedactionContext.RawMarker(CustomerRow),
             LoggingRedactionContext.RawMarker(CardRow));
 
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(handler.Requests);
         Assert.Equal(
             $"{PrimaryLabel}?external_id={LoggingRedactionContext.EncodedMarker(CustomerRow)}" +
             $"&option_id={LoggingRedactionContext.EncodedMarker(CardRow)}",
             handler.Requests[0].Target);
-        Assert.Equal(
-            $"/api/customers/v1/{LoggingRedactionContext.EncodedMarker(CustomerRow)}" +
-            $"/cards/{LoggingRedactionContext.EncodedMarker(CardRow)}",
-            handler.Requests[1].Target);
 
-        AssertRedacted(logs, [CustomerRow, CardRow], PrimaryLabel, FallbackLabel);
+        AssertRedacted(logs, [CustomerRow, CardRow], PrimaryLabel);
     }
 
     [Fact]
@@ -712,26 +630,21 @@ public class LegacyLoggingRedactionTests
         const string CustomerRow = "confirmation-customer";
         const string CardRow = "confirmation-card";
         const string PrimaryLabel = "/api/customers/v1/wallet/confirmation/status";
-        const string FallbackLabel = "/api/customers/v1/{customer_id}/cards/{card_id}/confirmation";
 
         (RedactionHandler handler, CapturingLoggerProvider logs, CustomerService service) =
-            Arrange(static (c, h, l) => new CustomerService(c, h, l), fallback: true);
+            Arrange(static (c, h, l) => new CustomerService(c, h, l));
 
         await service.GetCardConfirmationStatusAsync(
             LoggingRedactionContext.RawMarker(CustomerRow),
             LoggingRedactionContext.RawMarker(CardRow));
 
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(handler.Requests);
         Assert.Equal(
             $"{PrimaryLabel}?external_id={LoggingRedactionContext.EncodedMarker(CustomerRow)}" +
             $"&option_id={LoggingRedactionContext.EncodedMarker(CardRow)}",
             handler.Requests[0].Target);
-        Assert.Equal(
-            $"/api/customers/v1/{LoggingRedactionContext.EncodedMarker(CustomerRow)}" +
-            $"/cards/{LoggingRedactionContext.EncodedMarker(CardRow)}/confirmation",
-            handler.Requests[1].Target);
 
-        AssertRedacted(logs, [CustomerRow, CardRow], PrimaryLabel, FallbackLabel);
+        AssertRedacted(logs, [CustomerRow, CardRow], PrimaryLabel);
     }
 
     [Fact]
@@ -739,24 +652,20 @@ public class LegacyLoggingRedactionTests
     {
         const string Row = "set-default-card";
         const string PrimaryLabel = "/api/customers/v1/wallet/settings/set";
-        const string FallbackLabel = "/api/customers/v1/{customer_id}/cards/default";
 
         (RedactionHandler handler, CapturingLoggerProvider logs, CustomerService service) =
-            Arrange(static (c, h, l) => new CustomerService(c, h, l), fallback: true);
+            Arrange(static (c, h, l) => new CustomerService(c, h, l));
 
         await service.SetDefaultCardAsync(
             LoggingRedactionContext.RawMarker(Row),
             new SetDefaultCardRequest { CardId = "card-id-placeholder-EXP359" });
 
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(handler.Requests);
         Assert.Equal(
             $"{PrimaryLabel}?external_id={LoggingRedactionContext.EncodedMarker(Row)}",
             handler.Requests[0].Target);
-        Assert.Equal(
-            $"/api/customers/v1/{LoggingRedactionContext.EncodedMarker(Row)}/cards/default",
-            handler.Requests[1].Target);
 
-        AssertRedacted(logs, [Row], PrimaryLabel, FallbackLabel);
+        AssertRedacted(logs, [Row], PrimaryLabel);
     }
 
     [Fact]
@@ -1160,23 +1069,20 @@ public class LegacyLoggingRedactionTests
     }
 
     /// <summary>
-    /// A fallback whose primary answered a hostile <c>404</c> logs neither the provider message nor the raw
-    /// body, and still reaches the fallback.
+    /// A hostile <c>404</c> reaches the caller without its provider message or raw body being logged, and
+    /// without a second request being sent anywhere.
     /// </summary>
     [Fact]
-    public async Task FallbackOnHostileNotFound_ShouldNotLogTheProviderMessage()
+    public async Task HostileNotFound_ShouldNotLogTheProviderMessage_AndShouldNotRetryElsewhere()
     {
         (CapturingLoggerProvider logs, ILogger logger) = LoggingRedactionContext.Capture();
         RedactionHandler handler = RedactionHandler.NotFoundThenJson();
         LoggingRedactionProbeService probe = LoggingRedactionContext.Probe(handler, logger);
 
-        await probe.GetWithFallbackAndLabelsAsync(
-            PrimaryTarget(),
-            LoggingRedactionContext.ProbeLabel,
-            FallbackTarget(),
-            LoggingRedactionContext.ProbeFallbackLabel);
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(
+            () => probe.GetWithLabelAsync(PrimaryTarget(), LoggingRedactionContext.ProbeLabel));
 
-        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(handler.Requests);
         LoggingRedactionAssert.NotLogged(logs, LoggingRedactionContext.ProviderMessageMarker);
         LoggingRedactionAssert.NotLogged(logs, LoggingRedactionContext.NotFoundBody);
     }
@@ -1184,11 +1090,6 @@ public class LegacyLoggingRedactionTests
     // =========================================================================================
     // Helpers
     // =========================================================================================
-
-    private static bool IsFallback(string helper)
-    {
-        return helper is GetFallback or PostFallback or PostAllowingNoContentFallback;
-    }
 
     private static string PrimaryTarget()
     {
@@ -1208,8 +1109,7 @@ public class LegacyLoggingRedactionTests
     private static Task InvokeNoLabelAsync(
         LoggingRedactionProbeService probe,
         string helper,
-        string primary,
-        string fallback)
+        string primary)
     {
         return helper switch
         {
@@ -1218,10 +1118,6 @@ public class LegacyLoggingRedactionTests
             PostAllowingNoContent => probe.LegacyPostAllowingNoContentAsync(primary, Payload()),
             Patch => probe.LegacyPatchAsync(primary, Payload()),
             Delete => probe.LegacyDeleteAsync(primary),
-            GetFallback => probe.LegacyGetWithFallbackAsync(primary, fallback),
-            PostFallback => probe.LegacyPostWithFallbackAsync(primary, fallback, Payload()),
-            PostAllowingNoContentFallback =>
-                probe.LegacyPostAllowingNoContentWithFallbackAsync(primary, fallback, Payload()),
             _ => throw new ArgumentOutOfRangeException(nameof(helper), helper, "Unknown helper key.")
         };
     }
@@ -1229,11 +1125,9 @@ public class LegacyLoggingRedactionTests
     private static Task InvokeWithLabelAsync(
         LoggingRedactionProbeService probe,
         string helper,
-        string primary,
-        string fallback)
+        string primary)
     {
         string label = LoggingRedactionContext.ProbeLabel;
-        string fallbackLabel = LoggingRedactionContext.ProbeFallbackLabel;
 
         return helper switch
         {
@@ -1244,15 +1138,6 @@ public class LegacyLoggingRedactionTests
             PostWithoutBody => probe.PostWithoutBodyWithLabelAsync(primary, label),
             Delete => probe.DeleteWithLabelAsync(primary, label),
             DeleteWithBody => probe.DeleteWithBodyAndLabelAsync(primary, label, Payload()),
-            GetFallback => probe.GetWithFallbackAndLabelsAsync(primary, label, fallback, fallbackLabel),
-            PostFallback =>
-                probe.PostWithFallbackAndLabelsAsync(primary, label, fallback, fallbackLabel, Payload()),
-            PostAllowingNoContentFallback => probe.PostAllowingNoContentWithFallbackAndLabelsAsync(
-                primary,
-                label,
-                fallback,
-                fallbackLabel,
-                Payload()),
             _ => throw new ArgumentOutOfRangeException(nameof(helper), helper, "Unknown helper key.")
         };
     }
@@ -1267,7 +1152,7 @@ public class LegacyLoggingRedactionTests
     {
         CapturingLoggerProvider logs = new();
         ILogger logger = logs.CreateLogger(typeof(TService).FullName!);
-        RedactionHandler handler = fallback ? RedactionHandler.NotFoundThenJson() : RedactionHandler.Json();
+        RedactionHandler handler = RedactionHandler.Json();
         TService service = factory(
             LoggingRedactionContext.Configuration(),
             LoggingRedactionContext.Client(handler),
