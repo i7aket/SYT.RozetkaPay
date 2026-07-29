@@ -190,6 +190,12 @@ public class CustomerInfo : BaseRequestUserDetails
     /// </summary>
     [JsonPropertyName("user_info")]
     public CustomerUserInfo? UserInfo { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;browser_user_agent&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("browser_user_agent")]
+    public string? BrowserUserAgent { get; set; }
 }
 
 /// <summary>

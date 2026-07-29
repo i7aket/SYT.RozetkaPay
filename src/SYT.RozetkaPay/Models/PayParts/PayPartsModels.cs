@@ -275,6 +275,22 @@ public class PayPartsCustomer
     /// </summary>
     [JsonPropertyName("birth_date")]
     public DateTime? BirthDate { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;account_number&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("account_number")]
+    public string? AccountNumber { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;fingerprint&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("fingerprint")]
+    public BrowserFingerprint? Fingerprint { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;payment_method&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("payment_method")]
+    public PayPartsPaymentMethod? PaymentMethod { get; set; }
 }
 
 /// <summary>
@@ -313,6 +329,27 @@ public class PayPartsProduct
     /// </summary>
     [JsonPropertyName("url")]
     public string? Url { get; set; }
+
+    /// <summary>
+    /// First-level product category (top level in hierarchy, most general)
+    /// </summary>
+    [JsonPropertyName("category_name")]
+    public string? CategoryName { get; set; }
+    /// <summary>
+    /// Id of the product on the merchant side.
+    /// </summary>
+    [JsonPropertyName("external_id")]
+    public string? ExternalId { get; set; }
+    /// <summary>
+    /// Second-level product category
+    /// </summary>
+    [JsonPropertyName("second_category_name")]
+    public string? SecondCategoryName { get; set; }
+    /// <summary>
+    /// Tax group is required for projects with enabled fiscalization.
+    /// </summary>
+    [JsonPropertyName("tax_group")]
+    public int? TaxGroup { get; set; }
 }
 
 // ===================== PAYPARTS ORDER RESPONSE =====================
@@ -866,6 +903,17 @@ public class PayPartsOperationDetails
     /// </summary>
     [JsonPropertyName("bank_name")]
     public string? BankName { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;bank_key&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("bank_key")]
+    public string? BankKey { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;fiscalization&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("fiscalization")]
+    public Fiscalization? Fiscalization { get; set; }
 }
 
 /// <summary>

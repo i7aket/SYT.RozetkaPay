@@ -413,6 +413,12 @@ public class ResendCallbackRequest
     /// </summary>
     [JsonPropertyName("callback_url")]
     public string? CallbackUrl { get; set; }
+
+    /// <summary>
+    /// Operation whose callback is being resent.
+    /// </summary>
+    [JsonPropertyName("operation")]
+    public OperationType? Operation { get; set; }
 }
 
 /// <summary>
@@ -563,6 +569,32 @@ public class CustomerRequestPaymentMethod
     /// </summary>
     [JsonPropertyName("wallet_token")]
     public string? WalletToken { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;apple_pay&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("apple_pay")]
+    public CustomerAppleGooglePayRequestPaymentMethod? ApplePay { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;decrypted_apple_pay&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("decrypted_apple_pay")]
+    public CustomerDecryptedApplePayRequestPaymentMethod? DecryptedApplePay { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;decrypted_google_pay&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("decrypted_google_pay")]
+    public CustomerDecryptedGooglePayRequestPaymentMethod? DecryptedGooglePay { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;google_pay&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("google_pay")]
+    public CustomerAppleGooglePayRequestPaymentMethod? GooglePay { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;wallet&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("wallet")]
+    public CustomerWalletRequestPaymentMethod? Wallet { get; set; }
 }
 
 /// <summary>
@@ -765,6 +797,17 @@ public class RecipientRequestUserDetails : BaseRequestUserDetails
     /// </summary>
     [JsonPropertyName("currency")]
     public string? Currency { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;rid&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("rid")]
+    public string? Rid { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;tin&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("tin")]
+    public string? Tin { get; set; }
 }
 
 /// <summary>
@@ -796,6 +839,22 @@ public class RecipientRequestPaymentMethod
     /// </summary>
     [JsonPropertyName("wallet")]
     public RecipientWalletRequestPaymentMethod? Wallet { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;cc_number&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("cc_number")]
+    public RecipientCCNumberRequestPaymentMethod? CcNumber { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;cc_token&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("cc_token")]
+    public RecipientCCTokenRequestPaymentMethod? CcToken { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;iban&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("iban")]
+    public RecipientIbanRequestPaymentMethod? Iban { get; set; }
 }
 
 /// <summary>
@@ -880,6 +939,22 @@ public class ResultPaymentMethod
     /// </summary>
     [JsonPropertyName("payment_system")]
     public string? PaymentSystem { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;apple_pay&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("apple_pay")]
+    public ApplePayResponsePaymentMethod? ApplePay { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;cc_token&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("cc_token")]
+    public CCTokenResponsePaymentMethod? CcToken { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;google_pay&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("google_pay")]
+    public GooglePayResponsePaymentMethod? GooglePay { get; set; }
 }
 
 /// <summary>
@@ -892,6 +967,12 @@ public class ResultUserDetails : UserInfo
     /// </summary>
     [JsonPropertyName("payment_method")]
     public ResultPaymentMethod? PaymentMethod { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;account_number&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("account_number")]
+    public string? AccountNumber { get; set; }
 }
 
 /// <summary>
@@ -970,6 +1051,22 @@ public class PaymentOperationResult
     [MetadataLimits]
     [JsonPropertyName("metadata")]
     public Dictionary<string, string>? Metadata { get; set; }
+
+    /// <summary>
+    /// External identifier from the merchant, one per batch.
+    /// </summary>
+    [JsonPropertyName("batch_external_id")]
+    public string? BatchExternalId { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;operation&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("operation")]
+    public OperationType? Operation { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;project_id&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("project_id")]
+    public string? ProjectId { get; set; }
 }
 
 /// <summary>
@@ -1020,6 +1117,107 @@ public class PaymentStatusResult
     [JsonPropertyName("processed_at")]
     [JsonConverter(typeof(NullableFlexibleDateTimeConverter))]
     public DateTime? ProcessedAt { get; set; }
+
+    /// <summary>
+    /// Object which contains information about required post-request action. Will be null if action not required.
+    /// </summary>
+    [JsonPropertyName("action")]
+    public UserAction? Action { get; set; }
+    /// <summary>
+    /// A boolean flag which indicates if action from the customer is required
+    /// </summary>
+    [JsonPropertyName("action_required")]
+    public bool? ActionRequired { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;amount_canceled&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("amount_canceled")]
+    public string? AmountCanceled { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;amount_confirmed&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("amount_confirmed")]
+    public string? AmountConfirmed { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;amount_refunded&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("amount_refunded")]
+    public string? AmountRefunded { get; set; }
+    /// <summary>
+    /// External identifier from the merchant, one per batch.
+    /// </summary>
+    [JsonPropertyName("batch_external_id")]
+    public string? BatchExternalId { get; set; }
+    /// <summary>
+    /// A boolean flag which indicates if payment was canceled
+    /// </summary>
+    [JsonPropertyName("canceled")]
+    public bool? Canceled { get; set; }
+    /// <summary>
+    /// List of cancellation transactions
+    /// </summary>
+    [JsonPropertyName("cancellation_details")]
+    public List<TransactionDetails>? CancellationDetails { get; set; }
+    /// <summary>
+    /// List of confirmation transactions in the 2-step acquiring flow
+    /// </summary>
+    [JsonPropertyName("confirmation_details")]
+    public List<TransactionDetails>? ConfirmationDetails { get; set; }
+    /// <summary>
+    /// A boolean flag for the 2-step acquiring flow which indicates if payment was confirmed
+    /// </summary>
+    [JsonPropertyName("confirmed")]
+    public bool? Confirmed { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;customer&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("customer")]
+    public ResultUserDetails? Customer { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;delivery_details&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("delivery_details")]
+    public ExpressCheckoutDeliveryDetails? DeliveryDetails { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;order_recipient&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("order_recipient")]
+    public ExpressCheckoutRecipient? OrderRecipient { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;partner_details&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("partner_details")]
+    public PartnerDetails? PartnerDetails { get; set; }
+    /// <summary>
+    /// List of primary transactions
+    /// </summary>
+    [JsonPropertyName("purchase_details")]
+    public List<TransactionDetails>? PurchaseDetails { get; set; }
+    /// <summary>
+    /// A boolean flag which indicates if payment was successful
+    /// </summary>
+    [JsonPropertyName("purchased")]
+    public bool? Purchased { get; set; }
+    /// <summary>
+    /// Link to the receipt for user
+    /// </summary>
+    [JsonPropertyName("receipt_url")]
+    public string? ReceiptUrl { get; set; }
+    /// <summary>
+    /// List of refund transactions
+    /// </summary>
+    [JsonPropertyName("refund_details")]
+    public List<TransactionDetails>? RefundDetails { get; set; }
+    /// <summary>
+    /// A boolean flag which indicates if payment was refunded
+    /// </summary>
+    [JsonPropertyName("refunded")]
+    public bool? Refunded { get; set; }
+    /// <summary>
+    /// Unified external id
+    /// </summary>
+    [JsonPropertyName("unified_external_id")]
+    public string? UnifiedExternalId { get; set; }
 }
 
 /// <summary>
@@ -1038,6 +1236,12 @@ public class PaymentReceiptResult
     /// </summary>
     [JsonPropertyName("receipt_url")]
     public string? ReceiptUrl { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;project_id&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("project_id")]
+    public string? ProjectId { get; set; }
 }
 
 /// <summary>
@@ -1081,6 +1285,12 @@ public class PaymentSearchResult
     [JsonPropertyName("created_at")]
     [JsonConverter(typeof(FlexibleDateTimeConverter))]
     public DateTime? CreatedAt { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;project_id&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("project_id")]
+    public string? ProjectId { get; set; }
 }
 
 /// <summary>
@@ -1105,6 +1315,12 @@ public class PaymentSearchList
     /// </summary>
     [JsonPropertyName("count")]
     public int? Count { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;has_more&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("has_more")]
+    public bool? HasMore { get; set; }
 }
 
 
@@ -1143,6 +1359,12 @@ public class ApplePayResponsePaymentMethod
     /// </summary>
     [JsonPropertyName("token")]
     public string? Token { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;bin_country&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("bin_country")]
+    public string? BinCountry { get; set; }
 }
 
 /// <summary>
@@ -1180,6 +1402,12 @@ public class GooglePayResponsePaymentMethod
     /// </summary>
     [JsonPropertyName("token")]
     public string? Token { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;bin_country&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("bin_country")]
+    public string? BinCountry { get; set; }
 }
 
 /// <summary>
@@ -1217,6 +1445,17 @@ public class CCTokenResponsePaymentMethod
     /// </summary>
     [JsonPropertyName("token")]
     public string? Token { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;bin_country&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("bin_country")]
+    public string? BinCountry { get; set; }
+    /// <summary>
+    /// Provider field &lt;c&gt;saved_card&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("saved_card")]
+    public bool? SavedCard { get; set; }
 }
 
 /// <summary>
@@ -1392,6 +1631,27 @@ public class CardItemDetails
     /// </summary>
     [JsonPropertyName("bank_short_name")]
     public string? BankShortName { get; set; }
+
+    /// <summary>
+    /// Card art image URL
+    /// </summary>
+    [JsonPropertyName("card_art_url")]
+    public string? CardArtUrl { get; set; }
+    /// <summary>
+    /// Card number
+    /// </summary>
+    [JsonPropertyName("full_number")]
+    public string? FullNumber { get; set; }
+    /// <summary>
+    /// Payment system
+    /// </summary>
+    [JsonPropertyName("payment_system")]
+    public string? PaymentSystem { get; set; }
+    /// <summary>
+    /// Card token
+    /// </summary>
+    [JsonPropertyName("token")]
+    public string? Token { get; set; }
 }
 
 /// <summary>

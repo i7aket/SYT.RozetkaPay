@@ -117,6 +117,12 @@ public class CashRecipient : RecipientUser
     [JsonPropertyName("phone")]
     [Required]
     public new string Phone { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Provider field &lt;c&gt;card_data&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("card_data")]
+    public CardData? CardData { get; set; }
 }
 
 /// <summary>
@@ -687,4 +693,10 @@ public class PayoutTransactionResult
     /// </summary>
     [JsonPropertyName("transaction_id")]
     public string? TransactionId { get; set; }
+
+    /// <summary>
+    /// Provider field &lt;c&gt;receipt_url&lt;/c&gt;.
+    /// </summary>
+    [JsonPropertyName("receipt_url")]
+    public string? ReceiptUrl { get; set; }
 } 

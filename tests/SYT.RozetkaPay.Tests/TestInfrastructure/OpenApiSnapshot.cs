@@ -129,6 +129,79 @@ internal static class OpenApiSnapshot
             .GetProperty("schema");
     }
 
+    /// <summary>
+    /// Every named schema, request body and response, with the property names it declares.
+    /// </summary>
+    /// <remarks>
+    /// Properties are collected through <c>allOf</c> as well as directly, so a schema that composes its
+    /// shape from another reports the full set rather than only what it adds.
+    /// </remarks>
+    internal static IEnumerable<(string Name, IReadOnlyCollection<string> Properties)> SchemaPropertyNames()
+    {
+        JsonElement components = Document.Value.RootElement.GetProperty("components");
+
+        foreach (string section in new[] { "schemas", "requestBodies", "responses" })
+        {
+            if (!components.TryGetProperty(section, out JsonElement group))
+            {
+                continue;
+            }
+
+            foreach (JsonProperty entry in group.EnumerateObject())
+            {
+                JsonElement schema = section == "schemas" ? entry.Value : BodySchemaOrDefault(entry.Value);
+                if (schema.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                string[] properties = [.. CollectPropertyNames(schema)];
+                if (properties.Length > 0)
+                {
+                    yield return (entry.Name, properties);
+                }
+            }
+        }
+    }
+
+    private static JsonElement BodySchemaOrDefault(JsonElement wrapper)
+    {
+        return wrapper.TryGetProperty("content", out JsonElement content) &&
+               content.TryGetProperty("application/json", out JsonElement json) &&
+               json.TryGetProperty("schema", out JsonElement schema)
+            ? schema
+            : default;
+    }
+
+    private static IEnumerable<string> CollectPropertyNames(JsonElement schema, int depth = 0)
+    {
+        if (depth > 10)
+        {
+            yield break;
+        }
+
+        schema = Resolve(schema);
+
+        if (schema.TryGetProperty("allOf", out JsonElement composed))
+        {
+            foreach (JsonElement part in composed.EnumerateArray())
+            {
+                foreach (string name in CollectPropertyNames(part, depth + 1))
+                {
+                    yield return name;
+                }
+            }
+        }
+
+        if (schema.TryGetProperty("properties", out JsonElement properties))
+        {
+            foreach (JsonProperty property in properties.EnumerateObject())
+            {
+                yield return property.Name;
+            }
+        }
+    }
+
     private static JsonElement Schemas()
     {
         return Document.Value.RootElement.GetProperty("components").GetProperty("schemas");

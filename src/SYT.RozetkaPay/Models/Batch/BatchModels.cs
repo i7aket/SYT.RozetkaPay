@@ -234,6 +234,22 @@ public class BatchOrder
     /// </summary>
     [JsonPropertyName("products")]
     public List<Product>? Products { get; set; }
+
+    /// <summary>
+    /// Account number or phone number to refill (e.g. mobile top-up).
+    /// </summary>
+    [JsonPropertyName("account_to_refill")]
+    public string? AccountToRefill { get; set; }
+    /// <summary>
+    /// If `true`, marks this order as the first payment of a recurrent series.
+    /// </summary>
+    [JsonPropertyName("init_recurrent")]
+    public bool? InitRecurrent { get; set; }
+    /// <summary>
+    /// Additional data transmitted with the order. One parameter per order.
+    /// </summary>
+    [JsonPropertyName("payload")]
+    public string? Payload { get; set; }
 }
 
 /// <summary>
@@ -619,6 +635,12 @@ public class BatchCustomerRequestUserDetails : BaseRequestUserDetails
     /// </summary>
     [JsonPropertyName("fingerprint")]
     public BrowserFingerprint? Fingerprint { get; set; }
+
+    /// <summary>
+    /// Color theme of checkout for the `hosted` payment mode
+    /// </summary>
+    [JsonPropertyName("color_mode")]
+    public CheckoutColorMode? ColorMode { get; set; }
 }
 
 /// <summary>
@@ -691,6 +713,22 @@ public class BatchOrderDetail
     /// </summary>
     [JsonPropertyName("fee")]
     public FeeDetails? Fee { get; set; }
+
+    /// <summary>
+    /// Additional data that was transmitted in the order request. One parameter per order.
+    /// </summary>
+    [JsonPropertyName("payload")]
+    public string? Payload { get; set; }
+    /// <summary>
+    /// Recipient IBAN.
+    /// </summary>
+    [JsonPropertyName("recipient_iban")]
+    public string? RecipientIban { get; set; }
+    /// <summary>
+    /// Identifier of a successful recurrent-initiating payment. Present only when
+    /// </summary>
+    [JsonPropertyName("recurrent_id")]
+    public string? RecurrentId { get; set; }
 }
 
 /// <summary>
