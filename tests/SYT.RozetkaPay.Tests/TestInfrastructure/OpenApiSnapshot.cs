@@ -62,13 +62,7 @@ internal static class OpenApiSnapshot
     /// </summary>
     internal static IEnumerable<string> RequestBodyPropertyNames(string requestBodyName)
     {
-        return Document.Value.RootElement
-            .GetProperty("components")
-            .GetProperty("requestBodies")
-            .GetProperty(requestBodyName)
-            .GetProperty("content")
-            .GetProperty("application/json")
-            .GetProperty("schema")
+        return RequestBodySchema(requestBodyName)
             .GetProperty("properties")
             .EnumerateObject()
             .Select(static property => property.Name);
@@ -90,6 +84,49 @@ internal static class OpenApiSnapshot
                         inherit: true)
                     .FirstOrDefault() as System.Text.Json.Serialization.JsonPropertyNameAttribute)?.Name
                 ?? property.Name);
+    }
+
+    /// <summary>
+    /// The property names a named request body declares as required.
+    /// </summary>
+    internal static IEnumerable<string> RequiredRequestBodyPropertyNames(string requestBodyName)
+    {
+        JsonElement schema = RequestBodySchema(requestBodyName);
+
+        return schema.TryGetProperty("required", out JsonElement required)
+            ? required.EnumerateArray().Select(static value => value.GetString()!)
+            : [];
+    }
+
+    /// <summary>
+    /// The JSON names a model marks with <c>[Required]</c>.
+    /// </summary>
+    internal static IEnumerable<string> RequiredJsonPropertyNamesOf(Type modelType)
+    {
+        return modelType
+            .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(static property => property
+                .GetCustomAttributes(
+                    typeof(System.ComponentModel.DataAnnotations.RequiredAttribute),
+                    inherit: true)
+                .Length > 0)
+            .Select(static property =>
+                (property.GetCustomAttributes(
+                        typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute),
+                        inherit: true)
+                    .FirstOrDefault() as System.Text.Json.Serialization.JsonPropertyNameAttribute)?.Name
+                ?? property.Name);
+    }
+
+    private static JsonElement RequestBodySchema(string requestBodyName)
+    {
+        return Document.Value.RootElement
+            .GetProperty("components")
+            .GetProperty("requestBodies")
+            .GetProperty(requestBodyName)
+            .GetProperty("content")
+            .GetProperty("application/json")
+            .GetProperty("schema");
     }
 
     private static JsonElement Schemas()
