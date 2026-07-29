@@ -660,7 +660,7 @@ internal static class OpenApiOperationManifest
             Auth = ContractAuthPolicy.Authenticated,
             ExpectedBodyFragments = ["\"external_id\":\"op30-alternative-create\"", "\"amount\":130.30"],
             InvokeAsync = (host, token) => host.AlternativePayments.CreateOperationAsync(
-                new CreateAlternativePaymentRequest
+                new CreateAlternativePayment
                 {
                     Amount = 130.30m,
                     Currency = "UAH",

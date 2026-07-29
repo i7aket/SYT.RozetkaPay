@@ -66,7 +66,7 @@ public class CompatibilityAndSerializationTests
         });
 
         AlternativePaymentService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.CreateAsync(new CreateAlternativePaymentRequest
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.CreateAsync(new CreateAlternativePayment
         {
             Amount = 25m,
             Currency = "PLN",

@@ -68,9 +68,9 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <param name="request">Alternative payment request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Alternative payment response</returns>
-    public async Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePayment request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreateAlternativePaymentRequest, AlternativePaymentResponse>(
+        return await PostAsync<CreateAlternativePayment, AlternativePaymentResponse>(
             CreateEndpoint,
             CreateEndpoint,
             request,
@@ -84,9 +84,9 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// <param name="request">Alternative payment request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Alternative payment operation result</returns>
-    public async Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePayment request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreateAlternativePaymentRequest, AlternativePaymentOperationResult>(
+        return await PostAsync<CreateAlternativePayment, AlternativePaymentOperationResult>(
             CreateEndpoint,
             CreateEndpoint,
             request,
