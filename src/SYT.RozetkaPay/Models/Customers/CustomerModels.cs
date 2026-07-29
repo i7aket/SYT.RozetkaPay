@@ -447,11 +447,28 @@ public class CardConfirmationStatusResponse
 public class SetDefaultCardRequest
 {
     /// <summary>
-    /// Card ID to set as default
+    /// Identifier of the wallet option to make default.
     /// </summary>
     [Required]
-    [JsonPropertyName("card_id")]
-    public required string CardId { get; set; }
+    [JsonPropertyName("option_id")]
+    public required Guid OptionId { get; set; }
+
+    /// <summary>
+    /// Kind of wallet option being set. The document declares one value.
+    /// </summary>
+    [Required]
+    [JsonPropertyName("type")]
+    public required WalletOptionType Type { get; set; }
+}
+
+/// <summary>
+/// Kind of wallet option a default-selection request refers to.
+/// </summary>
+public enum WalletOptionType
+{
+    /// <summary>A saved card.</summary>
+    [JsonStringEnumMemberName("card")]
+    Card
 }
 
 /// <summary>

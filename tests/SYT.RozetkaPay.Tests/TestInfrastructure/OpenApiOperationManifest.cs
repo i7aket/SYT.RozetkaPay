@@ -851,10 +851,15 @@ internal static class OpenApiOperationManifest
                 "/api/customers/v1/wallet/settings/set?external_id=" + "op40-wallet-default" + HostileEncodedSuffix,
             Body = ContractBodyPolicy.Json,
             Auth = ContractAuthPolicy.Authenticated,
-            ExpectedBodyFragments = ["\"card_id\":\"op40-wallet-card\""],
+            ExpectedBodyFragments =
+                ["\"option_id\":\"00000000-0000-0000-0000-0000000040aa\"", "\"type\":\"card\""],
             InvokeAsync = (host, token) => host.Customers.SetDefaultCardAsync(
                 Raw("op40-wallet-default"),
-                new SetDefaultCardRequest { CardId = "op40-wallet-card" },
+                new SetDefaultCardRequest
+                {
+                    OptionId = new Guid("00000000-0000-0000-0000-0000000040aa"),
+                    Type = WalletOptionType.Card
+                },
                 token)
         }
     ];
