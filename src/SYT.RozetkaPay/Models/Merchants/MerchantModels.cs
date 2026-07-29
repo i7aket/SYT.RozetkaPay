@@ -10,25 +10,25 @@ public enum MerchantStatus
     /// <summary>
     /// Merchant is in onboarding process
     /// </summary>
-    [JsonPropertyName("onboarding")]
+    [JsonStringEnumMemberName("onboarding")]
     Onboarding,
     
     /// <summary>
     /// Merchant is activated
     /// </summary>
-    [JsonPropertyName("activated")]
+    [JsonStringEnumMemberName("activated")]
     Activated,
     
     /// <summary>
     /// Merchant is blocked
     /// </summary>
-    [JsonPropertyName("blocked")]
+    [JsonStringEnumMemberName("blocked")]
     Blocked,
     
     /// <summary>
     /// External merchant
     /// </summary>
-    [JsonPropertyName("external_merchant")]
+    [JsonStringEnumMemberName("external_merchant")]
     ExternalMerchant
 }
 

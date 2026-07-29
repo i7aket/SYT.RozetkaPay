@@ -13,19 +13,19 @@ public enum AlternativePaymentMethodType
     /// <summary>
     /// BLIK payment method
     /// </summary>
-    [JsonPropertyName("blik")]
+    [JsonStringEnumMemberName("blik")]
     Blik,
     
     /// <summary>
     /// BLIK paylater payment method
     /// </summary>
-    [JsonPropertyName("blik_paylater")]
+    [JsonStringEnumMemberName("blik_paylater")]
     BlikPaylater,
     
     /// <summary>
     /// Leasing payment method
     /// </summary>
-    [JsonPropertyName("leasing")]
+    [JsonStringEnumMemberName("leasing")]
     Leasing
 }
 
@@ -37,33 +37,10 @@ public enum AlternativePaymentOperationType
     /// <summary>
     /// Create operation
     /// </summary>
-    [JsonPropertyName("create")]
+    [JsonStringEnumMemberName("create")]
     Create
 }
 
-/// <summary>
-/// Alternative payment response codes (JSON string as per CDN documentation)
-/// </summary>
-public enum AlternativePaymentResponseCode
-{
-    /// <summary>
-    /// Success
-    /// </summary>
-    [JsonPropertyName("00")]
-    Success,
-    
-    /// <summary>
-    /// Pending
-    /// </summary>
-    [JsonPropertyName("pending")]
-    Pending,
-    
-    /// <summary>
-    /// Failed
-    /// </summary>
-    [JsonPropertyName("failed")]
-    Failed
-}
 
 /// <summary>
 /// Alternative payment providers (JSON string as per CDN documentation)
@@ -73,14 +50,26 @@ public enum AlternativePaymentProvider
     /// <summary>
     /// iMoje provider
     /// </summary>
-    [JsonPropertyName("imoje")]
+    [JsonStringEnumMemberName("imoje")]
     Imoje,
     
     /// <summary>
     /// LeaseLink provider
     /// </summary>
-    [JsonPropertyName("leaselink")]
-    LeaseLink
+    [JsonStringEnumMemberName("leaselink")]
+    LeaseLink,
+
+    /// <summary>
+    /// Santander alternative payment provider.
+    /// </summary>
+    [JsonStringEnumMemberName("santander")]
+    Santander,
+
+    /// <summary>
+    /// Przelewy24 alternative payment provider.
+    /// </summary>
+    [JsonStringEnumMemberName("przelewy24")]
+    Przelewy24
 }
 
 /// <summary>
@@ -392,7 +381,7 @@ public class AlternativePaymentOperationDetails
     /// Operation status code (JSON string as per CDN documentation)
     /// </summary>
     [JsonPropertyName("status_code")]
-    public AlternativePaymentResponseCode? StatusCode { get; set; }
+    public ResponseCode? StatusCode { get; set; }
 
     /// <summary>
     /// Operation status description (JSON string as per CDN documentation)

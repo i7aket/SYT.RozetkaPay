@@ -41,12 +41,15 @@ public static class SdkSerializerOptions
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             Converters =
             {
-                // Carried over verbatim from the per-call construction this replaces, naming policy
-                // included: extracting the instance must not change a single byte on the wire. The
-                // enum tokens are wrong against the published schema, but correcting them is a
-                // separate change with its own tests - doing both at once would leave neither
-                // provable on its own.
-                new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower),
+                // The naming policy stays, and every member whose token differs from its snake-cased
+                // name carries [JsonStringEnumMemberName], which takes precedence. Dropping the policy
+                // instead would have re-derived tokens for the enums that were already right.
+                //
+                // allowIntegerValues: false because every published enum is a string enum, so a number
+                // is never a valid value on the wire. Accepting one would also make the numeric identity
+                // of a member part of the contract, and those numbers shift whenever a member is added
+                // or removed.
+                new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower, allowIntegerValues: false),
                 new FlexibleDecimalConverter(),
                 new FlexibleDecimalConverterNonNullable(),
                 new FlexibleInt32Converter(),

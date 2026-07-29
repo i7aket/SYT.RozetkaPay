@@ -325,7 +325,7 @@ public class OperationParityTests
                 "auto_renew": true,
                 "created_at": "2026-07-25T10:11:12Z"
               },
-              { "id": "sub-2", "state": "paused" }
+              { "id": "sub-2", "state": "pending" }
             ]
             """);
 
@@ -344,7 +344,7 @@ public class OperationParityTests
         Assert.Equal(new DateTime(2026, 7, 25, 10, 11, 12, DateTimeKind.Utc), first.CreatedAt!.Value.ToUniversalTime());
 
         Assert.Equal("sub-2", result.Subscriptions[1].Id);
-        Assert.Equal(SubscriptionState.Paused, result.Subscriptions[1].State);
+        Assert.Equal(SubscriptionState.Pending, result.Subscriptions[1].State);
     }
 
     [Fact]
