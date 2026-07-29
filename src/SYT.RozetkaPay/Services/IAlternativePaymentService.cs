@@ -15,7 +15,7 @@ public interface IAlternativePaymentService
     /// <param name="request">Alternative payment request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Alternative payment response</returns>
-    Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePaymentRequest request, CancellationToken cancellationToken = default);
+    Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePayment request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create alternative payment using OpenAPI contract response schema
@@ -23,7 +23,7 @@ public interface IAlternativePaymentService
     /// <param name="request">Alternative payment request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Alternative payment operation result</returns>
-    Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePaymentRequest request, CancellationToken cancellationToken = default);
+    Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePayment request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Refund alternative payment
