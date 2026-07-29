@@ -12,37 +12,32 @@ public enum SubscriptionState
     /// <summary>
     /// Subscription is initializing
     /// </summary>
-    [JsonPropertyName("init")]
+    [JsonStringEnumMemberName("init")]
     Init,
 
     /// <summary>
     /// Subscription is processing
     /// </summary>
-    [JsonPropertyName("processing")]
+    [JsonStringEnumMemberName("processing")]
     Processing,
 
     /// <summary>
     /// Subscription is pending
     /// </summary>
-    [JsonPropertyName("pending")]
+    [JsonStringEnumMemberName("pending")]
     Pending,
 
     /// <summary>
     /// Subscription is active
     /// </summary>
-    [JsonPropertyName("active")]
+    [JsonStringEnumMemberName("active")]
     Active,
 
-    /// <summary>
-    /// Subscription is paused
-    /// </summary>
-    [JsonPropertyName("paused")]
-    Paused,
 
     /// <summary>
     /// Subscription is inactive
     /// </summary>
-    [JsonPropertyName("inactive")]
+    [JsonStringEnumMemberName("inactive")]
     Inactive
 }
 
@@ -54,25 +49,25 @@ public enum SubscriptionPaymentState
     /// <summary>
     /// Payment is unprocessed
     /// </summary>
-    [JsonPropertyName("unprocessed")]
+    [JsonStringEnumMemberName("unprocessed")]
     Unprocessed,
 
     /// <summary>
     /// Payment is processing
     /// </summary>
-    [JsonPropertyName("processing")]
+    [JsonStringEnumMemberName("processing")]
     Processing,
 
     /// <summary>
     /// Payment is processed
     /// </summary>
-    [JsonPropertyName("processed")]
+    [JsonStringEnumMemberName("processed")]
     Processed,
 
     /// <summary>
     /// Payment failed
     /// </summary>
-    [JsonPropertyName("failed")]
+    [JsonStringEnumMemberName("failed")]
     Failed
 }
 
@@ -82,22 +77,64 @@ public enum SubscriptionPaymentState
 public enum SubscriptionCallbackType
 {
     /// <summary>
-    /// Payment callback
+    /// A subscription payment was processed.
     /// </summary>
-    [JsonPropertyName("payment")]
-    Payment,
+    [JsonStringEnumMemberName("payment.processed")]
+    PaymentProcessed,
 
     /// <summary>
-    /// Subscription status change
+    /// A subscription payment failed.
     /// </summary>
-    [JsonPropertyName("status_change")]
-    StatusChange,
+    [JsonStringEnumMemberName("payment.failed")]
+    PaymentFailed,
 
     /// <summary>
-    /// Subscription expiry
+    /// The subscription was deactivated.
     /// </summary>
-    [JsonPropertyName("expiry")]
-    Expiry
+    [JsonStringEnumMemberName("subscription.deactivated")]
+    SubscriptionDeactivated,
+
+    /// <summary>
+    /// The subscription was renewed for another period.
+    /// </summary>
+    [JsonStringEnumMemberName("subscription.renewed")]
+    SubscriptionRenewed,
+
+    /// <summary>
+    /// The subscription was cancelled.
+    /// </summary>
+    [JsonStringEnumMemberName("subscription.cancelled")]
+    SubscriptionCancelled,
+
+    /// <summary>
+    /// A subscription payment was refunded.
+    /// </summary>
+    [JsonStringEnumMemberName("subscription.refunded")]
+    SubscriptionRefunded,
+
+    /// <summary>
+    /// A subscription refund failed.
+    /// </summary>
+    [JsonStringEnumMemberName("subscription.refund_failed")]
+    SubscriptionRefundFailed,
+
+    /// <summary>
+    /// The subscription was updated.
+    /// </summary>
+    [JsonStringEnumMemberName("subscription.updated")]
+    SubscriptionUpdated,
+
+    /// <summary>
+    /// The subscription payment method was changed.
+    /// </summary>
+    [JsonStringEnumMemberName("subscription.payment_method_changed")]
+    SubscriptionPaymentMethodChanged,
+
+    /// <summary>
+    /// The customer identifier on the subscription was updated.
+    /// </summary>
+    [JsonStringEnumMemberName("subscription.customer_id_updated")]
+    SubscriptionCustomerIdUpdated
 }
 
 /// <summary>
@@ -108,13 +145,13 @@ public enum PlanState
     /// <summary>
     /// Plan is active
     /// </summary>
-    [JsonPropertyName("active")]
+    [JsonStringEnumMemberName("active")]
     Active,
 
     /// <summary>
     /// Plan is inactive
     /// </summary>
-    [JsonPropertyName("inactive")]
+    [JsonStringEnumMemberName("inactive")]
     Inactive
 }
 

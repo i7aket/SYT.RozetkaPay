@@ -154,13 +154,13 @@ public enum PayoutType
     /// <summary>
     /// Card payout
     /// </summary>
-    [JsonPropertyName("card")]
+    [JsonStringEnumMemberName("card")]
     Card,
 
     /// <summary>
     /// Cash payout
     /// </summary>
-    [JsonPropertyName("cash")]
+    [JsonStringEnumMemberName("cash")]
     Cash
 }
 

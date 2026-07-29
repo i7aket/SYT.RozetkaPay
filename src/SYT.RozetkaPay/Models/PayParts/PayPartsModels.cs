@@ -113,16 +113,16 @@ public class CreatePayPartsOrder
 public enum PayPartsPaymentMode
 {
     /// <summary>
-    /// Single payment mode
+    /// Hosted checkout: RozetkaPay collects the payment details.
     /// </summary>
-    [JsonPropertyName("single")]
-    Single,
+    [JsonStringEnumMemberName("hosted")]
+    Hosted,
 
     /// <summary>
-    /// Installment payment mode
+    /// Direct: the merchant supplies the payment details.
     /// </summary>
-    [JsonPropertyName("installment")]
-    Installment
+    [JsonStringEnumMemberName("direct")]
+    Direct
 }
 
 // ===================== CREATE PAYPARTS ORDER MODELS =====================
@@ -724,25 +724,25 @@ public enum PayPartsOperationType
     /// <summary>
     /// Create operation
     /// </summary>
-    [JsonPropertyName("create")]
+    [JsonStringEnumMemberName("create")]
     Create,
     
     /// <summary>
     /// Confirm operation
     /// </summary>
-    [JsonPropertyName("confirm")]
+    [JsonStringEnumMemberName("confirm")]
     Confirm,
     
     /// <summary>
     /// Cancel operation
     /// </summary>
-    [JsonPropertyName("cancel")]
+    [JsonStringEnumMemberName("cancel")]
     Cancel,
     
     /// <summary>
     /// Refund operation
     /// </summary>
-    [JsonPropertyName("refund")]
+    [JsonStringEnumMemberName("refund")]
     Refund
 }
 
@@ -754,19 +754,19 @@ public enum PayPartsResponseCode
     /// <summary>
     /// Success
     /// </summary>
-    [JsonPropertyName("00")]
+    [JsonStringEnumMemberName("00")]
     Success,
     
     /// <summary>
     /// Pending
     /// </summary>
-    [JsonPropertyName("pending")]
+    [JsonStringEnumMemberName("pending")]
     Pending,
     
     /// <summary>
     /// Failed
     /// </summary>
-    [JsonPropertyName("failed")]
+    [JsonStringEnumMemberName("failed")]
     Failed
 }
 

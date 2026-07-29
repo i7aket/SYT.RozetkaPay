@@ -550,8 +550,14 @@ public enum BatchPaymentMode
     /// <summary>
     /// Direct mode - requires customer's payment details in request
     /// </summary>
-    [JsonPropertyName("direct")]
-    Direct
+    [JsonStringEnumMemberName("direct")]
+    Direct,
+
+    /// <summary>
+    /// Hosted checkout: RozetkaPay collects the payment details.
+    /// </summary>
+    [JsonStringEnumMemberName("hosted")]
+    Hosted
 }
 
 /// <summary>

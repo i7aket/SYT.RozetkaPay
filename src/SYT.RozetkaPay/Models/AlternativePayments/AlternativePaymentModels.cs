@@ -13,19 +13,19 @@ public enum AlternativePaymentMethodType
     /// <summary>
     /// BLIK payment method
     /// </summary>
-    [JsonPropertyName("blik")]
+    [JsonStringEnumMemberName("blik")]
     Blik,
     
     /// <summary>
     /// BLIK paylater payment method
     /// </summary>
-    [JsonPropertyName("blik_paylater")]
+    [JsonStringEnumMemberName("blik_paylater")]
     BlikPaylater,
     
     /// <summary>
     /// Leasing payment method
     /// </summary>
-    [JsonPropertyName("leasing")]
+    [JsonStringEnumMemberName("leasing")]
     Leasing
 }
 
@@ -37,7 +37,7 @@ public enum AlternativePaymentOperationType
     /// <summary>
     /// Create operation
     /// </summary>
-    [JsonPropertyName("create")]
+    [JsonStringEnumMemberName("create")]
     Create
 }
 
@@ -49,19 +49,19 @@ public enum AlternativePaymentResponseCode
     /// <summary>
     /// Success
     /// </summary>
-    [JsonPropertyName("00")]
+    [JsonStringEnumMemberName("00")]
     Success,
     
     /// <summary>
     /// Pending
     /// </summary>
-    [JsonPropertyName("pending")]
+    [JsonStringEnumMemberName("pending")]
     Pending,
     
     /// <summary>
     /// Failed
     /// </summary>
-    [JsonPropertyName("failed")]
+    [JsonStringEnumMemberName("failed")]
     Failed
 }
 
@@ -73,14 +73,26 @@ public enum AlternativePaymentProvider
     /// <summary>
     /// iMoje provider
     /// </summary>
-    [JsonPropertyName("imoje")]
+    [JsonStringEnumMemberName("imoje")]
     Imoje,
     
     /// <summary>
     /// LeaseLink provider
     /// </summary>
-    [JsonPropertyName("leaselink")]
-    LeaseLink
+    [JsonStringEnumMemberName("leaselink")]
+    LeaseLink,
+
+    /// <summary>
+    /// Santander alternative payment provider.
+    /// </summary>
+    [JsonStringEnumMemberName("santander")]
+    Santander,
+
+    /// <summary>
+    /// Przelewy24 alternative payment provider.
+    /// </summary>
+    [JsonStringEnumMemberName("przelewy24")]
+    Przelewy24
 }
 
 /// <summary>
