@@ -223,6 +223,60 @@ jobs:
             --api-key "$NUGET_API_KEY" \
             --skip-duplicate
 
+
+      - name: Verify the published package is the package that was built
+        shell: bash
+        env:
+          PACKAGE_ID: SYT.RozetkaPay
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+          NUPKG_PATH: ${{ steps.verify.outputs.nupkg }}
+        run: |
+          set -euo pipefail
+          # The push above reports success and stops there. Two things it does not establish:
+          # that the package became downloadable at all, and - when --skip-duplicate silently
+          # skipped an existing version - that what is published is what was just built.
+          #
+          # The second one has teeth. If a previous run pushed successfully and then failed
+          # before creating the GitHub release, a rerun skips the duplicate and attaches
+          # freshly built bits to the release. Both channels then carry the same version
+          # number with different contents, and the workflow is green.
+          #
+          # Downloading and comparing is the only way to know. Indexing is not instant, so
+          # this polls rather than assuming the package is there the moment push returns.
+          lower_id="$(echo "$PACKAGE_ID" | tr '[:upper:]' '[:lower:]')"
+          url="https://api.nuget.org/v3-flatcontainer/${lower_id}/${PACKAGE_VERSION}/${lower_id}.${PACKAGE_VERSION}.nupkg"
+
+          published=""
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --location --max-time 60 -o published.nupkg "$url"; then
+              published="yes"
+              echo "Package downloaded on attempt ${attempt}."
+              break
+            fi
+            echo "Not indexed yet (attempt ${attempt}/30); waiting 20s."
+            sleep 20
+          done
+
+          if [ -z "$published" ]; then
+            echo "::error::${PACKAGE_ID} ${PACKAGE_VERSION} did not become downloadable within 10 minutes."
+            exit 1
+          fi
+
+          built_hash="$(sha256sum "$NUPKG_PATH" | cut -d' ' -f1)"
+          published_hash="$(sha256sum published.nupkg | cut -d' ' -f1)"
+
+          echo "built     : ${built_hash}"
+          echo "published : ${published_hash}"
+
+          if [ "$built_hash" != "$published_hash" ]; then
+            echo "::error::The package on nuget.org is not the package this run built. A previous run \
+          published a different build under the same version. Do not attach these artifacts to a \
+          release: publish a new version instead."
+            exit 1
+          fi
+
+          echo "Published package is byte-identical to the one built here."
+
       - name: Create GitHub Release
         shell: bash
         env:
