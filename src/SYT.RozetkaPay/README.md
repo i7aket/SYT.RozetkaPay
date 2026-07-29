@@ -48,10 +48,20 @@ instead.
 - Last checked against official public docs: `2026-07-25`
 - Detailed compatibility notes: `docs/API_COMPATIBILITY.md`
 
-Path coverage and operation parity are reported separately: calling the right path does not prove the
-SDK calls the right operation. The pinned snapshot now holds `59` paths and `67` operations — the
-official document as observed on `2026-07-25` — and the SDK covers `59/59` paths with a typed method
-for each of those `67` operations.
+Coverage is reported at three levels, because the weaker ones were being read as the stronger.
+
+- **Routes.** The pinned snapshot holds `59` paths and `67` operations, and the SDK has a typed method
+  for each. This has been true for a while and says nothing about what those methods send.
+- **Request bodies.** Fifteen request bodies are checked property-by-property against the document, in
+  both directions, so a missing field and an invented one both fail the build. The list is in
+  `RequestBodyParityTests` and it is the record of what has actually been compared. Bodies not on it
+  have not been.
+- **Fields the SDK can receive.** No published schema declares a field the SDK has nowhere to put,
+  with one recorded exception. `ModelFieldCoverageTests` holds that, and every exemption carries a
+  reason and fails when it goes stale.
+
+Enum values are compared as exact token sets against the document, in both directions, including the
+two schemas that inherit their values through `allOf`.
 
 Every one of those `67` operations has an executable contract row: the SDK method is invoked for real and
 the request it produces — verb, concrete request target, percent-encoding, body policy, and authentication
@@ -61,7 +71,8 @@ build. Outbound authentication and the inbound webhook signature pipeline are ad
 a real Kestrel server over a real socket. All of it runs in ordinary CI, on `net9.0` and `net10.0`, with
 no network access.
 
-That remains a statement about the **pinned document**. It is **not** a claim that a live RozetkaPay
+All of that is a statement about the **pinned document**, which a CI job compares against the live one
+on every run — so "pinned" does not mean "possibly stale". It is **not** a claim that a live RozetkaPay
 environment has answered all `67` operations — most of them move real money, so the SDK does not call them
 against a live environment. The only live check is one opt-in, read-only merchant identity call; see
 [Live sandbox smoke test](#live-sandbox-smoke-test) and `docs/API_COMPATIBILITY.md`.
@@ -76,10 +87,23 @@ As of `2026-02-28`, the behavior is still present on some endpoints.
 To avoid runtime failures and to remain forward-compatible when API behavior is normalized, the SDK deserializes numeric fields from both formats.
 In addition to dedicated converters for `decimal`/`int`/`long` types, global JSON number handling is configured to allow reading numeric values from strings.
 
+## Status and trademarks
+
+`SYT.RozetkaPay` is an **independent, community-maintained** SDK. It is not published, endorsed or
+supported by RozetkaPay, and no affiliation is claimed.
+
+RozetkaPay is a trademark of its owner. The name is used here only to say which API this library
+speaks to. The package icon is an original mark generated from `assets/package-icon.svg`; it is not
+the RozetkaPay logo and is not derived from any third-party asset.
+
+For support with the payment service itself, contact RozetkaPay. For problems with this library, open
+an issue on this repository.
+
+
 ## Installation
 
 ```bash
-dotnet add package SYT.RozetkaPay --prerelease
+dotnet add package SYT.RozetkaPay
 ```
 
 ## Quick Start (ASP.NET Core)
