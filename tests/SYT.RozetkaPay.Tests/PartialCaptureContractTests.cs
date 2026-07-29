@@ -22,25 +22,9 @@ namespace SYT.RozetkaPay.Tests;
 /// </remarks>
 public class PartialCaptureContractTests
 {
-    public static TheoryData<string, Type> PartialOperationBodies => new()
-    {
-        { "ConfirmPaymentRequest", typeof(ConfirmPaymentRequest) },
-        { "CancelPaymentRequest", typeof(CancelPaymentRequest) },
-    };
-
-    /// <summary>
-    /// Each body carries exactly the properties the document declares for it — no fewer, and none
-    /// invented.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(PartialOperationBodies))]
-    public void Body_ShouldCarryExactlyTheDeclaredProperties(string schemaName, Type modelType)
-    {
-        HashSet<string> declared = [.. OpenApiSnapshot.RequestBodyPropertyNames(schemaName)];
-        HashSet<string> modelled = [.. OpenApiSnapshot.JsonPropertyNamesOf(modelType)];
-
-        Assert.Equal(declared, modelled);
-    }
+    // The property-set comparison for these two bodies lives in RequestBodyParityTests, which applies
+    // the same check to every reconciled body. What is left here is what is specific to them: that a
+    // partial amount actually reaches the wire, and that a full-amount call is unchanged.
 
     [Fact]
     public void ConfirmPaymentRequest_ShouldSerializeAPartialCapture()

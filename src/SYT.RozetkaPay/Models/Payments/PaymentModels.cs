@@ -463,11 +463,47 @@ public class P2PConfirmationRequest
 public class CreateLookupRequest
 {
     /// <summary>
-    /// External ID for lookup (JSON string as per CDN documentation)
+    /// Payment mode. The only field the operation requires.
     /// </summary>
-    [JsonPropertyName("external_id")]
     [Required]
-    public string ExternalId { get; set; } = string.Empty;
+    [JsonPropertyName("mode")]
+    public PaymentMode Mode { get; set; }
+
+    /// <summary>
+    /// Lookup currency.
+    /// </summary>
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+
+    /// <summary>
+    /// Customer the lookup is performed for.
+    /// </summary>
+    [JsonPropertyName("customer")]
+    public CustomerRequestUserDetails? Customer { get; set; }
+
+    /// <summary>
+    /// Human-readable description of the lookup.
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Opaque merchant payload echoed back on the callback.
+    /// </summary>
+    [JsonPropertyName("payload")]
+    public string? Payload { get; set; }
+
+    /// <summary>
+    /// Callback URL for the lookup result.
+    /// </summary>
+    [JsonPropertyName("callback_url")]
+    public string? CallbackUrl { get; set; }
+
+    /// <summary>
+    /// URL the payer is returned to once the lookup completes.
+    /// </summary>
+    [JsonPropertyName("result_url")]
+    public string? ResultUrl { get; set; }
 }
 
 /// <summary>
