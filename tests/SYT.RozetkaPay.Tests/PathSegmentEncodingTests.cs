@@ -225,14 +225,14 @@ public class PathSegmentEncodingTests
     public async Task SubscriptionService_Update_ShouldKeepHostileSubscriptionIdInOneSegmentAndKeepBody()
     {
         RequestRecordingHandler handler = new();
-        UpdateSubscriptionRequest request = new() { Amount = 56.78m, Frequency = "monthly" };
+        UpdateSubscriptionRequest request = new() { AutoRenew = false, GiftedUntil = "2026-12-31" };
 
         await PathEncodingTestContext.Subscriptions(handler).UpdateAsync(HostileRawId, request);
 
         RecordedRequest recorded = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Patch, recorded.Method);
         AssertRequestTarget(recorded, $"/api/subscriptions/v1/subscriptions/{HostileEncodedId}");
-        Assert.Equal("{\"amount\":56.78,\"frequency\":\"monthly\"}", recorded.Body);
+        Assert.Equal("{\"auto_renew\":false,\"gifted_until\":\"2026-12-31\"}", recorded.Body);
     }
 
     [Fact]

@@ -926,29 +926,13 @@ public class UpdateSubscriptionPlanRequest
 /// </summary>
 public class UpdateSubscriptionRequest
 {
-    /// <summary>
-    /// Subscription amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
+    /// <summary>Whether the subscription renews automatically at the end of each period.</summary>
+    [JsonPropertyName("auto_renew")]
+    public bool? AutoRenew { get; set; }
 
-    /// <summary>
-    /// Payment frequency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("frequency")]
-    public string? Frequency { get; set; }
-
-    /// <summary>
-    /// Number of periods (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("period_count")]
-    public int? PeriodCount { get; set; }
-
-    /// <summary>
-    /// Subscription description (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    /// <summary>Date up to which the subscription is granted free of charge.</summary>
+    [JsonPropertyName("gifted_until")]
+    public string? GiftedUntil { get; set; }
 }
 
 /// <summary>
@@ -1452,17 +1436,41 @@ public class CreatePlanRequest
 /// </summary>
 public class UpdatePlanRequest
 {
-    /// <summary>
-    /// Plan description
-    /// </summary>
+    /// <summary>Plan name.</summary>
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    /// <summary>Plan description.</summary>
     [JsonPropertyName("description")]
     public string? Description { get; set; }
 
-    /// <summary>
-    /// Plan name
-    /// </summary>
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
+    /// <summary>Plan price.</summary>
+    [JsonPropertyName("price")]
+    public int? Price { get; set; }
+
+    /// <summary>Platforms the plan is offered on.</summary>
+    [JsonPropertyName("platforms")]
+    public List<string>? Platforms { get; set; }
+
+    /// <summary>Date the plan stops being offered.</summary>
+    [JsonPropertyName("end_date")]
+    public string? EndDate { get; set; }
+
+    /// <summary>Number of periods the plan runs for.</summary>
+    [JsonPropertyName("duration_periods")]
+    public int? DurationPeriods { get; set; }
+
+    /// <summary>How many intervals make one period.</summary>
+    [JsonPropertyName("frequency")]
+    public int? Frequency { get; set; }
+
+    /// <summary>The interval a period is measured in.</summary>
+    [JsonPropertyName("frequency_type")]
+    public PlanFrequencyType? FrequencyType { get; set; }
+
+    /// <summary>Callback endpoints registered on the plan.</summary>
+    [JsonPropertyName("callbacks")]
+    public List<PlanCallbackRequest>? Callbacks { get; set; }
 }
 
 /// <summary>

@@ -1055,10 +1055,10 @@ internal static class OpenApiOperationManifest
                 "/api/subscriptions/v1/subscriptions/" + "op51-subscription-id" + HostileEncodedSuffix,
             Body = ContractBodyPolicy.Json,
             Auth = ContractAuthPolicy.Authenticated,
-            ExpectedBodyFragments = ["\"amount\":151.51"],
+            ExpectedBodyFragments = ["\"auto_renew\":false"],
             InvokeAsync = (host, token) => host.Subscriptions.UpdateAsync(
                 Raw("op51-subscription-id"),
-                new UpdateSubscriptionRequest { Amount = 151.51m },
+                new UpdateSubscriptionRequest { AutoRenew = false },
                 token)
         },
         new()
