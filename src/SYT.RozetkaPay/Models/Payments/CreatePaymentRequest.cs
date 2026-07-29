@@ -100,6 +100,36 @@ public class CreatePaymentRequest
     public string? UnifiedExternalId { get; set; }
 
     /// <summary>
+    /// URL the payer is returned to after a successful checkout.
+    /// </summary>
+    [JsonPropertyName("result_url_success")]
+    public string? ResultUrlSuccess { get; set; }
+
+    /// <summary>
+    /// URL the payer is returned to after a failed checkout.
+    /// </summary>
+    [JsonPropertyName("result_url_fail")]
+    public string? ResultUrlFail { get; set; }
+
+    /// <summary>
+    /// How long the hosted checkout stays open, in seconds.
+    /// </summary>
+    [JsonPropertyName("checkout_ttl")]
+    public decimal? CheckoutTtl { get; set; }
+
+    /// <summary>
+    /// Subscription this payment belongs to.
+    /// </summary>
+    [JsonPropertyName("subscription_id")]
+    public string? SubscriptionId { get; set; }
+
+    /// <summary>
+    /// Whether the payer may choose the amount at checkout.
+    /// </summary>
+    [JsonPropertyName("use_custom_free_amount")]
+    public bool? UseCustomFreeAmount { get; set; }
+
+    /// <summary>
     /// Additional merchant-defined data associated with the payment.
     /// </summary>
     /// <remarks>

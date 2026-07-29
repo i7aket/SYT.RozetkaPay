@@ -29,21 +29,40 @@ namespace SYT.RozetkaPay.Tests;
 public class MetadataContractTests
 {
     /// <summary>
-    /// Every type the document says carries <c>metadata</c>.
+    /// Every schema site the document declares <c>metadata</c> on, with the SDK type that carries it.
     /// </summary>
-    public static TheoryData<Type> MetadataBearingTypes =>
-    [
-        typeof(CreatePaymentRequest),
-        typeof(CreatePaymentRequestDev),
-        typeof(CreateBatchPaymentRequest),
-        typeof(CreateRecurrentPaymentRequest),
-        typeof(CreatePayPartsOrder),
-        typeof(CreateAlternativePayment),
-        typeof(PaymentOperationResult),
-        typeof(BatchPaymentOperationResult),
-        typeof(PayPartsOperationResult),
-        typeof(AlternativePaymentOperationResult),
-    ];
+    /// <remarks>
+    /// Ten sites, nine types. <c>CreatePaymentRequest</c> and <c>CreatePaymentRequestDev</c> are the
+    /// same body under two names — only the second is referenced by an operation, and they differ by
+    /// one field the referenced one does not have — so a single SDK type serves both.
+    /// </remarks>
+    private static readonly Dictionary<string, Type> MetadataSites = new()
+    {
+        ["CreatePaymentRequest"] = typeof(CreatePaymentRequest),
+        ["CreatePaymentRequestDev"] = typeof(CreatePaymentRequest),
+        ["CreateBatchPaymentRequest"] = typeof(CreateBatchPaymentRequest),
+        ["CreateRecurrentPaymentRequest"] = typeof(CreateRecurrentPaymentRequest),
+        ["CreatePayPartsOrder"] = typeof(CreatePayPartsOrder),
+        ["CreateAlternativePayment"] = typeof(CreateAlternativePayment),
+        ["PaymentOperationResult"] = typeof(PaymentOperationResult),
+        ["BatchPaymentOperationResult"] = typeof(BatchPaymentOperationResult),
+        ["PayPartsOperationResult"] = typeof(PayPartsOperationResult),
+        ["AlternativePaymentOperationResult"] = typeof(AlternativePaymentOperationResult),
+    };
+
+    public static TheoryData<Type> MetadataBearingTypes
+    {
+        get
+        {
+            TheoryData<Type> data = [];
+            foreach (Type type in MetadataSites.Values.Distinct())
+            {
+                data.Add(type);
+            }
+
+            return data;
+        }
+    }
 
     [Theory]
     [MemberData(nameof(MetadataBearingTypes))]
@@ -61,8 +80,8 @@ public class MetadataContractTests
     [Fact]
     public void MetadataBearingTypes_ShouldCoverEverySchemaThatDeclaresIt()
     {
-        // Guards the list above against the document growing another metadata site.
-        Assert.Equal(10, MetadataBearingTypes.Cast<object>().Count());
+        // Guards the map above against the document growing another metadata site.
+        Assert.Equal(10, MetadataSites.Count);
     }
 
     [Fact]
