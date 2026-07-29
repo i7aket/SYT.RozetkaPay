@@ -83,9 +83,8 @@ public class CreatePayPartsOrder
     /// <summary>
     /// Products in the order
     /// </summary>
-    [Required]
     [JsonPropertyName("products")]
-    public required List<PayPartsProduct> Products { get; set; }
+    public List<PayPartsProduct>? Products { get; set; }
 
     /// <summary>
     /// Result URL (max 2048 characters)
@@ -117,6 +116,12 @@ public class CreatePayPartsOrder
     [MetadataLimits]
     [JsonPropertyName("metadata")]
     public Dictionary<string, string>? Metadata { get; set; }
+
+    /// <summary>
+    /// Optional delivery information for the order.
+    /// </summary>
+    [JsonPropertyName("deliveries")]
+    public List<PayPartsDelivery>? Deliveries { get; set; }
 }
 
 /// <summary>
@@ -1155,6 +1160,12 @@ public class RefundPPayRequest
     /// </summary>
     [JsonPropertyName("payload")]
     public string? Payload { get; set; }
+
+    /// <summary>
+    /// Products covered by the refund, for a partial refund that names the items.
+    /// </summary>
+    [JsonPropertyName("products")]
+    public List<PayPartsProduct>? Products { get; set; }
 }
 
 /// <summary>
@@ -1188,4 +1199,68 @@ public class PayPartsCardPaymentMethod
     /// </summary>
     [JsonPropertyName("cvv")]
     public string? Cvv { get; set; }
-} 
+}
+
+/// <summary>
+/// Delivery details attached to a PayParts order.
+/// </summary>
+public class PayPartsDelivery
+{
+    /// <summary>Delivery method identifier.</summary>
+    [JsonPropertyName("method_id")]
+    public string? MethodId { get; set; }
+
+    /// <summary>Delivery service identifier.</summary>
+    [JsonPropertyName("service_id")]
+    public string? ServiceId { get; set; }
+
+    /// <summary>Requested delivery time.</summary>
+    [JsonPropertyName("time")]
+    public string? Time { get; set; }
+
+    /// <summary>Destination city.</summary>
+    [JsonPropertyName("city")]
+    public string? City { get; set; }
+
+    /// <summary>Destination street.</summary>
+    [JsonPropertyName("street")]
+    public string? Street { get; set; }
+
+    /// <summary>Destination house.</summary>
+    [JsonPropertyName("house")]
+    public string? House { get; set; }
+
+    /// <summary>Destination flat.</summary>
+    [JsonPropertyName("flat")]
+    public string? Flat { get; set; }
+
+    /// <summary>Whether someone other than the payer receives the delivery.</summary>
+    [JsonPropertyName("is_other_person")]
+    public bool? IsOtherPerson { get; set; }
+
+    /// <summary>Recipient, when it is not the payer.</summary>
+    [JsonPropertyName("other_person")]
+    public PayPartsDeliveryOtherPerson? OtherPerson { get; set; }
+}
+
+/// <summary>
+/// Recipient of a PayParts delivery when it is not the payer.
+/// </summary>
+public class PayPartsDeliveryOtherPerson
+{
+    /// <summary>Recipient last name.</summary>
+    [JsonPropertyName("last_name")]
+    public string? LastName { get; set; }
+
+    /// <summary>Recipient first name.</summary>
+    [JsonPropertyName("first_name")]
+    public string? FirstName { get; set; }
+
+    /// <summary>Recipient middle name.</summary>
+    [JsonPropertyName("middle_name")]
+    public string? MiddleName { get; set; }
+
+    /// <summary>Recipient phone number.</summary>
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
+}
