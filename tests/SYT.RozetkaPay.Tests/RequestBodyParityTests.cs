@@ -36,6 +36,9 @@ public class RequestBodyParityTests
         { "CancelBatchPaymentRequest", typeof(CancelBatchPaymentRequest) },
         { "CreateBatchPaymentRequest", typeof(CreateBatchPaymentRequest) },
         { "CreateAlternativePayment", typeof(CreateAlternativePayment) },
+        // The body POST /api/payments/v1/new actually takes. The similarly named
+        // CreatePaymentRequest schema is referenced by no operation and differs by one field.
+        { "CreatePaymentRequestDev", typeof(CreatePaymentRequest) },
     };
 
     [Theory]
