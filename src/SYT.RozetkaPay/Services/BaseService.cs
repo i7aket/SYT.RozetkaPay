@@ -6,6 +6,7 @@ using System.Text.Json;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Converters;
 using SYT.RozetkaPay.Exceptions;
+using SYT.RozetkaPay.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace SYT.RozetkaPay.Services;
@@ -1236,25 +1237,24 @@ public abstract class BaseService
     }
 
     /// <summary>
-    /// Get JSON serializer options with proper naming policy and converters
+    /// The shared JSON serializer options used by every request and response in this SDK.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Returns the one instance from <see cref="SdkSerializerOptions"/> rather than building a new one.
+    /// This method used to construct a fresh <see cref="JsonSerializerOptions"/> on every call, and it is
+    /// called twice per request - to serialize the body and to deserialize the response. Each new
+    /// instance carries its own reflection-derived contract cache, so every call rebuilt from scratch
+    /// what the previous one had just computed.
+    /// </para>
+    /// <para>
+    /// The returned instance is frozen by <see cref="System.Text.Json"/> on first use and is shared
+    /// across every service and every thread. Do not mutate it, and do not hand it to anything that
+    /// would: an attempt throws, which is the guarantee that keeps sharing safe rather than racy.
+    /// </para>
+    /// </remarks>
     protected JsonSerializerOptions GetJsonSerializerOptions()
     {
-        return new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-            WriteIndented = false,
-            NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-            Converters = {
-                new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower),
-                new FlexibleDecimalConverter(),
-                new FlexibleDecimalConverterNonNullable(),
-                new FlexibleInt32Converter(),
-                new FlexibleNullableInt32Converter(),
-                new FlexibleInt64Converter(),
-                new FlexibleNullableInt64Converter()
-            }
-        };
+        return SdkSerializerOptions.Value;
     }
 }
