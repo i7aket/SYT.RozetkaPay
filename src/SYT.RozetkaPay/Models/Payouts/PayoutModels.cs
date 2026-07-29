@@ -121,6 +121,7 @@ public class CashRecipient : RecipientUser
     /// <summary>
     /// Provider field &lt;c&gt;card_data&lt;/c&gt;.
     /// </summary>
+    [Required]
     [JsonPropertyName("card_data")]
     public CardData? CardData { get; set; }
 }

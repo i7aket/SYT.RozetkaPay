@@ -199,6 +199,7 @@ public class BatchOrder
     /// <summary>
     /// API key for the order
     /// </summary>
+    [Required]
     [JsonPropertyName("api_key")]
     public string? ApiKey { get; set; }
 
@@ -213,6 +214,7 @@ public class BatchOrder
     /// <summary>
     /// Order description
     /// </summary>
+    [Required]
     [JsonPropertyName("description")]
     public string? Description { get; set; }
 
@@ -299,6 +301,7 @@ public class BatchConfirmOrder
     /// <summary>
     /// API key for the order
     /// </summary>
+    [Required]
     [JsonPropertyName("api_key")]
     public string? ApiKey { get; set; }
 

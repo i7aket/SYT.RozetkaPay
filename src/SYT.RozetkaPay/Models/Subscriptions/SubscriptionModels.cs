@@ -284,7 +284,6 @@ public class GiftSubscriptionRequest
     /// <summary>
     /// URL where asynchronous subscription updates will be sent
     /// </summary>
-    [Required]
     [JsonPropertyName("callback_url")]
     public required string CallbackUrl { get; set; }
 

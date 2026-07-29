@@ -75,7 +75,10 @@ public class CompatibilityAndSerializationTests
             Amount = 25m,
             Currency = "PLN",
             ExternalId = "ext-1",
-            Provider = AlternativePaymentProvider.Imoje
+            Provider = AlternativePaymentProvider.Imoje,
+            Description = "test alternative payment",
+            Customer = new AlternativePaymentCustomerDetails(),
+            Products = []
         }));
 
         // A 404 can mean the resource is absent, not the route. Reinterpreting it as a missing
