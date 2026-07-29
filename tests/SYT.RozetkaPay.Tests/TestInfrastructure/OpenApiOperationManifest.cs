@@ -488,12 +488,16 @@ internal static class OpenApiOperationManifest
             Auth = ContractAuthPolicy.Authenticated,
             ExpectedBodyFragments = ["\"external_id\":\"op20-payparts-create\"", "\"parts_count\":3"],
             InvokeAsync = (host, token) => host.PayParts.CreateOrderAsync(
-                new CreatePayPartsOrderRequest
+                new CreatePayPartsOrder
                 {
                     ExternalId = "op20-payparts-create",
                     Amount = 120.20m,
                     Currency = "UAH",
-                    PartsCount = 3
+                    PartsCount = 3,
+                    BankName = "op20-bank",
+                    Mode = PayPartsPaymentMode.Hosted,
+                    Description = "op20 payparts order",
+                    Customer = new PayPartsCustomer { FirstName = "Op20", LastName = "Payer", Phone = "+380000000000" }
                 },
                 token)
         },

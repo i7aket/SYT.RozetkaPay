@@ -33,12 +33,16 @@ public class CompatibilityAndSerializationTests
         });
 
         PayPartsService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.CreateOrderAsync(new CreatePayPartsOrderRequest
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.CreateOrderAsync(new CreatePayPartsOrder
         {
             ExternalId = "ext-1",
             Amount = 1000m,
             Currency = "UAH",
-            PartsCount = 3
+            PartsCount = 3,
+            BankName = "test-bank",
+            Mode = PayPartsPaymentMode.Hosted,
+            Description = "test order",
+            Customer = new PayPartsCustomer { FirstName = "Test", LastName = "Payer", Phone = "+380000000000" }
         }));
 
         // A 404 can mean the resource is absent, not the route. Reinterpreting it as a missing

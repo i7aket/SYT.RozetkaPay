@@ -1,5 +1,6 @@
 using SYT.RozetkaPay.Models.AlternativePayments;
 using SYT.RozetkaPay.Models.Batch;
+using SYT.RozetkaPay.Models.PayParts;
 using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Tests.TestInfrastructure;
 
@@ -39,6 +40,8 @@ public class RequestBodyParityTests
         // The body POST /api/payments/v1/new actually takes. The similarly named
         // CreatePaymentRequest schema is referenced by no operation and differs by one field.
         { "CreatePaymentRequestDev", typeof(CreatePaymentRequest) },
+        { "CreatePayPartsOrder", typeof(CreatePayPartsOrder) },
+        { "RefundPPayRequest", typeof(RefundPPayRequest) },
     };
 
     [Theory]

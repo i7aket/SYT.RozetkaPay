@@ -77,9 +77,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <param name="request">PayParts order creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts order response</returns>
-    public async Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrderRequest request, CancellationToken cancellationToken = default)
+    public async Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreatePayPartsOrderRequest, PayPartsOrderResponse>(
+        return await PostAsync<CreatePayPartsOrder, PayPartsOrderResponse>(
             OrderCreateEndpoint,
             OrderCreateEndpoint,
             request,
