@@ -202,6 +202,17 @@ internal static class OpenApiSnapshot
         }
     }
 
+    /// <summary>
+    /// Every path the document declares.
+    /// </summary>
+    internal static IEnumerable<string> DeclaredPaths()
+    {
+        return Document.Value.RootElement
+            .GetProperty("paths")
+            .EnumerateObject()
+            .Select(static path => path.Name);
+    }
+
     private static JsonElement Schemas()
     {
         return Document.Value.RootElement.GetProperty("components").GetProperty("schemas");
