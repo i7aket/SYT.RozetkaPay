@@ -47,6 +47,8 @@ public class RequestBodyParityTests
         { "SetDefaultCardRequest", typeof(SetDefaultCardRequest) },
         { "CreatePlanRequest", typeof(CreatePlanRequest) },
         { "CreateSubscriptionRequest", typeof(CreateSubscriptionRequest) },
+        { "UpdatePlanRequest", typeof(UpdatePlanRequest) },
+        { "UpdateSubscriptionRequest", typeof(UpdateSubscriptionRequest) },
     };
 
     [Theory]
