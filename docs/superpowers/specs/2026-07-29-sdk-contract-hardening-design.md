@@ -60,7 +60,7 @@ nuget.org 1.0.0          -> опубликован, страница 200, в sea
 
 ## 3. Работы
 
-24 позиции. Каждая — один тикет EXP и один PR. Каждый PR проходит независимое ревью Codex
+25 позиций. Каждая — один тикет EXP и один PR. Каждый PR проходит независимое ревью Codex
 перед мержем.
 
 ### Блокеры
@@ -311,9 +311,9 @@ GitHub Release.
 **W24. `chore(deps)`: обновить зависимости** — `Microsoft.Extensions.*` закреплены на
 `9.0.5` при доступных `9.0.18`.
 
-## 4. Документация
+**W25. `docs(contract)`: привести документацию к доказанному контракту**
 
-Отдельно от работ выше, выполняется последней: README утверждает проверенный body-parity и
+Выполняется последней. README утверждает проверенный body-parity и
 `59/59`, `67 operations` (`README.md:3-20`, `42-67`) — это опровергается находками W9-W19.
 `API_COMPATIBILITY.md` называет SDK `0.1.0-alpha.1` и утверждает, что снапшот побайтово
 совпадает с живым документом, что опровергается diff'ом. Инструкция по установке всё ещё
@@ -321,6 +321,26 @@ GitHub Release.
 или неофициальном статусе SDK и атрибуция торговой марки.
 
 Документация обновляется **после** кодовых работ и описывает только доказанный контракт.
+
+## 4. Соответствие работ и тикетов
+
+Эпик: [EXP-229](https://experthub.youtrack.cloud/issue/EXP-229). Все тикеты заведены как подзадачи.
+
+| Работа | Тикет | Работа | Тикет |
+|---|---|---|---|
+| W1 | [EXP-383](https://experthub.youtrack.cloud/issue/EXP-383) | W14 | [EXP-396](https://experthub.youtrack.cloud/issue/EXP-396) |
+| W2 | [EXP-384](https://experthub.youtrack.cloud/issue/EXP-384) | W15 | [EXP-397](https://experthub.youtrack.cloud/issue/EXP-397) |
+| W3 | [EXP-385](https://experthub.youtrack.cloud/issue/EXP-385) | W16 | [EXP-398](https://experthub.youtrack.cloud/issue/EXP-398) |
+| W4 | [EXP-386](https://experthub.youtrack.cloud/issue/EXP-386) | W17 | [EXP-399](https://experthub.youtrack.cloud/issue/EXP-399) |
+| W5 | [EXP-387](https://experthub.youtrack.cloud/issue/EXP-387) | W18 | [EXP-400](https://experthub.youtrack.cloud/issue/EXP-400) |
+| W6 | [EXP-388](https://experthub.youtrack.cloud/issue/EXP-388) | W19 | [EXP-401](https://experthub.youtrack.cloud/issue/EXP-401) |
+| W7 | [EXP-389](https://experthub.youtrack.cloud/issue/EXP-389) | W20 | [EXP-402](https://experthub.youtrack.cloud/issue/EXP-402) |
+| W8 | [EXP-390](https://experthub.youtrack.cloud/issue/EXP-390) | W21 | [EXP-403](https://experthub.youtrack.cloud/issue/EXP-403) |
+| W9 | [EXP-391](https://experthub.youtrack.cloud/issue/EXP-391) | W22 | [EXP-404](https://experthub.youtrack.cloud/issue/EXP-404) |
+| W10 | [EXP-392](https://experthub.youtrack.cloud/issue/EXP-392) | W23 | [EXP-405](https://experthub.youtrack.cloud/issue/EXP-405) |
+| W11 | [EXP-393](https://experthub.youtrack.cloud/issue/EXP-393) | W24 | [EXP-406](https://experthub.youtrack.cloud/issue/EXP-406) |
+| W12 | [EXP-394](https://experthub.youtrack.cloud/issue/EXP-394) | W25 | [EXP-407](https://experthub.youtrack.cloud/issue/EXP-407) |
+| W13 | [EXP-395](https://experthub.youtrack.cloud/issue/EXP-395) | | |
 
 ## 5. Порядок
 
@@ -331,14 +351,14 @@ W1 W2 W3 W4          блокеры, строго первыми
   -> W9 .. W19       контракт; W18 может породить новые тикеты
   -> W20             только после W9-W19, иначе валидация отвергнет валидное
   -> W21 W22 W23 W24 поверхность, гейты, зависимости
-  -> документация
+  -> W25             документация, строго последней
 ```
 
 ## 6. Определение готовности
 
 Работа считается завершённой, когда:
 
-- все 24 PR смержены, каждый прошёл независимое ревью Codex;
+- все 25 PR смержены, каждый прошёл независимое ревью Codex;
 - CI-job живой сверки со спекой зелёный и падает на искусственно внесённом расхождении;
 - контрактные тесты проверяют фактические wire-токены enum и полное тело запроса;
 - прогон против sandbox с реальными ключами выполнен, а не пропущен;
