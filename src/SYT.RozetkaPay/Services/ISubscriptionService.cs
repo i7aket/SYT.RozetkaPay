@@ -22,7 +22,7 @@ public interface ISubscriptionService
     /// <param name="request">Create subscription plan request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plan response</returns>
-    Task<SubscriptionPlanResponse> CreatePlanAsync(CreateSubscriptionPlanRequest request, CancellationToken cancellationToken = default);
+    Task<SubscriptionPlanResponse> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deactivate plan

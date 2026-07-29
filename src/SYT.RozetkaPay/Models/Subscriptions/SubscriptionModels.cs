@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Converters;
 
 namespace SYT.RozetkaPay.Models.Subscriptions;
@@ -161,68 +162,110 @@ public enum PlanState
 public class CreateSubscriptionRequest
 {
     /// <summary>
-    /// External subscription ID (JSON string as per CDN documentation)
+    /// Customer the subscription is created for.
     /// </summary>
-    [JsonPropertyName("external_id")]
     [Required]
-    public string ExternalId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Subscription amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    [Required]
-    public decimal Amount { get; set; }
-
-    /// <summary>
-    /// Subscription currency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("currency")]
-    [Required]
-    public string Currency { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Subscription description (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Payment frequency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("frequency")]
-    [Required]
-    public string Frequency { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Number of periods (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("period_count")]
-    public int? PeriodCount { get; set; }
-
-    /// <summary>
-    /// Customer information (JSON object as per CDN documentation)
-    /// </summary>
     [JsonPropertyName("customer")]
-    public SubscriptionCustomer? Customer { get; set; }
+    public required CustomerRequestUserDetails Customer { get; set; }
 
     /// <summary>
-    /// Initial payment information (JSON object as per CDN documentation)
+    /// Plan the subscription follows.
     /// </summary>
-    [JsonPropertyName("initial_payment")]
-    public SubscriptionInitialPayment? InitialPayment { get; set; }
+    [Required]
+    [JsonPropertyName("plan_id")]
+    public required string PlanId { get; set; }
 
     /// <summary>
-    /// Callback URL (JSON string as per CDN documentation)
+    /// URL the payer is returned to once the subscription is set up.
+    /// </summary>
+    [Required]
+    [JsonPropertyName("result_url")]
+    public required string ResultUrl { get; set; }
+
+    /// <summary>
+    /// Date the subscription starts.
+    /// </summary>
+    [Required]
+    [JsonPropertyName("start_date")]
+    public required string StartDate { get; set; }
+
+    /// <summary>
+    /// Whether the subscription renews automatically at the end of each period.
+    /// </summary>
+    [JsonPropertyName("auto_renew")]
+    public bool? AutoRenew { get; set; }
+
+    /// <summary>
+    /// Callback URL for subscription notifications.
     /// </summary>
     [JsonPropertyName("callback_url")]
     public string? CallbackUrl { get; set; }
 
     /// <summary>
-    /// Subscription start date (JSON string as per CDN documentation)
+    /// API key of the merchant the subscription is delegated to.
     /// </summary>
-    [JsonPropertyName("start_date")]
-    public string? StartDate { get; set; }
+    [JsonPropertyName("delegate_api_key")]
+    public string? DelegateApiKey { get; set; }
+
+    /// <summary>
+    /// Human-readable description.
+    /// </summary>
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Identifier linking the subscription within the merchant's system.
+    /// </summary>
+    [JsonPropertyName("external_id")]
+    public string? ExternalId { get; set; }
+
+    /// <summary>
+    /// Identifier of an external premium entitlement.
+    /// </summary>
+    [JsonPropertyName("external_premium_id")]
+    public string? ExternalPremiumId { get; set; }
+
+    /// <summary>
+    /// Price overriding the plan's, when the subscription is not billed at plan price.
+    /// </summary>
+    [JsonPropertyName("price")]
+    public int? Price { get; set; }
+
+    /// <summary>
+    /// Recurrent identifier of an existing card mandate to bill.
+    /// </summary>
+    [JsonPropertyName("recurrent_id")]
+    public string? RecurrentId { get; set; }
+
+    /// <summary>
+    /// Number of trial periods before billing begins.
+    /// </summary>
+    [JsonPropertyName("trial_periods")]
+    public decimal? TrialPeriods { get; set; }
+
+    /// <summary>
+    /// Whether trial periods are themselves charged.
+    /// </summary>
+    [JsonPropertyName("trial_periodic_payments")]
+    public bool? TrialPeriodicPayments { get; set; }
+
+    /// <summary>
+    /// Identifier linking this subscription to others across systems.
+    /// </summary>
+    [JsonPropertyName("unified_external_id")]
+    public string? UnifiedExternalId { get; set; }
+
+    /// <summary>
+    /// Whether an automatic renewal is billed at the plan's price rather than this subscription's.
+    /// </summary>
+    [JsonPropertyName("use_plan_price_on_auto_renew")]
+    public bool? UsePlanPriceOnAutoRenew { get; set; }
+
+    /// <summary>
+    /// Number of periods granted as a gift.
+    /// </summary>
+    [JsonPropertyName("gifted_periods")]
+    public decimal? GiftedPeriods { get; set; }
 }
 
 /// <summary>
@@ -1360,16 +1403,15 @@ public class CreatePlanRequest
     /// <summary>
     /// Platforms where plan is available
     /// </summary>
-    [Required]
     [JsonPropertyName("platforms")]
-    public required List<string> Platforms { get; set; }
+    public List<string>? Platforms { get; set; }
 
     /// <summary>
     /// Frequency type
     /// </summary>
     [Required]
     [JsonPropertyName("frequency_type")]
-    public required string FrequencyType { get; set; }
+    public required PlanFrequencyType FrequencyType { get; set; }
 
     /// <summary>
     /// Frequency value
@@ -1390,6 +1432,19 @@ public class CreatePlanRequest
     /// </summary>
     [JsonPropertyName("end_date")]
     public string? EndDate { get; set; }
+
+    /// <summary>
+    /// Number of periods the plan runs for.
+    /// </summary>
+    [Required]
+    [JsonPropertyName("duration_periods")]
+    public required int DurationPeriods { get; set; }
+
+    /// <summary>
+    /// Callback endpoints registered on the plan.
+    /// </summary>
+    [JsonPropertyName("callbacks")]
+    public List<PlanCallbackRequest>? Callbacks { get; set; }
 }
 
 /// <summary>
@@ -1408,4 +1463,44 @@ public class UpdatePlanRequest
     /// </summary>
     [JsonPropertyName("name")]
     public string? Name { get; set; }
+}
+
+/// <summary>
+/// The time interval a plan period is measured in.
+/// </summary>
+/// <remarks>
+/// Combined with the plan's frequency: four weeks is <c>frequency=4</c> with
+/// <see cref="Weekly"/>.
+/// </remarks>
+public enum PlanFrequencyType
+{
+    /// <summary>Days.</summary>
+    [JsonStringEnumMemberName("daily")]
+    Daily,
+
+    /// <summary>Weeks.</summary>
+    [JsonStringEnumMemberName("weekly")]
+    Weekly,
+
+    /// <summary>Months.</summary>
+    [JsonStringEnumMemberName("monthly")]
+    Monthly,
+
+    /// <summary>Years.</summary>
+    [JsonStringEnumMemberName("yearly")]
+    Yearly
+}
+
+/// <summary>
+/// A callback endpoint registered on a subscription plan.
+/// </summary>
+public class PlanCallbackRequest
+{
+    /// <summary>API key the callback is authenticated with.</summary>
+    [JsonPropertyName("api_key")]
+    public string? ApiKey { get; set; }
+
+    /// <summary>URL the callback is delivered to.</summary>
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
 }

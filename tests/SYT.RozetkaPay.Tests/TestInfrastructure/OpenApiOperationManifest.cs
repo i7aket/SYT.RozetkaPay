@@ -892,14 +892,18 @@ internal static class OpenApiOperationManifest
             ExpectedPathAndQuery = "/api/subscriptions/v1/plans",
             Body = ContractBodyPolicy.Json,
             Auth = ContractAuthPolicy.Authenticated,
-            ExpectedBodyFragments = ["\"name\":\"op42-plan-name\"", "\"amount\":142.42"],
+            ExpectedBodyFragments =
+                ["\"name\":\"op42-plan-name\"", "\"price\":142", "\"frequency_type\":\"monthly\""],
             InvokeAsync = (host, token) => host.Subscriptions.CreatePlanAsync(
-                new CreateSubscriptionPlanRequest
+                new CreatePlanRequest
                 {
                     Name = "op42-plan-name",
-                    Amount = 142.42m,
+                    Price = 142,
                     Currency = "UAH",
-                    Frequency = "monthly"
+                    FrequencyType = PlanFrequencyType.Monthly,
+                    Frequency = 1,
+                    DurationPeriods = 12,
+                    StartDate = "2026-08-01"
                 },
                 token)
         },
@@ -957,14 +961,16 @@ internal static class OpenApiOperationManifest
             ExpectedPathAndQuery = "/api/subscriptions/v1/subscriptions",
             Body = ContractBodyPolicy.Json,
             Auth = ContractAuthPolicy.Authenticated,
-            ExpectedBodyFragments = ["\"external_id\":\"op46-subscription-create\"", "\"amount\":146.46"],
+            ExpectedBodyFragments =
+                ["\"external_id\":\"op46-subscription-create\"", "\"plan_id\":\"op46-plan\""],
             InvokeAsync = (host, token) => host.Subscriptions.CreateAsync(
                 new CreateSubscriptionRequest
                 {
                     ExternalId = "op46-subscription-create",
-                    Amount = 146.46m,
-                    Currency = "UAH",
-                    Frequency = "monthly"
+                    Customer = new CustomerRequestUserDetails(),
+                    PlanId = "op46-plan",
+                    ResultUrl = "https://merchant.example/done",
+                    StartDate = "2026-08-01"
                 },
                 token)
         },
