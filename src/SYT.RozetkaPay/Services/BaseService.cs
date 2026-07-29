@@ -125,6 +125,18 @@ public abstract class BaseService
         HttpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         Logger = logger;
 
+        // Enforced here, not only in the options validator: a service constructed directly - which is
+        // a supported, public way to use this SDK - never goes through the options pipeline, so an
+        // earlier revision that guarded only that pipeline let a directly built service dispatch a
+        // credential-bearing request over clear text. This constructor is the one point every service
+        // passes through, whichever way it was built.
+        if (!RozetkaPayEndpointPolicy.IsAcceptable(Configuration.BaseUrl, Configuration.TransportSecurity))
+        {
+            throw new ArgumentException(
+                RozetkaPayEndpointPolicy.DescribeRejection(nameof(RozetkaPayConfiguration.BaseUrl)),
+                nameof(configuration));
+        }
+
         // Endpoint and timeout only. Header state belongs to the request, below.
         HttpClient.BaseAddress = new Uri(Configuration.BaseUrl);
         HttpClient.Timeout = Configuration.Timeout;

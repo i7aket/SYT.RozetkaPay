@@ -124,13 +124,32 @@ public class RozetkaPayClient : IRozetkaPayClient
     /// Initialize RozetkaPayClient with configuration
     /// </summary>
     /// <param name="configuration">RozetkaPay configuration</param>
-    /// <param name="httpClient">Optional HTTP client</param>
+    /// <param name="httpClient">
+    /// Optional HTTP client. When omitted, this client creates and owns one that refuses redirects.
+    /// <b>When supplied, the redirect policy is the caller's to set:</b> the SDK cannot reach into a
+    /// client it does not own, and a client that follows redirects will forward
+    /// <c>X-ON-BEHALF-OF</c> and <c>X-CUSTOMER-AUTH</c> to whatever host a <c>302</c> names. Configure
+    /// the supplied client's primary handler with <c>AllowAutoRedirect = false</c>, or register the SDK
+    /// through <c>AddRozetkaPay</c>, which does it for you.
+    /// </param>
     /// <param name="logger">Optional logger</param>
+    /// <exception cref="ArgumentException">
+    /// The configured endpoint is not an absolute https URL, and is not a loopback http URL with
+    /// <see cref="RozetkaPayConfiguration.TransportSecurity"/> set to
+    /// <see cref="RozetkaPayTransportSecurity.AllowClearTextLoopback"/>.
+    /// </exception>
     public RozetkaPayClient(RozetkaPayConfiguration configuration, HttpClient? httpClient = null, ILogger<RozetkaPayClient>? logger = null)
     {
         RozetkaPayConfiguration configuration1 = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _ownsHttpClient = httpClient is null;
-        HttpClient = httpClient ?? new HttpClient();
+
+        // When this client owns the transport it also owns the redirect policy, and refuses redirects.
+        // A default HttpClient follows them, and while the runtime drops Authorization across origins it
+        // forwards X-ON-BEHALF-OF and X-CUSTOMER-AUTH verbatim - both merchant secrets - so a host
+        // answering with a Location it controls harvested them. The DI registration disables redirects on
+        // its named clients for the same reason; doing it only there left this constructor, the simplest
+        // way to use the SDK, still exposed.
+        HttpClient = httpClient ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
 
         // Initialize all services
         Payments = new PaymentService(configuration1, HttpClient, logger);

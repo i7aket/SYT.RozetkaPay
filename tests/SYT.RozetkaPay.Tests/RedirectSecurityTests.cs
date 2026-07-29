@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Extensions;
+using SYT.RozetkaPay.Services;
 
 namespace SYT.RozetkaPay.Tests;
 
@@ -137,6 +138,119 @@ public class RedirectSecurityTests
         provider.GetRequiredService<IStartupValidator>().Validate();
 
         Assert.NotNull(provider.GetRequiredService<RozetkaPayConfiguration>());
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // The non-DI surface. A service or client built directly never touches the options pipeline, so
+    // every guarantee above has to hold here independently - an earlier revision enforced both only on
+    // the DI path, and a directly constructed service sent credentials over clear text.
+    // ---------------------------------------------------------------------------------------------
+
+    [Fact]
+    public void ClientOwnedTransport_ShouldNotFollowRedirects()
+    {
+        using RozetkaPayClient client = new(HttpsConfiguration());
+
+        HttpClient owned = OwnedHttpClientOf(client);
+        HttpClientHandler handler = Assert.IsType<HttpClientHandler>(PrimaryHandlerOf(owned));
+
+        Assert.False(handler.AllowAutoRedirect);
+    }
+
+    [Theory]
+    [InlineData("http://payments.example.test")]
+    [InlineData("http://203.0.113.10:8080/rozetkapay/")]
+    public void DirectlyConstructedService_ShouldRefuseAClearTextEndpoint(string baseUrl)
+    {
+        RozetkaPayConfiguration configuration = HttpsConfiguration();
+        configuration.BaseUrl = baseUrl;
+
+        using HttpClient httpClient = new();
+
+        ArgumentException failure = Assert.Throws<ArgumentException>(
+            () => new PaymentService(configuration, httpClient));
+
+        Assert.Contains("https", failure.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void DirectlyConstructedClient_ShouldRefuseAClearTextEndpoint()
+    {
+        RozetkaPayConfiguration configuration = HttpsConfiguration();
+        configuration.BaseUrl = "http://payments.example.test";
+
+        Assert.Throws<ArgumentException>(() => new RozetkaPayClient(configuration));
+    }
+
+    [Fact]
+    public void DirectlyConstructedService_ShouldAcceptLoopbackHttpWhenExplicitlyAllowed()
+    {
+        RozetkaPayConfiguration configuration = HttpsConfiguration();
+        configuration.BaseUrl = "http://127.0.0.1:5005";
+        configuration.TransportSecurity = RozetkaPayTransportSecurity.AllowClearTextLoopback;
+
+        using HttpClient httpClient = new();
+
+        Assert.NotNull(new PaymentService(configuration, httpClient));
+    }
+
+    [Fact]
+    public void DirectlyConstructedService_ShouldRefuseNonLoopbackHttpEvenWhenLoopbackIsAllowed()
+    {
+        RozetkaPayConfiguration configuration = HttpsConfiguration();
+        configuration.BaseUrl = "http://payments.example.test";
+        configuration.TransportSecurity = RozetkaPayTransportSecurity.AllowClearTextLoopback;
+
+        using HttpClient httpClient = new();
+
+        Assert.Throws<ArgumentException>(() => new PaymentService(configuration, httpClient));
+    }
+
+    private static RozetkaPayConfiguration HttpsConfiguration() => new()
+    {
+        BaseUrl = RozetkaPayOptions.ProductionBaseUrl,
+        Login = Login,
+        Password = Secret,
+        OnBehalfOf = "on-behalf-secret",
+        CustomerAuth = "customer-auth-secret"
+    };
+
+    /// <summary>
+    /// The <see cref="HttpClient"/> a <see cref="RozetkaPayClient"/> created for itself.
+    /// </summary>
+    /// <remarks>
+    /// Not exposed on the public surface, and deliberately so - but whether the SDK disables redirects
+    /// on the transport it owns is a security property, and asserting it needs the instance.
+    /// </remarks>
+    private static HttpClient OwnedHttpClientOf(RozetkaPayClient client)
+    {
+        FieldInfo field = typeof(RozetkaPayClient).GetField(
+            "HttpClient",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException(
+                "RozetkaPayClient no longer holds its transport in a field named 'HttpClient'. Update " +
+                "this walk rather than dropping the assertion.");
+
+        return (HttpClient)field.GetValue(client)!;
+    }
+
+    private static HttpMessageHandler PrimaryHandlerOf(HttpClient client)
+    {
+        FieldInfo field = typeof(HttpMessageInvoker).GetField(
+            "_handler",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException(
+                "HttpMessageInvoker no longer exposes its handler through the '_handler' field.");
+
+        object? current = field.GetValue(client);
+
+        while (current is DelegatingHandler delegating)
+        {
+            current = delegating.InnerHandler;
+        }
+
+        return current as HttpMessageHandler
+            ?? throw new InvalidOperationException("The handler chain did not end in an HttpMessageHandler.");
     }
 
     private static ServiceProvider BuildProvider(Action<RozetkaPayOptions> configure)

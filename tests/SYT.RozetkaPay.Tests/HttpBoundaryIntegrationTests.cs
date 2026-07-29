@@ -427,7 +427,10 @@ public class HttpBoundaryIntegrationTests
             CustomerAuth = CustomerAuthPlaceholder,
             UserAgent = UserAgentPlaceholder,
             Timeout = RequestTimeout,
-            RetryPolicy = RetryPolicy.None
+            RetryPolicy = RetryPolicy.None,
+
+            // Loopback stub gateway with no certificate to present - the one case clear text is for.
+            TransportSecurity = RozetkaPayTransportSecurity.AllowClearTextLoopback
         };
     }
 

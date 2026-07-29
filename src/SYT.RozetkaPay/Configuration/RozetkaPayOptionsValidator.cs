@@ -70,7 +70,7 @@ internal sealed class RozetkaPayOptionsValidator : IValidateOptions<RozetkaPayOp
             // The endpoint comes from the environment. Verifying the resolved URL as well keeps the rule that
             // whatever the SDK ends up calling is an absolute http(s) address, whichever path produced it.
             if (environmentIsUsable &&
-                !IsAcceptableEndpoint(
+                !RozetkaPayEndpointPolicy.IsAcceptable(
                     RozetkaPayOptionsMapper.ResolveBaseUrl(options),
                     options.TransportSecurity))
             {
@@ -90,13 +90,10 @@ internal sealed class RozetkaPayOptionsValidator : IValidateOptions<RozetkaPayOp
             return;
         }
 
-        if (!IsAcceptableEndpoint(options.BaseUrl, options.TransportSecurity))
+        if (!RozetkaPayEndpointPolicy.IsAcceptable(options.BaseUrl, options.TransportSecurity))
         {
             failures.Add(
-                $"{Key(nameof(RozetkaPayOptions.BaseUrl))} must be an absolute https URL. Plain http is " +
-                $"accepted only for a loopback host, and only when " +
-                $"{Key(nameof(RozetkaPayOptions.TransportSecurity))} is " +
-                $"{nameof(RozetkaPayTransportSecurity.AllowClearTextLoopback)}.");
+                RozetkaPayEndpointPolicy.DescribeRejection(Key(nameof(RozetkaPayOptions.BaseUrl))));
         }
     }
 
@@ -153,34 +150,6 @@ internal sealed class RozetkaPayOptionsValidator : IValidateOptions<RozetkaPayOp
         }
     }
 
-    /// <summary>
-    /// Reject relative URLs, absolute URLs the SDK cannot speak, and any clear-text endpoint that is not
-    /// an explicitly permitted loopback address - all before the first request is attempted.
-    /// </summary>
-    /// <remarks>
-    /// The host is examined, not only the scheme. Accepting <c>http</c> on the strength of
-    /// <see cref="RozetkaPayOptions.TransportSecurity"/> alone would let one setting - whose
-    /// entire purpose is to unblock a stub gateway on localhost - silently downgrade a production endpoint
-    /// to clear text, which is the failure this guard exists to prevent.
-    /// </remarks>
-    /// <param name="value">Candidate endpoint.</param>
-    /// <param name="transportSecurity">Which schemes the caller has permitted.</param>
-    private static bool IsAcceptableEndpoint(string value, RozetkaPayTransportSecurity transportSecurity)
-    {
-        if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri))
-        {
-            return false;
-        }
-
-        if (uri.Scheme == Uri.UriSchemeHttps)
-        {
-            return true;
-        }
-
-        return uri.Scheme == Uri.UriSchemeHttp &&
-               transportSecurity == RozetkaPayTransportSecurity.AllowClearTextLoopback &&
-               uri.IsLoopback;
-    }
 
     private static string Key(string property)
     {
