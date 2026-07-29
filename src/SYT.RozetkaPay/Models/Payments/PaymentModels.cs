@@ -80,10 +80,34 @@ public class ConfirmPaymentRequest
     public required string ExternalId { get; set; }
 
     /// <summary>
-    /// Amount to confirm in UAH (optional, confirms full amount if not specified)
+    /// Amount to confirm (optional; confirms the full amount when omitted).
     /// </summary>
     [JsonPropertyName("amount")]
     public decimal? Amount { get; set; }
+
+    /// <summary>
+    /// Currency of <see cref="Amount"/>.
+    /// </summary>
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+
+    /// <summary>
+    /// Products covered by this confirmation, for a partial capture that names the items.
+    /// </summary>
+    [JsonPropertyName("products")]
+    public List<Product>? Products { get; set; }
+
+    /// <summary>
+    /// Opaque merchant payload echoed back on the callback.
+    /// </summary>
+    [JsonPropertyName("payload")]
+    public string? Payload { get; set; }
+
+    /// <summary>
+    /// Callback URL for this operation, overriding the one the payment was created with.
+    /// </summary>
+    [JsonPropertyName("callback_url")]
+    public string? CallbackUrl { get; set; }
 }
 
 // ===================== CANCEL PAYMENT MODELS =====================
@@ -101,10 +125,34 @@ public class CancelPaymentRequest
     public required string ExternalId { get; set; }
 
     /// <summary>
-    /// Cancellation reason
+    /// Amount to cancel (optional; cancels the full amount when omitted).
     /// </summary>
-    [JsonPropertyName("reason")]
-    public string? Reason { get; set; }
+    [JsonPropertyName("amount")]
+    public decimal? Amount { get; set; }
+
+    /// <summary>
+    /// Currency of <see cref="Amount"/>.
+    /// </summary>
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+
+    /// <summary>
+    /// Products covered by this cancel, for a partial cancel that names the items.
+    /// </summary>
+    [JsonPropertyName("products")]
+    public List<Product>? Products { get; set; }
+
+    /// <summary>
+    /// Opaque merchant payload echoed back on the callback.
+    /// </summary>
+    [JsonPropertyName("payload")]
+    public string? Payload { get; set; }
+
+    /// <summary>
+    /// Callback URL for this operation, overriding the one the payment was created with.
+    /// </summary>
+    [JsonPropertyName("callback_url")]
+    public string? CallbackUrl { get; set; }
 }
 
 // ===================== REFUND PAYMENT MODELS =====================

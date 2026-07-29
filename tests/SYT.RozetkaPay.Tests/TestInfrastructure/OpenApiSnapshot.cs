@@ -57,6 +57,41 @@ internal static class OpenApiSnapshot
             : [.. values.Distinct(StringComparer.Ordinal)];
     }
 
+    /// <summary>
+    /// The property names a named request body declares.
+    /// </summary>
+    internal static IEnumerable<string> RequestBodyPropertyNames(string requestBodyName)
+    {
+        return Document.Value.RootElement
+            .GetProperty("components")
+            .GetProperty("requestBodies")
+            .GetProperty(requestBodyName)
+            .GetProperty("content")
+            .GetProperty("application/json")
+            .GetProperty("schema")
+            .GetProperty("properties")
+            .EnumerateObject()
+            .Select(static property => property.Name);
+    }
+
+    /// <summary>
+    /// The JSON names a model type puts on the wire, ignoring anything marked <c>[JsonIgnore]</c>.
+    /// </summary>
+    internal static IEnumerable<string> JsonPropertyNamesOf(Type modelType)
+    {
+        return modelType
+            .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(static property => property
+                .GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonIgnoreAttribute), inherit: true)
+                .Length == 0)
+            .Select(static property =>
+                (property.GetCustomAttributes(
+                        typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute),
+                        inherit: true)
+                    .FirstOrDefault() as System.Text.Json.Serialization.JsonPropertyNameAttribute)?.Name
+                ?? property.Name);
+    }
+
     private static JsonElement Schemas()
     {
         return Document.Value.RootElement.GetProperty("components").GetProperty("schemas");
