@@ -155,7 +155,6 @@ internal static class OpenApiOperationManifest
                 new CreateRecurrentPaymentRequest
                 {
                     Amount = 102.02m,
-                    Currency = "UAH",
                     ExternalId = "op02-create-recurrent",
                     RecurrentId = "op02-recurrent-id"
                 },
