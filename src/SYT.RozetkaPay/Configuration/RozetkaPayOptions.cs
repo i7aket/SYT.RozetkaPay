@@ -92,6 +92,19 @@ public sealed class RozetkaPayOptions
     public string UserAgent { get; set; } = "RozetkaPaySDK/.NET";
 
     /// <summary>
+    /// Which endpoint schemes the SDK will speak. Defaults to
+    /// <see cref="RozetkaPayTransportSecurity.HttpsOnly"/>.
+    /// </summary>
+    /// <remarks>
+    /// Every request carries a Basic credential, and a partner integration adds
+    /// <c>X-ON-BEHALF-OF</c> and <c>X-CUSTOMER-AUTH</c> on top of it, so clear text is refused by
+    /// default. <see cref="RozetkaPayTransportSecurity.AllowClearTextLoopback"/> relaxes that for a
+    /// loopback host and nothing else - <see cref="RozetkaPayOptionsValidator"/> checks the host as
+    /// well as the scheme. Certificate validation is not affected either way.
+    /// </remarks>
+    public RozetkaPayTransportSecurity TransportSecurity { get; set; } = RozetkaPayTransportSecurity.HttpsOnly;
+
+    /// <summary>
     /// Retry policy for failed HTTP requests. Retries are disabled by default.
     /// </summary>
     public RetryPolicy RetryPolicy { get; set; } = RetryPolicy.Default;

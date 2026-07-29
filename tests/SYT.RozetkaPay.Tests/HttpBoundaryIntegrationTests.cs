@@ -401,6 +401,11 @@ public class HttpBoundaryIntegrationTests
             options.Timeout = RequestTimeout;
             options.RetryPolicy = RetryPolicy.None;
 
+            // The stub gateway is a loopback listener with no certificate to present, which is the one
+            // case clear text is permitted for. Every other host stays https-only, and this setting
+            // cannot change that - the validator checks the host, not just the switch.
+            options.TransportSecurity = RozetkaPayTransportSecurity.AllowClearTextLoopback;
+
             if (withOptionalHeaders)
             {
                 options.OnBehalfOf = OnBehalfOfPlaceholder;

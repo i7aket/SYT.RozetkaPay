@@ -149,10 +149,10 @@ public class RozetkaPayOptionsTests
         {
             options.Login = Login;
             options.Password = Secret;
-            options.BaseUrl = "http://localhost:5005/rozetkapay";
+            options.BaseUrl = "https://gateway.example.com/rozetkapay";
         });
 
-        Assert.Equal("http://localhost:5005/rozetkapay", snapshot.BaseUrl);
+        Assert.Equal("https://gateway.example.com/rozetkapay", snapshot.BaseUrl);
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -587,11 +587,13 @@ public class RozetkaPayOptionsTests
         });
     }
 
+    // Clear text used to be accepted here, loopback included. It is not: every request carries a
+    // Basic credential and may carry two secret headers. The loopback cases moved to
+    // RedirectSecurityTests, where they assert the opposite - rejected unless explicitly opted into.
     [Theory]
     [InlineData("https://gateway.example.com")]
-    [InlineData("http://localhost:5005")]
-    [InlineData("http://127.0.0.1:5005/rozetkapay/")]
-    public void Validation_ShouldAcceptAnAbsoluteHttpOrHttpsBaseUrl(string baseUrl)
+    [InlineData("https://gateway.example.com:8443/rozetkapay/")]
+    public void Validation_ShouldAcceptAnAbsoluteHttpsBaseUrl(string baseUrl)
     {
         AssertValid(options =>
         {

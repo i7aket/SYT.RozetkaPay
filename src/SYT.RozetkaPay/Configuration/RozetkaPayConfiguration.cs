@@ -45,6 +45,13 @@ public class RozetkaPayConfiguration
     public string UserAgent { get; set; } = "RozetkaPaySDK/.NET";
 
     /// <summary>
+    /// Which endpoint schemes the SDK will speak. Defaults to
+    /// <see cref="RozetkaPayTransportSecurity.HttpsOnly"/>. See
+    /// <see cref="RozetkaPayOptions.TransportSecurity"/> for what it does and does not relax.
+    /// </summary>
+    public RozetkaPayTransportSecurity TransportSecurity { get; set; } = RozetkaPayTransportSecurity.HttpsOnly;
+
+    /// <summary>
     /// Retry policy for failed HTTP requests
     /// </summary>
     public RetryPolicy RetryPolicy { get; set; } = RetryPolicy.Default;
