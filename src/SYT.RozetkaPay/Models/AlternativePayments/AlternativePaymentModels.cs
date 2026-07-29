@@ -41,29 +41,6 @@ public enum AlternativePaymentOperationType
     Create
 }
 
-/// <summary>
-/// Alternative payment response codes (JSON string as per CDN documentation)
-/// </summary>
-public enum AlternativePaymentResponseCode
-{
-    /// <summary>
-    /// Success
-    /// </summary>
-    [JsonStringEnumMemberName("00")]
-    Success,
-    
-    /// <summary>
-    /// Pending
-    /// </summary>
-    [JsonStringEnumMemberName("pending")]
-    Pending,
-    
-    /// <summary>
-    /// Failed
-    /// </summary>
-    [JsonStringEnumMemberName("failed")]
-    Failed
-}
 
 /// <summary>
 /// Alternative payment providers (JSON string as per CDN documentation)
@@ -404,7 +381,7 @@ public class AlternativePaymentOperationDetails
     /// Operation status code (JSON string as per CDN documentation)
     /// </summary>
     [JsonPropertyName("status_code")]
-    public AlternativePaymentResponseCode? StatusCode { get; set; }
+    public ResponseCode? StatusCode { get; set; }
 
     /// <summary>
     /// Operation status description (JSON string as per CDN documentation)

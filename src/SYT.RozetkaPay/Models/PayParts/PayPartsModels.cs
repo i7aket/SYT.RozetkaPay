@@ -746,29 +746,6 @@ public enum PayPartsOperationType
     Refund
 }
 
-/// <summary>
-/// PayParts response codes (JSON string as per CDN documentation)
-/// </summary>
-public enum PayPartsResponseCode
-{
-    /// <summary>
-    /// Success
-    /// </summary>
-    [JsonStringEnumMemberName("00")]
-    Success,
-    
-    /// <summary>
-    /// Pending
-    /// </summary>
-    [JsonStringEnumMemberName("pending")]
-    Pending,
-    
-    /// <summary>
-    /// Failed
-    /// </summary>
-    [JsonStringEnumMemberName("failed")]
-    Failed
-}
 
 /// <summary>
 /// PayParts operation details (JSON object as per CDN documentation)
@@ -833,7 +810,7 @@ public class PayPartsOperationDetails
     /// Operation status code (JSON string as per CDN documentation)
     /// </summary>
     [JsonPropertyName("status_code")]
-    public PayPartsResponseCode? StatusCode { get; set; }
+    public ResponseCode? StatusCode { get; set; }
 
     /// <summary>
     /// Operation status description (JSON string as per CDN documentation)
