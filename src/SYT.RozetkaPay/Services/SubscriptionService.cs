@@ -96,9 +96,9 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="request">Create subscription plan request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plan response</returns>
-    public async Task<SubscriptionPlanResponse> CreatePlanAsync(CreateSubscriptionPlanRequest request, CancellationToken cancellationToken = default)
+    public async Task<SubscriptionPlanResponse> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreateSubscriptionPlanRequest, SubscriptionPlanResponse>(
+        return await PostAsync<CreatePlanRequest, SubscriptionPlanResponse>(
             PlansEndpoint,
             PlansEndpoint,
             request,

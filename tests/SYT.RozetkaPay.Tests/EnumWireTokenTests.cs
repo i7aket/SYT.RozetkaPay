@@ -49,7 +49,6 @@ public class EnumWireTokenTests
         ["FiscalizationStatus"] = "fiscalization is not modelled",
         ["FiscalizationStatusCode"] = "fiscalization is not modelled",
         ["PayPartsPaymentMethodType"] = "PayParts payment-method details are not modelled",
-        ["PlanFrequencyType"] = "the plan model still carries frequency as a string",
         ["SubscriptionPaymentMethodType"] = "subscription payment-method details are not modelled",
         ["ErrorType"] = "errors surface through RozetkaPayApiError, not a typed enum",
     };
@@ -82,6 +81,7 @@ public class EnumWireTokenTests
         ["PayPartsResponseCode"] = typeof(ResponseCode),
         ["PaymentMethodType"] = typeof(PaymentMethodType),
         ["PaymentMode"] = typeof(PaymentMode),
+        ["PlanFrequencyType"] = typeof(PlanFrequencyType),
         ["PlanState"] = typeof(PlanState),
         ["ResponseCode"] = typeof(ResponseCode),
         ["SubscriptionCallbackType"] = typeof(SubscriptionCallbackType),
