@@ -10,6 +10,8 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-29
+
 ### Added
 - Enforceable repository and build conventions (EXP-340). Compiler and analyzer settings are no longer
   copy-pasted per project: a root `Directory.Build.props` declares `ImplicitUsings`, `Nullable`,
@@ -626,6 +628,7 @@ immediately before tagging a release (see the release process in `README.md`).
 ### Added
 - Initial alpha SDK package.
 
-[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/commits/main
+[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v1.0.0...main
+[1.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/1.0.0
 [0.1.0-alpha.2]: https://www.nuget.org/packages/SYT.RozetkaPay/0.1.0-alpha.2
 [0.1.0-alpha.1]: https://www.nuget.org/packages/SYT.RozetkaPay/0.1.0-alpha.1
