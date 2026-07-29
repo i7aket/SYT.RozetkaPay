@@ -348,8 +348,10 @@ public class PublicInterfacesTests
             Assert.NotNull(client.FinMon);
         }
 
-        // The externally supplied HttpClient is not owned by the client, so it stays usable.
-        Assert.NotNull(httpClient.BaseAddress);
+        // The externally supplied HttpClient is not owned by the client, so it survives disposal and is
+        // still usable. Asserted by using it, not by reading BaseAddress: the SDK no longer writes that
+        // property, and a disposed client throws here.
+        httpClient.CancelPendingRequests();
         httpClient.Dispose();
     }
 
