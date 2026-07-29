@@ -658,7 +658,11 @@ public class LegacyLoggingRedactionTests
 
         await service.SetDefaultCardAsync(
             LoggingRedactionContext.RawMarker(Row),
-            new SetDefaultCardRequest { CardId = "card-id-placeholder-EXP359" });
+            new SetDefaultCardRequest
+            {
+                OptionId = new Guid("00000000-0000-0000-0000-000000000359"),
+                Type = WalletOptionType.Card
+            });
 
         Assert.Single(handler.Requests);
         Assert.Equal(

@@ -1,5 +1,6 @@
 using SYT.RozetkaPay.Models.AlternativePayments;
 using SYT.RozetkaPay.Models.Batch;
+using SYT.RozetkaPay.Models.Customers;
 using SYT.RozetkaPay.Models.PayParts;
 using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Tests.TestInfrastructure;
@@ -42,6 +43,7 @@ public class RequestBodyParityTests
         { "CreatePaymentRequestDev", typeof(CreatePaymentRequest) },
         { "CreatePayPartsOrder", typeof(CreatePayPartsOrder) },
         { "RefundPPayRequest", typeof(RefundPPayRequest) },
+        { "SetDefaultCardRequest", typeof(SetDefaultCardRequest) },
     };
 
     [Theory]
