@@ -191,7 +191,7 @@ public class ServicesCoverageExpansionTests
     }
 
     [Fact]
-    public async Task AlternativePaymentService_GetOperationInfo_ShouldFallbackOnNotFound()
+    public async Task AlternativePaymentService_GetOperationInfo_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
     {
         List<string> calls = new();
         StubHttpMessageHandler handler = new(async (request, _) =>
@@ -209,15 +209,15 @@ public class ServicesCoverageExpansionTests
         });
 
         AlternativePaymentService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await service.GetOperationInfoAsync("ext-10", "op-10");
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.GetOperationInfoAsync("ext-10", "op-10"));
 
-        Assert.Equal(2, calls.Count);
+        // A 404 means the resource is absent, not the route.
+        Assert.Single(calls);
         Assert.Equal("/api/alternative-payments/v1/info/operation?external_id=ext-10&operation_id=op-10", calls[0]);
-        Assert.Equal("/api/alternative-payments/v1/operation/ext-10", calls[1]);
     }
 
     [Fact]
-    public async Task AlternativePaymentService_CreateOperation_ShouldFallbackOnNotFound()
+    public async Task AlternativePaymentService_CreateOperation_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
     {
         List<string> calls = new();
         StubHttpMessageHandler handler = new(async (request, _) =>
@@ -235,11 +235,11 @@ public class ServicesCoverageExpansionTests
         });
 
         AlternativePaymentService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await service.CreateOperationAsync(null!);
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.CreateOperationAsync(null!));
 
-        Assert.Equal(2, calls.Count);
+        // A 404 means the resource is absent, not the route.
+        Assert.Single(calls);
         Assert.Equal("/api/alternative-payments/v1/create", calls[0]);
-        Assert.Equal("/api/alternative-payments/v1/new", calls[1]);
     }
 
     [Fact]
@@ -293,7 +293,7 @@ public class ServicesCoverageExpansionTests
     }
 
     [Fact]
-    public async Task PayPartsService_ConfirmCancelRefund_ShouldFallbackOnNotFound()
+    public async Task PayPartsService_ConfirmCancelRefund_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
     {
         Dictionary<string, int> primaryCalls = new()
         {
@@ -320,17 +320,17 @@ public class ServicesCoverageExpansionTests
         });
 
         PayPartsService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await service.ConfirmOrderAsync(null!);
-        await service.CancelOrderAsync(null!);
-        await service.RefundOrderAsync(null!);
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.ConfirmOrderAsync(null!));
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.CancelOrderAsync(null!));
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.RefundOrderAsync(null!));
 
-        Assert.Contains("/api/payments/v1/payparts/confirm", calls);
-        Assert.Contains("/api/payments/v1/payparts/cancel", calls);
-        Assert.Contains("/api/payments/v1/payparts/refund", calls);
+        Assert.DoesNotContain("/api/payments/v1/payparts/confirm", calls);
+        Assert.DoesNotContain("/api/payments/v1/payparts/cancel", calls);
+        Assert.DoesNotContain("/api/payments/v1/payparts/refund", calls);
     }
 
     [Fact]
-    public async Task PayPartsService_GetOperationInfoAndBanks_ShouldFallbackOnNotFound()
+    public async Task PayPartsService_GetOperationInfoAndBanks_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
     {
         List<string> calls = new();
         StubHttpMessageHandler handler = new(async (request, _) =>
@@ -348,13 +348,14 @@ public class ServicesCoverageExpansionTests
         });
 
         PayPartsService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await service.GetOperationInfoAsync("external-1", "operation-1");
-        await service.GetBanksAsync();
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.GetOperationInfoAsync("external-1", "operation-1"));
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.GetBanksAsync());
 
+        // Two operations, two requests. The unpublished /operation/{id} and /banks routes are no longer
+        // tried when the official one answers 404.
+        Assert.Equal(2, calls.Count);
         Assert.Equal("/api/payparts/v1/info/operation?external_id=external-1&operation_id=operation-1", calls[0]);
-        Assert.Equal("/api/payparts/v1/operation/operation-1", calls[1]);
-        Assert.Equal("/api/payparts/v1/banks/info", calls[2]);
-        Assert.Equal("/api/payparts/v1/banks", calls[3]);
+        Assert.Equal("/api/payparts/v1/banks/info", calls[1]);
     }
 
     [Fact]
@@ -373,7 +374,7 @@ public class ServicesCoverageExpansionTests
     }
 
     [Fact]
-    public async Task CustomerService_WalletOperations_ShouldFallbackOnNotFound()
+    public async Task CustomerService_WalletOperations_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
     {
         List<string> calls = new();
         StubHttpMessageHandler handler = new(async (request, _) =>
@@ -395,17 +396,17 @@ public class ServicesCoverageExpansionTests
         });
 
         CustomerService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await service.GetCustomerWalletAsync("customer-7");
-        await service.AddCardToWalletAsync("customer-7", null!);
-        await service.GetWalletItemAsync("customer-7", "card-7");
-        await service.GetCardConfirmationStatusAsync("customer-7", "card-7");
-        await service.SetDefaultCardAsync("customer-7", null!);
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.GetCustomerWalletAsync("customer-7"));
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.AddCardToWalletAsync("customer-7", null!));
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.GetWalletItemAsync("customer-7", "card-7"));
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.GetCardConfirmationStatusAsync("customer-7", "card-7"));
+        await Assert.ThrowsAsync<RozetkaPayNotFoundException>(() => service.SetDefaultCardAsync("customer-7", null!));
 
-        Assert.Contains("/api/customers/v1/customer-7/wallet", calls);
-        Assert.Contains("/api/customers/v1/customer-7/cards", calls);
-        Assert.Contains("/api/customers/v1/customer-7/cards/card-7", calls);
-        Assert.Contains("/api/customers/v1/customer-7/cards/card-7/confirmation", calls);
-        Assert.Contains("/api/customers/v1/customer-7/cards/default", calls);
+        Assert.DoesNotContain("/api/customers/v1/customer-7/wallet", calls);
+        Assert.DoesNotContain("/api/customers/v1/customer-7/cards", calls);
+        Assert.DoesNotContain("/api/customers/v1/customer-7/cards/card-7", calls);
+        Assert.DoesNotContain("/api/customers/v1/customer-7/cards/card-7/confirmation", calls);
+        Assert.DoesNotContain("/api/customers/v1/customer-7/cards/default", calls);
     }
 
     [Fact]

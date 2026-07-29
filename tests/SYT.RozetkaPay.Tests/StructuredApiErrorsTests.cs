@@ -972,66 +972,8 @@ public class StructuredApiErrorTransportTests
         ErrorTestContext.AssertVerbDetails(exception);
     }
 
-    [Fact]
-    public async Task GetWithFallback_ShouldStillFallBackOnNotFound()
-    {
-        int calls = 0;
-        StubHttpMessageHandler handler = new((_, _) =>
-        {
-            calls++;
-            return Task.FromResult(calls == 1
-                ? ErrorTestContext.ErrorResponse(HttpStatusCode.NotFound, ErrorBody)
-                : ErrorTestContext.SuccessResponse("{}"));
-        });
-        CustomerService service = new(ErrorTestContext.CreateConfiguration(), ErrorTestContext.CreateHttpClient(handler));
 
-        CustomerWalletResponse response = await service.GetCustomerWalletAsync("customer-1");
 
-        Assert.NotNull(response);
-        Assert.Equal(2, calls);
-    }
-
-    [Fact]
-    public async Task PostWithFallback_ShouldStillFallBackOnNotFound()
-    {
-        int calls = 0;
-        StubHttpMessageHandler handler = new((_, _) =>
-        {
-            calls++;
-            return Task.FromResult(calls == 1
-                ? ErrorTestContext.ErrorResponse(HttpStatusCode.NotFound, ErrorBody)
-                : ErrorTestContext.SuccessResponse("{}"));
-        });
-        CustomerService service = new(ErrorTestContext.CreateConfiguration(), ErrorTestContext.CreateHttpClient(handler));
-
-        SetDefaultCardResponse response = await service.SetDefaultCardAsync(
-            "customer-1",
-            new SetDefaultCardRequest { CardId = "card-1" });
-
-        Assert.NotNull(response);
-        Assert.Equal(2, calls);
-    }
-
-    [Fact]
-    public async Task GetWithFallback_ShouldExposeTheDetailsOfTheFinalResponse()
-    {
-        int calls = 0;
-        StubHttpMessageHandler handler = new((_, _) =>
-        {
-            calls++;
-            return Task.FromResult(ErrorTestContext.ErrorResponse(
-                HttpStatusCode.NotFound,
-                $"{{\"code\":\"missing\",\"error_id\":\"attempt-{calls}\"}}"));
-        });
-        CustomerService service = new(ErrorTestContext.CreateConfiguration(), ErrorTestContext.CreateHttpClient(handler));
-
-        RozetkaPayNotFoundException exception = await Assert.ThrowsAsync<RozetkaPayNotFoundException>(async () =>
-            await service.GetCustomerWalletAsync("customer-1"));
-
-        Assert.Equal(2, calls);
-        Assert.Equal("attempt-2", exception.ApiError!.RequestId);
-        Assert.Equal("""{"code":"missing","error_id":"attempt-2"}""", exception.ApiError.RawBody);
-    }
 
     [Fact]
     public async Task RateLimit_WithoutRetries_ShouldExposeTheSingleResponseDetails()

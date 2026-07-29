@@ -68,7 +68,15 @@ public class PaymentService : BaseService, IPaymentService
     /// <returns>Payment response</returns>
     public async Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreatePaymentRequest, PaymentResponse>(NewEndpoint, NewEndpoint, request, cancellationToken);
+        // The one mutation the provider makes an at-most-once promise about: "At most one success
+        // payment is allowed with same external_id within single login." A repeat after a timeout or a
+        // 5xx therefore cannot produce a second successful payment, so a retry is safe here and only here.
+        return await PostAsync<CreatePaymentRequest, PaymentResponse>(
+            NewEndpoint,
+            NewEndpoint,
+            request,
+            cancellationToken,
+            isIdempotent: true);
     }
 
     /// <summary>

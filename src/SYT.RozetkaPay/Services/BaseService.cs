@@ -306,72 +306,19 @@ public abstract class BaseService
             }
 
             return DeserializeResponse<TResponse>(content, response.StatusCode);
-        }, cancellationToken).ConfigureAwait(false);
+        // a read repeats safely.
+        }, isIdempotent: true, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Make a GET request to the primary endpoint and fallback to secondary endpoint on 404. Neither real
-    /// request target is logged: with no explicit labels both log as <c>[redacted]</c>.
-    /// </summary>
-    protected Task<TResponse> GetAsyncWithFallback<TResponse>(
-        string endpoint,
-        string fallbackEndpoint,
-        CancellationToken cancellationToken = default)
-    {
-        return GetAsyncWithFallback<TResponse>(
-            endpoint,
-            RedactedEndpointLogLabel,
-            fallbackEndpoint,
-            RedactedEndpointLogLabel,
-            cancellationToken);
-    }
 
-    /// <summary>
-    /// Make a GET request to the primary endpoint and fallback to secondary endpoint on 404, logging the
-    /// supplied static labels instead of either real request target.
-    /// </summary>
-    /// <remarks>
-    /// A caller who cancelled while the primary request was in flight gets no fallback at all: the check is
-    /// the first statement of the catch, so the fallback path is abandoned before it announces itself and
-    /// before a second request is built. Only <see cref="RozetkaPayNotFoundException"/> is caught, so an
-    /// <see cref="OperationCanceledException"/> from the primary attempt leaves this method unchanged.
-    /// </remarks>
-    /// <param name="endpoint">Primary request target actually sent, including any query values.</param>
-    /// <param name="endpointForLogging">Static route template of the primary target.</param>
-    /// <param name="fallbackEndpoint">Fallback request target actually sent.</param>
-    /// <param name="fallbackEndpointForLogging">Static route template of the fallback target.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    protected async Task<TResponse> GetAsyncWithFallback<TResponse>(
-        string endpoint,
-        string endpointForLogging,
-        string fallbackEndpoint,
-        string fallbackEndpointForLogging,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await GetAsync<TResponse>(endpoint, endpointForLogging, cancellationToken).ConfigureAwait(false);
-        }
-        catch (RozetkaPayNotFoundException)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            Logger?.LogInformation(
-                "Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.",
-                endpointForLogging,
-                fallbackEndpointForLogging);
-            return await GetAsync<TResponse>(fallbackEndpoint, fallbackEndpointForLogging, cancellationToken)
-                .ConfigureAwait(false);
-        }
-    }
 
     /// <summary>
     /// Make a POST request to the specified endpoint with JSON body and retry support. The real request
     /// target is not logged: with no explicit label this logs <c>[redacted]</c>.
     /// </summary>
-    protected Task<TResponse> PostAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+    protected Task<TResponse> PostAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default, bool isIdempotent = false)
     {
-        return PostAsync<TRequest, TResponse>(endpoint, RedactedEndpointLogLabel, request, cancellationToken);
+        return PostAsync<TRequest, TResponse>(endpoint, RedactedEndpointLogLabel, request, cancellationToken, isIdempotent);
     }
 
     /// <summary>
@@ -385,11 +332,17 @@ public abstract class BaseService
     /// </param>
     /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="isIdempotent">
+    /// Whether the provider documents an at-most-once guarantee for this operation, making a repeat
+    /// safe. Defaults to <see langword="false"/>: a timeout or a <c>5xx</c> can arrive after the
+    /// gateway accepted the request, so a mutation is never repeated unless the caller says it may be.
+    /// </param>
     protected async Task<TResponse> PostAsync<TRequest, TResponse>(
         string endpoint,
         string endpointForLogging,
         TRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool isIdempotent = false)
     {
         return await ExecuteWithRetryAsync(async () =>
         {
@@ -414,84 +367,24 @@ public abstract class BaseService
             }
 
             return DeserializeResponse<TResponse>(responseContent, response.StatusCode);
-        }, cancellationToken).ConfigureAwait(false);
+        }, isIdempotent: isIdempotent, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Make a POST request to the primary endpoint and fallback to secondary endpoint on 404. Neither real
-    /// request target is logged: with no explicit labels both log as <c>[redacted]</c>.
-    /// </summary>
-    protected Task<TResponse> PostAsyncWithFallback<TRequest, TResponse>(
-        string endpoint,
-        string fallbackEndpoint,
-        TRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return PostAsyncWithFallback<TRequest, TResponse>(
-            endpoint,
-            RedactedEndpointLogLabel,
-            fallbackEndpoint,
-            RedactedEndpointLogLabel,
-            request,
-            cancellationToken);
-    }
 
-    /// <summary>
-    /// Make a POST request to the primary endpoint and fallback to secondary endpoint on 404, logging the
-    /// supplied static labels instead of either real request target.
-    /// </summary>
-    /// <remarks>
-    /// Same cancellation boundary as <see cref="GetAsyncWithFallback{TResponse}(string, string, CancellationToken)"/>:
-    /// a cancelled caller never reaches the fallback log, the second serialization of the body, or the
-    /// fallback request.
-    /// </remarks>
-    /// <param name="endpoint">Primary request target actually sent, including any query values.</param>
-    /// <param name="endpointForLogging">Static route template of the primary target.</param>
-    /// <param name="fallbackEndpoint">Fallback request target actually sent.</param>
-    /// <param name="fallbackEndpointForLogging">Static route template of the fallback target.</param>
-    /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    protected async Task<TResponse> PostAsyncWithFallback<TRequest, TResponse>(
-        string endpoint,
-        string endpointForLogging,
-        string fallbackEndpoint,
-        string fallbackEndpointForLogging,
-        TRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await PostAsync<TRequest, TResponse>(endpoint, endpointForLogging, request, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        catch (RozetkaPayNotFoundException)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            Logger?.LogInformation(
-                "Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.",
-                endpointForLogging,
-                fallbackEndpointForLogging);
-            return await PostAsync<TRequest, TResponse>(
-                fallbackEndpoint,
-                fallbackEndpointForLogging,
-                request,
-                cancellationToken).ConfigureAwait(false);
-        }
-    }
 
     /// <summary>
     /// Make a POST request that can handle both JSON responses and 204 No Content responses. The real
     /// request target is not logged: with no explicit label this logs <c>[redacted]</c>.
     /// </summary>
-    protected Task<TResponse> PostAsyncWithNoContent<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+    protected Task<TResponse> PostAsyncWithNoContent<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default, bool isIdempotent = false)
         where TResponse : new()
     {
         return PostAsyncWithNoContent<TRequest, TResponse>(
             endpoint,
             RedactedEndpointLogLabel,
             request,
-            cancellationToken);
+            cancellationToken,
+            isIdempotent);
     }
 
     /// <summary>
@@ -505,11 +398,17 @@ public abstract class BaseService
     /// </param>
     /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="isIdempotent">
+    /// Whether the provider documents an at-most-once guarantee for this operation, making a repeat
+    /// safe. Defaults to <see langword="false"/>: a timeout or a <c>5xx</c> can arrive after the
+    /// gateway accepted the request, so a mutation is never repeated unless the caller says it may be.
+    /// </param>
     protected async Task<TResponse> PostAsyncWithNoContent<TRequest, TResponse>(
         string endpoint,
         string endpointForLogging,
         TRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool isIdempotent = false)
         where TResponse : new()
     {
         return await ExecuteWithRetryAsync(async () =>
@@ -541,82 +440,18 @@ public abstract class BaseService
             }
 
             return DeserializeResponse<TResponse>(responseContent, response.StatusCode);
-        }, cancellationToken).ConfigureAwait(false);
+        }, isIdempotent: isIdempotent, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Make a POST request with 204 support to the primary endpoint and fallback to secondary endpoint on
-    /// 404. Neither real request target is logged: with no explicit labels both log as <c>[redacted]</c>.
-    /// </summary>
-    protected Task<TResponse> PostAsyncWithNoContentWithFallback<TRequest, TResponse>(
-        string endpoint,
-        string fallbackEndpoint,
-        TRequest request,
-        CancellationToken cancellationToken = default)
-        where TResponse : new()
-    {
-        return PostAsyncWithNoContentWithFallback<TRequest, TResponse>(
-            endpoint,
-            RedactedEndpointLogLabel,
-            fallbackEndpoint,
-            RedactedEndpointLogLabel,
-            request,
-            cancellationToken);
-    }
 
-    /// <summary>
-    /// Make a POST request with 204 support to the primary endpoint and fallback to secondary endpoint on
-    /// 404, logging the supplied static labels instead of either real request target.
-    /// </summary>
-    /// <remarks>
-    /// Same cancellation boundary as <see cref="GetAsyncWithFallback{TResponse}(string, string, CancellationToken)"/>.
-    /// </remarks>
-    /// <param name="endpoint">Primary request target actually sent, including any query values.</param>
-    /// <param name="endpointForLogging">Static route template of the primary target.</param>
-    /// <param name="fallbackEndpoint">Fallback request target actually sent.</param>
-    /// <param name="fallbackEndpointForLogging">Static route template of the fallback target.</param>
-    /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    protected async Task<TResponse> PostAsyncWithNoContentWithFallback<TRequest, TResponse>(
-        string endpoint,
-        string endpointForLogging,
-        string fallbackEndpoint,
-        string fallbackEndpointForLogging,
-        TRequest request,
-        CancellationToken cancellationToken = default)
-        where TResponse : new()
-    {
-        try
-        {
-            return await PostAsyncWithNoContent<TRequest, TResponse>(
-                endpoint,
-                endpointForLogging,
-                request,
-                cancellationToken).ConfigureAwait(false);
-        }
-        catch (RozetkaPayNotFoundException)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            Logger?.LogInformation(
-                "Primary endpoint {Endpoint} returned 404. Falling back to {FallbackEndpoint}.",
-                endpointForLogging,
-                fallbackEndpointForLogging);
-            return await PostAsyncWithNoContent<TRequest, TResponse>(
-                fallbackEndpoint,
-                fallbackEndpointForLogging,
-                request,
-                cancellationToken).ConfigureAwait(false);
-        }
-    }
 
     /// <summary>
     /// Make a PATCH request to the specified endpoint with JSON body and retry support. The real request
     /// target is not logged: with no explicit label this logs <c>[redacted]</c>.
     /// </summary>
-    protected Task<TResponse> PatchAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default)
+    protected Task<TResponse> PatchAsync<TRequest, TResponse>(string endpoint, TRequest request, CancellationToken cancellationToken = default, bool isIdempotent = false)
     {
-        return PatchAsync<TRequest, TResponse>(endpoint, RedactedEndpointLogLabel, request, cancellationToken);
+        return PatchAsync<TRequest, TResponse>(endpoint, RedactedEndpointLogLabel, request, cancellationToken, isIdempotent);
     }
 
     /// <summary>
@@ -630,11 +465,17 @@ public abstract class BaseService
     /// </param>
     /// <param name="request">Body serialized with the SDK serializer options. Never logged.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="isIdempotent">
+    /// Whether the provider documents an at-most-once guarantee for this operation, making a repeat
+    /// safe. Defaults to <see langword="false"/>: a timeout or a <c>5xx</c> can arrive after the
+    /// gateway accepted the request, so a mutation is never repeated unless the caller says it may be.
+    /// </param>
     protected async Task<TResponse> PatchAsync<TRequest, TResponse>(
         string endpoint,
         string endpointForLogging,
         TRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool isIdempotent = false)
     {
         return await ExecuteWithRetryAsync(async () =>
         {
@@ -660,7 +501,7 @@ public abstract class BaseService
             }
 
             return DeserializeResponse<TResponse>(responseContent, response.StatusCode);
-        }, cancellationToken).ConfigureAwait(false);
+        }, isIdempotent: isIdempotent, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -676,10 +517,16 @@ public abstract class BaseService
     /// <param name="endpoint">Request target actually sent, including any query values.</param>
     /// <param name="endpointForLogging">Static route template written by the SDK.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="isIdempotent">
+    /// Whether the provider documents an at-most-once guarantee for this operation, making a repeat
+    /// safe. Defaults to <see langword="false"/>: a timeout or a <c>5xx</c> can arrive after the
+    /// gateway accepted the request, so a mutation is never repeated unless the caller says it may be.
+    /// </param>
     protected async Task<TResponse> PostWithoutBodyAsync<TResponse>(
         string endpoint,
         string endpointForLogging,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool isIdempotent = false)
     {
         return await ExecuteWithRetryAsync(async () =>
         {
@@ -701,7 +548,7 @@ public abstract class BaseService
             }
 
             return DeserializeResponse<TResponse>(responseContent, response.StatusCode);
-        }, cancellationToken).ConfigureAwait(false);
+        }, isIdempotent: isIdempotent, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -800,7 +647,8 @@ public abstract class BaseService
             }
 
             return DeserializeResponse<TResponse>(responseContent, response.StatusCode);
-        }, cancellationToken).ConfigureAwait(false);
+        // DELETE is idempotent by HTTP semantics: a repeat finds the resource already gone.
+        }, isIdempotent: true, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -825,7 +673,17 @@ public abstract class BaseService
     /// <typeparam name="T">Result of one attempt.</typeparam>
     /// <param name="operation">One complete attempt, including reading and mapping the response.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    protected async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
+    /// <param name="isIdempotent">
+    /// Whether repeating this operation is safe. A read is. A mutation is not, unless the provider
+    /// documents an at-most-once guarantee for it - creating a payment qualifies, because the API
+    /// promises at most one success per <c>external_id</c>, while confirm, cancel and refund carry no
+    /// such promise. A timeout or a <c>5xx</c> can arrive after the gateway has already accepted the
+    /// operation, so repeating one of those is a second financial mutation, not a retry.
+    /// </param>
+    protected async Task<T> ExecuteWithRetryAsync<T>(
+        Func<Task<T>> operation,
+        bool isIdempotent,
+        CancellationToken cancellationToken = default)
     {
         // The single pre-dispatch cancellation contract of the SDK, and deliberately the first thing this
         // method does: before the retry policy is read, before any counter exists, and before the attempt
@@ -859,7 +717,10 @@ public abstract class BaseService
             // never retriable, the last attempt's own exception leaves this method untouched. That is what
             // keeps the status-specific SDK exception - and its RozetkaPayApiError evidence, including the
             // raw response body - intact instead of being replaced by a wrapper that erases both.
-            catch (Exception failure) when (ShouldRetryFailure(failure, retryPolicy, retryCount, cancellationToken))
+            // The idempotency gate comes first: no policy setting can buy a repeat of an operation the
+            // provider makes no at-most-once promise about.
+            catch (Exception failure) when (isIdempotent &&
+                ShouldRetryFailure(failure, retryPolicy, retryCount, cancellationToken))
             {
                 retryCount++;
                 await DelayBeforeRetryAsync(retryCount, failure, retryPolicy, cancellationToken).ConfigureAwait(false);

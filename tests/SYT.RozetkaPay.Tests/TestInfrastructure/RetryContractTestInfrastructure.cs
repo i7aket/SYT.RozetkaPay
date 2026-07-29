@@ -445,7 +445,7 @@ internal sealed class RetryProbeService : BaseService
         RetryProbePayload request,
         CancellationToken cancellationToken = default)
     {
-        return PostAsync<RetryProbePayload, TResponse>(endpoint, request, cancellationToken);
+        return PostAsync<RetryProbePayload, TResponse>(endpoint, request, cancellationToken, isIdempotent: true);
     }
 
     internal Task<RetryProbeResult> PostJsonAllowingNoContentAsync(
@@ -453,7 +453,7 @@ internal sealed class RetryProbeService : BaseService
         RetryProbePayload request,
         CancellationToken cancellationToken = default)
     {
-        return PostAsyncWithNoContent<RetryProbePayload, RetryProbeResult>(endpoint, request, cancellationToken);
+        return PostAsyncWithNoContent<RetryProbePayload, RetryProbeResult>(endpoint, request, cancellationToken, isIdempotent: true);
     }
 
     internal Task<TResponse> PatchJsonAsync<TResponse>(
@@ -461,14 +461,14 @@ internal sealed class RetryProbeService : BaseService
         RetryProbePayload request,
         CancellationToken cancellationToken = default)
     {
-        return PatchAsync<RetryProbePayload, TResponse>(endpoint, request, cancellationToken);
+        return PatchAsync<RetryProbePayload, TResponse>(endpoint, request, cancellationToken, isIdempotent: true);
     }
 
     internal Task<TResponse> PostWithoutBodyJsonAsync<TResponse>(
         string endpoint,
         CancellationToken cancellationToken = default)
     {
-        return PostWithoutBodyAsync<TResponse>(endpoint, endpoint, cancellationToken);
+        return PostWithoutBodyAsync<TResponse>(endpoint, endpoint, cancellationToken, isIdempotent: true);
     }
 
     internal Task<TResponse> DeleteJsonAsync<TResponse>(string endpoint, CancellationToken cancellationToken = default)
@@ -490,7 +490,7 @@ internal sealed class RetryProbeService : BaseService
     /// </summary>
     internal Task<T> ExecuteAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
     {
-        return ExecuteWithRetryAsync(operation, cancellationToken);
+        return ExecuteWithRetryAsync(operation, isIdempotent: true, cancellationToken);
     }
 }
 

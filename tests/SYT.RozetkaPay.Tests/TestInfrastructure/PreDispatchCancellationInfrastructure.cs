@@ -130,39 +130,8 @@ internal sealed class CancellationProbeService : BaseService
         return DeleteAsync<TripwirePayload, TripwireResult>(endpoint, endpoint, request, cancellationToken);
     }
 
-    internal Task<TripwireResult> GetJsonWithFallbackAsync(
-        string endpoint,
-        string fallbackEndpoint,
-        CancellationToken cancellationToken = default)
-    {
-        return GetAsyncWithFallback<TripwireResult>(endpoint, fallbackEndpoint, cancellationToken);
-    }
 
-    internal Task<TripwireResult> PostJsonWithFallbackAsync(
-        string endpoint,
-        string fallbackEndpoint,
-        TripwirePayload request,
-        CancellationToken cancellationToken = default)
-    {
-        return PostAsyncWithFallback<TripwirePayload, TripwireResult>(
-            endpoint,
-            fallbackEndpoint,
-            request,
-            cancellationToken);
-    }
 
-    internal Task<TripwireResult> PostJsonAllowingNoContentWithFallbackAsync(
-        string endpoint,
-        string fallbackEndpoint,
-        TripwirePayload request,
-        CancellationToken cancellationToken = default)
-    {
-        return PostAsyncWithNoContentWithFallback<TripwirePayload, TripwireResult>(
-            endpoint,
-            fallbackEndpoint,
-            request,
-            cancellationToken);
-    }
 
     /// <summary>
     /// The shared retry executor itself, so that "the attempt delegate was never invoked" is a direct
@@ -170,7 +139,7 @@ internal sealed class CancellationProbeService : BaseService
     /// </summary>
     internal Task<T> ExecuteAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
     {
-        return ExecuteWithRetryAsync(operation, cancellationToken);
+        return ExecuteWithRetryAsync(operation, isIdempotent: true, cancellationToken);
     }
 }
 

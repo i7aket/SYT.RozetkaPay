@@ -79,11 +79,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts order response</returns>
     public async Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrderRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsyncWithFallback<CreatePayPartsOrderRequest, PayPartsOrderResponse>(
+        return await PostAsync<CreatePayPartsOrderRequest, PayPartsOrderResponse>(
             OrderCreateEndpoint,
             OrderCreateEndpoint,
-            NewEndpoint,
-            NewEndpoint,
             request,
             cancellationToken);
     }
@@ -97,11 +95,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts order response</returns>
     public async Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsyncWithFallback<ConfirmPayPartsRequest, PayPartsOrderResponse>(
+        return await PostAsync<ConfirmPayPartsRequest, PayPartsOrderResponse>(
             OrderConfirmEndpoint,
             OrderConfirmEndpoint,
-            LegacyConfirmEndpoint,
-            LegacyConfirmEndpoint,
             request,
             cancellationToken);
     }
@@ -115,11 +111,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts order response</returns>
     public async Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsyncWithFallback<CancelPayPartsRequest, PayPartsOrderResponse>(
+        return await PostAsync<CancelPayPartsRequest, PayPartsOrderResponse>(
             OrderCancelEndpoint,
             OrderCancelEndpoint,
-            LegacyCancelEndpoint,
-            LegacyCancelEndpoint,
             request,
             cancellationToken);
     }
@@ -133,11 +127,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts refund response</returns>
     public async Task<PayPartsRefundResponse> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsyncWithFallback<RefundPayPartsOrderRequest, PayPartsRefundResponse>(
+        return await PostAsync<RefundPayPartsOrderRequest, PayPartsRefundResponse>(
             RefundEndpoint,
             RefundEndpoint,
-            LegacyRefundEndpoint,
-            LegacyRefundEndpoint,
             request,
             cancellationToken);
     }
@@ -202,13 +194,9 @@ public class PayPartsService : BaseService, IPayPartsService
     {
         string primaryEndpoint =
             $"{InfoOperationEndpoint}?external_id={Uri.EscapeDataString(externalId)}&operation_id={Uri.EscapeDataString(operationId)}";
-        string fallbackEndpoint =
-            $"/api/payparts/v1/operation/{RequestTargetEncoding.EscapePathSegment(operationId, nameof(operationId))}";
-        return await GetAsyncWithFallback<PayPartsOperationResult>(
+        return await GetAsync<PayPartsOperationResult>(
             primaryEndpoint,
             InfoOperationEndpoint,
-            fallbackEndpoint,
-            OperationByIdLogLabel,
             cancellationToken);
     }
 
@@ -278,11 +266,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <returns>PayParts banks information</returns>
     public async Task<PayPartsBanksResponse> GetBanksAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsyncWithFallback<PayPartsBanksResponse>(
+        return await GetAsync<PayPartsBanksResponse>(
             BanksInfoEndpoint,
             BanksInfoEndpoint,
-            BanksEndpoint,
-            BanksEndpoint,
             cancellationToken);
     }
 

@@ -306,24 +306,6 @@ public class PathSegmentEncodingTests
         Assert.Empty(handler.Requests);
     }
 
-    /// <summary>
-    /// A fallback endpoint string is built eagerly, so an exact dot identifier is rejected before the
-    /// primary query request is sent. That is intentional: such a method has a path fallback, and an
-    /// exact dot identifier is outside the documented safe-identifier contract.
-    /// </summary>
-    [Theory]
-    [InlineData(".")]
-    [InlineData("..")]
-    public async Task FallbackBearingMethod_ShouldRejectExactDotSegmentBeforeThePrimaryRequest(string dotValue)
-    {
-        RequestRecordingHandler handler = new();
-
-        ArgumentException exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => PathEncodingTestContext.Customers(handler).GetCustomerWalletAsync(dotValue));
-
-        Assert.Equal("customerId", exception.ParamName);
-        Assert.Empty(handler.Requests);
-    }
 
     // ===================== Raw / pre-encoded compatibility =====================
 
@@ -404,68 +386,9 @@ public class PathSegmentEncodingTests
 
     // ===================== Fallback: encoded exactly once on both requests =====================
 
-    [Fact]
-    public async Task AlternativePaymentService_OperationOverload_ShouldEncodeQueryAndFallbackPathExactlyOnce()
-    {
-        RequestRecordingHandler handler = new(HttpStatusCode.NotFound, HttpStatusCode.OK);
 
-        await PathEncodingTestContext.AlternativePayments(handler)
-            .GetOperationInfoAsync(LooksEncodedRawId, "op-1");
 
-        Assert.Equal(2, handler.Requests.Count);
-        Assert.Equal(
-            $"/api/alternative-payments/v1/info/operation?external_id={LooksEncodedExpected}&operation_id=op-1",
-            handler.Requests[0].RequestUri.PathAndQuery);
-        AssertRequestTarget(
-            handler.Requests[1],
-            $"/api/alternative-payments/v1/operation/{LooksEncodedExpected}");
-    }
 
-    [Fact]
-    public async Task PayPartsService_OperationOverload_ShouldEncodeQueryAndFallbackPathExactlyOnce()
-    {
-        RequestRecordingHandler handler = new(HttpStatusCode.NotFound, HttpStatusCode.OK);
-
-        await PathEncodingTestContext.PayParts(handler)
-            .GetOperationInfoAsync("ext-1", LooksEncodedRawId);
-
-        Assert.Equal(2, handler.Requests.Count);
-        Assert.Equal(
-            $"/api/payparts/v1/info/operation?external_id=ext-1&operation_id={LooksEncodedExpected}",
-            handler.Requests[0].RequestUri.PathAndQuery);
-        AssertRequestTarget(handler.Requests[1], $"/api/payparts/v1/operation/{LooksEncodedExpected}");
-    }
-
-    [Fact]
-    public async Task CustomerService_GetCustomerWallet_ShouldEncodeQueryAndSingleSegmentFallbackExactlyOnce()
-    {
-        RequestRecordingHandler handler = new(HttpStatusCode.NotFound, HttpStatusCode.OK);
-
-        await PathEncodingTestContext.Customers(handler).GetCustomerWalletAsync(LooksEncodedRawId);
-
-        Assert.Equal(2, handler.Requests.Count);
-        Assert.Equal(
-            $"/api/customers/v1/wallet?external_id={LooksEncodedExpected}",
-            handler.Requests[0].RequestUri.PathAndQuery);
-        AssertRequestTarget(handler.Requests[1], $"/api/customers/v1/{LooksEncodedExpected}/wallet");
-    }
-
-    [Fact]
-    public async Task CustomerService_GetWalletItem_ShouldEncodeQueryAndTwoSegmentFallbackExactlyOnce()
-    {
-        RequestRecordingHandler handler = new(HttpStatusCode.NotFound, HttpStatusCode.OK);
-
-        await PathEncodingTestContext.Customers(handler)
-            .GetWalletItemAsync(LooksEncodedRawId, LooksEncodedRawId);
-
-        Assert.Equal(2, handler.Requests.Count);
-        Assert.Equal(
-            $"/api/customers/v1/wallet/find?external_id={LooksEncodedExpected}&option_id={LooksEncodedExpected}",
-            handler.Requests[0].RequestUri.PathAndQuery);
-        AssertRequestTarget(
-            handler.Requests[1],
-            $"/api/customers/v1/{LooksEncodedExpected}/cards/{LooksEncodedExpected}");
-    }
 
     /// <summary>
     /// Encoding must not widen the fallback trigger: only a 404 may produce a second request.

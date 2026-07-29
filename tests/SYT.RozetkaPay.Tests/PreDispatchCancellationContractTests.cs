@@ -35,9 +35,6 @@ public class PreDispatchCancellationContractTests
     private const string PostBodylessRow = "post-bodyless";
     private const string DeleteRow = "delete-bodiless";
     private const string DeleteJsonRow = "delete-json-body";
-    private const string GetFallbackRow = "get-fallback";
-    private const string PostFallbackRow = "post-fallback";
-    private const string PostNoContentFallbackRow = "post-accepting-no-content-fallback";
 
     private const string NotFoundBody = """{"code":"not_found","message":"Resource not found"}""";
 
@@ -68,7 +65,7 @@ public class PreDispatchCancellationContractTests
         get
         {
             TheoryData<string, bool> rows = [];
-            foreach (string row in AllHelperRows.Where(static row => !IsFallbackRow(row)))
+            foreach (string row in AllHelperRows)
             {
                 rows.Add(row, false);
                 rows.Add(row, true);
@@ -78,23 +75,6 @@ public class PreDispatchCancellationContractTests
         }
     }
 
-    /// <summary>
-    /// The three fallback wrappers, which must not dispatch a fallback request after cancellation.
-    /// </summary>
-    public static TheoryData<string, bool> FallbackRows
-    {
-        get
-        {
-            TheoryData<string, bool> rows = [];
-            foreach (string row in AllHelperRows.Where(static row => IsFallbackRow(row)))
-            {
-                rows.Add(row, false);
-                rows.Add(row, true);
-            }
-
-            return rows;
-        }
-    }
 
     public static TheoryData<bool> RetryPolicyStates => [false, true];
 
@@ -106,10 +86,7 @@ public class PreDispatchCancellationContractTests
         PatchRow,
         PostBodylessRow,
         DeleteRow,
-        DeleteJsonRow,
-        GetFallbackRow,
-        PostFallbackRow,
-        PostNoContentFallbackRow
+        DeleteJsonRow
     ];
 
     // ===================== already cancelled: nothing happens at all =====================
@@ -210,64 +187,6 @@ public class PreDispatchCancellationContractTests
 
     // ===================== cancelled after the primary 404, before the fallback =====================
 
-    /// <summary>
-    /// Cancellation that becomes observable after the primary request answered <c>404</c> must stop the
-    /// fallback path at the catch boundary: no fallback request, and not even the "falling back" log that
-    /// used to be written before the fallback helper could inspect the token.
-    /// </summary>
-    /// <remarks>
-    /// Deterministic without a sleep: <c>HandleErrorResponse</c> writes its error log while the primary
-    /// response is still open, so cancelling from that callback lands after the <c>404</c> was mapped and
-    /// before the fallback catch runs, every time.
-    /// </remarks>
-    [Theory]
-    [MemberData(nameof(FallbackRows))]
-    public async Task CancellationAfterThePrimary404_ShouldStopBeforeTheFallbackLogAndRequest(
-        string row,
-        bool retryEnabled)
-    {
-        using CancellationTokenSource callerTokenSource = new();
-        ScriptedRetryHandler handler = new(
-            RetryOutcomes.Failure(HttpStatusCode.NotFound, static _ => NotFoundBody),
-            RetryOutcomes.Success());
-        RetryLogRecorder logger = new()
-        {
-            OnEntry = entry =>
-            {
-                if (entry.Level == LogLevel.Error
-                    && entry.Message.StartsWith(
-                        PreDispatchCancellationContext.ApiErrorLogPrefix,
-                        StringComparison.Ordinal))
-                {
-                    callerTokenSource.Cancel();
-                }
-            }
-        };
-        SerializationTripwire tripwire = new();
-        CancellationProbeService service = PreDispatchCancellationContext.Service(
-            handler,
-            PreDispatchCancellationContext.Policy(retryEnabled),
-            logger);
-
-        OperationCanceledException failure = await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => InvokeAsync(row, service, tripwire, callerTokenSource.Token));
-
-        Assert.Equal(callerTokenSource.Token, failure.CancellationToken);
-
-        // The primary only. The fallback target is never requested.
-        Assert.Equal(1, handler.AttemptCount);
-        Assert.All(
-            handler.Attempts,
-            attempt => Assert.Equal(PreDispatchCancellationContext.Endpoint, attempt.PathAndQuery));
-
-        Assert.DoesNotContain(
-            logger.AllText,
-            text => text.Contains(PreDispatchCancellationContext.FallbackLogFragment, StringComparison.Ordinal));
-        Assert.Empty(logger.RetryWarnings);
-
-        // The primary serialized the body once; the abandoned fallback never serialized it again.
-        Assert.Equal(CarriesBody(row) ? 1 : 0, tripwire.Accesses);
-    }
 
     // ===================== cancelled mid-flight: one attempt, never a retry =====================
 
@@ -406,33 +325,6 @@ public class PreDispatchCancellationContractTests
         Assert.Equal($"{{\"marker\":\"{PreDispatchCancellationContext.RequestBodyMarker}\"}}", attempt.Body);
     }
 
-    /// <summary>
-    /// The fallback catch still falls back when the caller has not cancelled, so the guard added there is a
-    /// cancellation check and not a change to the <c>404</c> fallback contract.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(FallbackRows))]
-    public async Task ALiveToken_ShouldStillFallBackAfterThePrimary404(string row, bool retryEnabled)
-    {
-        ScriptedRetryHandler handler = new(
-            RetryOutcomes.Failure(HttpStatusCode.NotFound, static _ => NotFoundBody),
-            RetryOutcomes.Success());
-        RetryLogRecorder logger = new();
-        SerializationTripwire tripwire = new();
-        CancellationProbeService service = PreDispatchCancellationContext.Service(
-            handler,
-            PreDispatchCancellationContext.Policy(retryEnabled),
-            logger);
-
-        await InvokeAsync(row, service, tripwire, CancellationToken.None);
-
-        Assert.Equal(2, handler.AttemptCount);
-        Assert.Equal(PreDispatchCancellationContext.Endpoint, handler.Attempts[0].PathAndQuery);
-        Assert.Equal(PreDispatchCancellationContext.FallbackEndpoint, handler.Attempts[1].PathAndQuery);
-        Assert.Contains(
-            logger.AllText,
-            text => text.Contains(PreDispatchCancellationContext.FallbackLogFragment, StringComparison.Ordinal));
-    }
 
     /// <summary>
     /// Cancelling is not an error report. The exception the caller catches carries no request target, no body,
@@ -490,7 +382,6 @@ public class PreDispatchCancellationContractTests
         CancellationToken cancellationToken)
     {
         string endpoint = PreDispatchCancellationContext.Endpoint;
-        string fallback = PreDispatchCancellationContext.FallbackEndpoint;
         TripwirePayload payload = new(tripwire);
 
         return row switch
@@ -502,13 +393,6 @@ public class PreDispatchCancellationContractTests
             PostBodylessRow => service.PostWithoutBodyJsonAsync(endpoint, cancellationToken),
             DeleteRow => service.DeleteJsonAsync(endpoint, cancellationToken),
             DeleteJsonRow => service.DeleteWithBodyAsync(endpoint, payload, cancellationToken),
-            GetFallbackRow => service.GetJsonWithFallbackAsync(endpoint, fallback, cancellationToken),
-            PostFallbackRow => service.PostJsonWithFallbackAsync(endpoint, fallback, payload, cancellationToken),
-            PostNoContentFallbackRow => service.PostJsonAllowingNoContentWithFallbackAsync(
-                endpoint,
-                fallback,
-                payload,
-                cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(row), row, "Unknown transport helper row.")
         };
     }
@@ -521,13 +405,7 @@ public class PreDispatchCancellationContractTests
         return row is PostJsonRow
             or PostJsonNoContentRow
             or PatchRow
-            or DeleteJsonRow
-            or PostFallbackRow
-            or PostNoContentFallbackRow;
+            or DeleteJsonRow;
     }
 
-    private static bool IsFallbackRow(string row)
-    {
-        return row is GetFallbackRow or PostFallbackRow or PostNoContentFallbackRow;
-    }
 }

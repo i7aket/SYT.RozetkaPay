@@ -231,39 +231,8 @@ internal sealed class LoggingRedactionProbeService : BaseService
         return DeleteAsync<RedactionResult>(endpoint, cancellationToken);
     }
 
-    internal Task<RedactionResult> LegacyGetWithFallbackAsync(
-        string endpoint,
-        string fallbackEndpoint,
-        CancellationToken cancellationToken = default)
-    {
-        return GetAsyncWithFallback<RedactionResult>(endpoint, fallbackEndpoint, cancellationToken);
-    }
 
-    internal Task<RedactionResult> LegacyPostWithFallbackAsync(
-        string endpoint,
-        string fallbackEndpoint,
-        RedactionPayload request,
-        CancellationToken cancellationToken = default)
-    {
-        return PostAsyncWithFallback<RedactionPayload, RedactionResult>(
-            endpoint,
-            fallbackEndpoint,
-            request,
-            cancellationToken);
-    }
 
-    internal Task<RedactionResult> LegacyPostAllowingNoContentWithFallbackAsync(
-        string endpoint,
-        string fallbackEndpoint,
-        RedactionPayload request,
-        CancellationToken cancellationToken = default)
-    {
-        return PostAsyncWithNoContentWithFallback<RedactionPayload, RedactionResult>(
-            endpoint,
-            fallbackEndpoint,
-            request,
-            cancellationToken);
-    }
 
     // ===================== label-aware overloads =====================
 
@@ -343,54 +312,8 @@ internal sealed class LoggingRedactionProbeService : BaseService
             cancellationToken);
     }
 
-    internal Task<RedactionResult> GetWithFallbackAndLabelsAsync(
-        string endpoint,
-        string endpointForLogging,
-        string fallbackEndpoint,
-        string fallbackEndpointForLogging,
-        CancellationToken cancellationToken = default)
-    {
-        return GetAsyncWithFallback<RedactionResult>(
-            endpoint,
-            endpointForLogging,
-            fallbackEndpoint,
-            fallbackEndpointForLogging,
-            cancellationToken);
-    }
 
-    internal Task<RedactionResult> PostWithFallbackAndLabelsAsync(
-        string endpoint,
-        string endpointForLogging,
-        string fallbackEndpoint,
-        string fallbackEndpointForLogging,
-        RedactionPayload request,
-        CancellationToken cancellationToken = default)
-    {
-        return PostAsyncWithFallback<RedactionPayload, RedactionResult>(
-            endpoint,
-            endpointForLogging,
-            fallbackEndpoint,
-            fallbackEndpointForLogging,
-            request,
-            cancellationToken);
-    }
 
-    internal Task<RedactionResult> PostAllowingNoContentWithFallbackAndLabelsAsync(
-        string endpoint,
-        string endpointForLogging,
-        string fallbackEndpoint,
-        string fallbackEndpointForLogging,
-        RedactionPayload request,
-        CancellationToken cancellationToken = default)
-    {
-        return PostAsyncWithNoContentWithFallback<RedactionPayload, RedactionResult>(
-            endpoint,
-            endpointForLogging,
-            fallbackEndpoint,
-            fallbackEndpointForLogging,
-            request,
-            cancellationToken);
-    }
 }
 
 /// <summary>
