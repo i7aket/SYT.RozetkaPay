@@ -16,6 +16,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  openapi-drift:
+    name: OpenAPI drift
+    runs-on: ubuntu-latest
+
+    # Deliberately a separate job rather than a step of build-test-pack. The contract tests assert
+    # against the committed snapshot, so they cannot tell whether that snapshot still matches what
+    # RozetkaPay publishes — that is this job's only question, and it must be answerable at a glance
+    # without reading a green test run's log.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Compare the snapshot against the published document
+        run: ./scripts/verify-openapi-drift.sh
+
   build-test-pack:
     runs-on: ubuntu-latest
 

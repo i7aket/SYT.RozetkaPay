@@ -3358,6 +3358,18 @@
         "format": "decimal",
         "example": "0"
       },
+      "Metadata": {
+        "type": "object",
+        "maxProperties": 10,
+        "description": "Additional merchant-defined data associated with the payment.\nA maximum of 10 entries is allowed. Each key can contain up to 30 characters,\nand each value can contain up to 200 characters.\n",
+        "additionalProperties": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "example": {
+          "promo_id": "12345-54321"
+        }
+      },
       "BrowserFingerprint": {
         "properties": {
           "browser_accept_header": {
@@ -6633,6 +6645,9 @@
                 },
                 "operation": {
                   "$ref": "#/components/schemas/OperationType"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "type": "object"
@@ -6678,6 +6693,9 @@
                 "receipt_url": {
                   "type": "string",
                   "description": "URL to the received receipt or transaction confirmation.\n"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "type": "object"
@@ -7008,6 +7026,9 @@
                 "receipt_url": {
                   "type": "string",
                   "description": "Link to the receipt for user"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "type": "object"
@@ -7346,6 +7367,9 @@
                 },
                 "details": {
                   "$ref": "#/components/schemas/AlternativePaymentOperationDetails"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "type": "object"
@@ -7832,6 +7856,9 @@
                 "use_custom_free_amount": {
                   "type": "boolean",
                   "description": "Applicable only if `mode` is one of: `express_checkout`, `hosted`.\nOnly for payments with free amount (might be changed by payer).\nIf `true` - overrides default checkout amount with the one from request.\n"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "required": [
@@ -7944,6 +7971,9 @@
                 "use_custom_free_amount": {
                   "type": "boolean",
                   "description": "Applicable only if `mode` is one of: `express_checkout`, `hosted`.\nOnly for payments with free amount (might be changed by payer).\nIf `true` - overrides default checkout amount with the one from request.\n"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "required": [
@@ -8023,6 +8053,9 @@
                 },
                 "campaign_name": {
                   "$ref": "#/components/schemas/CampaignName"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "required": [
@@ -8208,6 +8241,9 @@
                   "type": "boolean",
                   "default": true,
                   "description": "If `true` - funds are transferred to recipient account.\nIf `false` - you have to call `POST /api/payments/v1/confirm` for additional confirmation of funds transfer.\n"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "required": [
@@ -8938,6 +8974,9 @@
                   },
                   "type": "array",
                   "description": "Optional delivery information.\n"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "required": [
@@ -9236,6 +9275,9 @@
                 },
                 "customer": {
                   "$ref": "#/components/schemas/AlternativePaymentCustomerDetails"
+                },
+                "metadata": {
+                  "$ref": "#/components/schemas/Metadata"
                 }
               },
               "required": [

@@ -21,7 +21,7 @@ public class OpenApi59OperationTests
     /// SHA-256 of the official document observed on 2026-07-25 and pinned by EXP-354.
     /// </summary>
     private const string PinnedSha256 =
-        "98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a";
+        "d3114314e542adc8239579116f02a367496387636af0707c332c848ac27766cf";
 
     private const int PinnedPathCount = 59;
 
@@ -48,6 +48,15 @@ public class OpenApi59OperationTests
             { "GET", "/api/payment-instructions/v1/decline", "declinePaymentInstruction" }
         };
 
+    /// <summary>
+    /// The snapshot on disk is the one this suite was written against.
+    /// </summary>
+    /// <remarks>
+    /// Whether that snapshot still matches what RozetkaPay publishes is a different question, and
+    /// <c>scripts/verify-openapi-drift.sh</c> answers it in CI. This hash catches the other failure: a
+    /// local edit to the snapshot, which would quietly move every expectation the contract tests read
+    /// from it.
+    /// </remarks>
     [Fact]
     public void PinnedSnapshot_ShouldMatchTheDocumentedHash()
     {
