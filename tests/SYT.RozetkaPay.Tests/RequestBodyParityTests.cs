@@ -29,6 +29,7 @@ public class RequestBodyParityTests
         { "ConfirmPaymentRequest", typeof(ConfirmPaymentRequest) },
         { "CancelPaymentRequest", typeof(CancelPaymentRequest) },
         { "CreateLookupRequest", typeof(CreateLookupRequest) },
+        { "CreateRecurrentPaymentRequest", typeof(CreateRecurrentPaymentRequest) },
     };
 
     [Theory]

@@ -13,54 +13,69 @@ namespace SYT.RozetkaPay.Models.Payments;
 public class CreateRecurrentPaymentRequest
 {
     /// <summary>
-    /// Payment amount in UAH
-    /// </summary>
-    [Required]
-    [JsonPropertyName("amount")]
-    public required decimal Amount { get; set; }
-
-    /// <summary>
-    /// Payment currency
-    /// </summary>
-    [Required]
-    [JsonPropertyName("currency")]
-    public required string Currency { get; set; }
-
-    /// <summary>
-    /// Unique external ID for the payment
-    /// </summary>
-    [Required]
-    [JsonPropertyName("external_id")]
-    public required string ExternalId { get; set; }
-
-    /// <summary>
-    /// Recurrent ID from previous payment
+    /// Recurrent identifier returned by the payment that initialised the series.
     /// </summary>
     [Required]
     [JsonPropertyName("recurrent_id")]
     public required string RecurrentId { get; set; }
 
     /// <summary>
-    /// Payment description
+    /// Unique external identifier for this payment.
     /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [Required]
+    [JsonPropertyName("external_id")]
+    public required string ExternalId { get; set; }
 
     /// <summary>
-    /// Callback URL for payment notifications
+    /// Payment amount.
+    /// </summary>
+    [Required]
+    [JsonPropertyName("amount")]
+    public required decimal Amount { get; set; }
+
+    /// <summary>
+    /// Identifier linking this payment to others across systems.
+    /// </summary>
+    [JsonPropertyName("unified_external_id")]
+    public string? UnifiedExternalId { get; set; }
+
+    /// <summary>
+    /// Callback URL for payment notifications.
     /// </summary>
     [JsonPropertyName("callback_url")]
     public string? CallbackUrl { get; set; }
 
     /// <summary>
-    /// Customer information
+    /// Opaque merchant payload echoed back on the callback.
     /// </summary>
-    [JsonPropertyName("customer")]
-    public CustomerInfo? Customer { get; set; }
+    [JsonPropertyName("payload")]
+    public string? Payload { get; set; }
 
     /// <summary>
-    /// Additional metadata
+    /// API key of the merchant this payment is delegated to.
     /// </summary>
+    [JsonPropertyName("delegate_api_key")]
+    public Guid? DelegateApiKey { get; set; }
+
+    /// <summary>
+    /// Subscription this payment belongs to.
+    /// </summary>
+    [JsonPropertyName("subscription_id")]
+    public string? SubscriptionId { get; set; }
+
+    /// <summary>
+    /// Whether to confirm the payment immediately rather than leaving it authorised.
+    /// </summary>
+    [JsonPropertyName("confirm")]
+    public bool? Confirm { get; set; }
+
+    /// <summary>
+    /// Additional merchant-defined data associated with the payment.
+    /// </summary>
+    /// <remarks>
+    /// Typed as declared: string values, at most ten entries. The typing is EXP-399's subject; this
+    /// property exists here because the body must carry it.
+    /// </remarks>
     [JsonPropertyName("metadata")]
     public Dictionary<string, object>? Metadata { get; set; }
 }
