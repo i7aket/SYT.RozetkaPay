@@ -12,7 +12,6 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
 {
     private const string CreateEndpoint = "/api/alternative-payments/v1/create";
 
-    private const string NewEndpoint = "/api/alternative-payments/v1/new";
 
     private const string RefundEndpoint = "/api/alternative-payments/v1/refund";
 

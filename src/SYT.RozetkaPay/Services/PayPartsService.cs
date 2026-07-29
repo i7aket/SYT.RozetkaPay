@@ -12,19 +12,15 @@ public class PayPartsService : BaseService, IPayPartsService
 {
     private const string OrderCreateEndpoint = "/api/payparts/v1/order/create";
 
-    private const string NewEndpoint = "/api/payparts/v1/new";
 
     private const string OrderConfirmEndpoint = "/api/payparts/v1/order/confirm";
 
-    private const string LegacyConfirmEndpoint = "/api/payments/v1/payparts/confirm";
 
     private const string OrderCancelEndpoint = "/api/payparts/v1/order/cancel";
 
-    private const string LegacyCancelEndpoint = "/api/payments/v1/payparts/cancel";
 
     private const string RefundEndpoint = "/api/payparts/v1/refund";
 
-    private const string LegacyRefundEndpoint = "/api/payments/v1/payparts/refund";
 
     private const string RetryRefundEndpoint = "/api/payparts/v1/refund/retry";
 
@@ -55,7 +51,6 @@ public class PayPartsService : BaseService, IPayPartsService
 
     private const string BanksInfoEndpoint = "/api/payparts/v1/banks/info";
 
-    private const string BanksEndpoint = "/api/payparts/v1/banks";
 
     private const string ResendCallbackEndpoint = "/api/payparts/v1/callback/resend";
 
