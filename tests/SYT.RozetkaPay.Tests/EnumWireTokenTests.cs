@@ -46,7 +46,6 @@ public class EnumWireTokenTests
     /// </remarks>
     private static readonly Dictionary<string, string> UnmodelledSchemas = new()
     {
-        ["CampaignName"] = "no SDK property carries a campaign name",
         ["FiscalizationStatus"] = "fiscalization is not modelled",
         ["FiscalizationStatusCode"] = "fiscalization is not modelled",
         ["PayPartsPaymentMethodType"] = "PayParts payment-method details are not modelled",
@@ -71,6 +70,7 @@ public class EnumWireTokenTests
         ["AlternativePaymentProvider"] = typeof(AlternativePaymentProvider),
         ["AlternativePaymentResponseCode"] = typeof(ResponseCode),
         ["BatchMethodType"] = typeof(BatchMethodType),
+        ["CampaignName"] = typeof(CampaignName),
         ["BatchPaymentMode"] = typeof(BatchPaymentMode),
         ["CheckoutColorMode"] = typeof(CheckoutColorMode),
         ["CustomerCheckoutLocale"] = typeof(CustomerCheckoutLocale),

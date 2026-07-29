@@ -154,6 +154,20 @@ public enum CustomerCheckoutLocale
 }
 
 /// <summary>
+/// Campaign a batch payment belongs to.
+/// </summary>
+public enum CampaignName
+{
+    /// <summary>R-card campaign.</summary>
+    [JsonStringEnumMemberName("r_card")]
+    RCard,
+
+    /// <summary>Diia card campaign.</summary>
+    [JsonStringEnumMemberName("diia_card")]
+    DiiaCard
+}
+
+/// <summary>
 /// Payment method types
 /// </summary>
 public enum PaymentMethodType

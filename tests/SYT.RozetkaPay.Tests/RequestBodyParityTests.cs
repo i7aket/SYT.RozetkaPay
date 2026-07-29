@@ -1,3 +1,4 @@
+using SYT.RozetkaPay.Models.Batch;
 using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Tests.TestInfrastructure;
 
@@ -30,6 +31,8 @@ public class RequestBodyParityTests
         { "CancelPaymentRequest", typeof(CancelPaymentRequest) },
         { "CreateLookupRequest", typeof(CreateLookupRequest) },
         { "CreateRecurrentPaymentRequest", typeof(CreateRecurrentPaymentRequest) },
+        { "ConfirmBatchPaymentRequest", typeof(ConfirmBatchPaymentRequest) },
+        { "CancelBatchPaymentRequest", typeof(CancelBatchPaymentRequest) },
     };
 
     [Theory]
