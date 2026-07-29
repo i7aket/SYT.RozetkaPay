@@ -2,7 +2,7 @@
 
 ## Scope
 
-- SDK: `SYT.RozetkaPay` (`0.1.0-alpha.1`)
+- SDK: `SYT.RozetkaPay` (`1.0.0` published; this document describes the current `main`)
 - API path family: `v1` (`/api/*/v1/*`)
 - OpenAPI schema version: `3.0.3`
 
@@ -20,24 +20,39 @@ coverage therefore does not imply operation parity, and the two are reported sep
 
 ### Pinned repository snapshot (`docs/openapi.json`)
 
-- SHA-256: `98a9cf2a74b7df6edcaa17872d63f6bc9de96d77ca85a8adfb6a91af05c8e67a`
-- Observed: `2026-07-25`
+- SHA-256: `d3114314e542adc8239579116f02a367496387636af0707c332c848ac27766cf`
+- Observed: `2026-07-29`
 - Paths: `59`
 - Operations: `67`
 - Path coverage: `59/59`
 - Operation coverage: a typed SDK method exists for each of the pinned `67` operations.
-- Additional legacy compatibility routes in SDK: `25`
+- Request bodies compared property-by-property against the document: `15`
+- Routes the SDK calls that the document does not declare: `10`, listed by name in
+  `tests/SYT.RozetkaPay.Tests/OffSpecRouteTests.cs` and awaiting confirmation from RozetkaPay
 
-EXP-354 refreshed the snapshot from the `49`-path / `57`-operation document to the current one. The
-snapshot is now byte-identical to the live official document, so the two views that used to be reported
-separately have collapsed into one. Identity is asserted, not assumed:
-`tests/SYT.RozetkaPay.Tests/OpenApi59OperationTests.cs` hashes the committed file and fails if it is not
-exactly the document above.
+Two different questions, answered by two different checks. Whether the committed snapshot still matches
+what RozetkaPay serves is answered by `scripts/verify-openapi-drift.sh`, which downloads the live
+document on every CI run and fails on a semantic difference. Whether the committed file was edited
+locally is answered by the SHA-256 pin in `OpenApi59OperationTests`.
+
+The distinction matters because the suite reads its expectations from the snapshot. Before the drift job
+existed, every contract test was checking the SDK against a file someone had once downloaded — which is
+how `1.0.0` shipped green with enums outside the published token set, request bodies missing required
+fields, and two response-code schemas modelled with three values out of 184.
 
 ### What "coverage" does and does not claim
 
-The claim is about the **pinned document**: for every operation it declares, the SDK has a typed method
-that sends the declared verb, request target, and body shape, and deserializes the declared response.
+The claim is about the **pinned document**, and it is deliberately narrower than it used to read.
+
+For every operation the document declares, the SDK has a typed method that sends the declared verb and
+request target. That much has long been asserted. The body those methods send is a separate question,
+and it is answered per body: fifteen are compared property-by-property, in both directions, and the rest
+are not yet. `RequestBodyParityTests` is the list, and it is a record of what has been compared rather
+than an aspiration.
+
+On the response side, no declared field is left without somewhere to land, bar one recorded exception —
+`ModelFieldCoverageTests`. Extra properties are not treated as failures there; several are inherited from
+a base class shared with another schema, and removing them is a judgement per type.
 That is proven by the wire-level tests listed under each section below, and — since EXP-337 — by an
 executable row per operation (see [Deterministic 67/67 Coverage](#deterministic-6767-coverage-exp-337)).
 
