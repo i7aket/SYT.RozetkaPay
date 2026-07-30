@@ -99,13 +99,26 @@ public class PaymentWebhook
     /// of the same event collapse, which is the property deduplication needs.
     /// </para>
     /// <para>
+    /// The operation's state is part of the key, and it has to be. One operation can be delivered
+    /// more than once as it progresses — a pending or 3-D Secure callback, then the final one — and a
+    /// key without the status collapses them, so a consumer following the advice below would reject
+    /// the final delivery and never mark the payment paid. The dedup that was meant to protect the
+    /// booking would lose it instead.
+    /// </para>
+    /// <para>
     /// Storing this key and rejecting a repeat has to happen in the same transaction as the state
     /// change it guards. The SDK can name the key; only the consumer can make the check atomic.
     /// </para>
     /// </remarks>
     [JsonIgnore]
     public string EventKey =>
-        string.Join('|', Id ?? string.Empty, Operation ?? string.Empty, Details?.OperationId ?? string.Empty);
+        string.Join(
+            '|',
+            Id ?? string.Empty,
+            Operation ?? string.Empty,
+            Details?.OperationId ?? string.Empty,
+            Details?.Status ?? string.Empty,
+            IsSuccess ? "1" : "0");
 }
 
 /// <summary>

@@ -716,7 +716,7 @@ public class SubscriptionResponse
     /// Customer information (JSON object as per CDN documentation)
     /// </summary>
     [JsonPropertyName("customer")]
-    public SubscriptionCustomer? Customer { get; set; }
+    public CustomerRequestUserDetails? Customer { get; set; }
 
     /// <summary>
     /// Subscription creation date (ISO 8601 format)

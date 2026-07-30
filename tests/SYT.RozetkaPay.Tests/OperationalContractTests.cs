@@ -74,6 +74,32 @@ public class OperationalContractTests
         Assert.DoesNotContain("EventKey", json, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// A progressing operation must not collapse into its earlier delivery.
+    /// </summary>
+    /// <remarks>
+    /// Found by the pre-release audit. One operation is delivered more than once as it progresses —
+    /// pending, then final — and a key without the status treats the final delivery as a duplicate.
+    /// A consumer following the property's own advice would reject it and never mark the payment
+    /// paid: the dedup meant to protect the booking losing it instead.
+    /// </remarks>
+    [Fact]
+    public void TheEventKey_ShouldSeparateAPendingDeliveryFromItsFinalOne()
+    {
+        PaymentWebhook pending = Read("""
+        {"id":"pay-1","operation":"payment","is_success":false,
+         "details":{"operation_id":"op-1","status":"pending"}}
+        """);
+
+        PaymentWebhook settled = Read("""
+        {"id":"pay-1","operation":"payment","is_success":true,
+         "details":{"operation_id":"op-1","status":"success"}}
+        """);
+
+        Assert.Equal(pending.Details!.OperationId, settled.Details!.OperationId);
+        Assert.NotEqual(pending.EventKey, settled.EventKey);
+    }
+
     private static PaymentWebhook Read(string body) =>
         JsonSerializer.Deserialize<PaymentWebhook>(body, SdkSerializerOptions.Value)!;
 }

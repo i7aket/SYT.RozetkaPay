@@ -236,7 +236,12 @@ SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationsResult
     String UnifiedExternalId { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentProduct
     .ctor()
+    Decimal? NetAmount { get; set; }
     Decimal? Price { get; set; }
+    Decimal? VatAmount { get; set; }
+    Int32? Quantity { get; set; }
+    String Category { get; set; }
+    String Name { get; set; }
     String TaxCategory { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentProvider
     AlternativePaymentProvider Imoje
@@ -264,7 +269,7 @@ SYT.RozetkaPay.Models.AlternativePayments.CreateAlternativePayment
 SYT.RozetkaPay.Models.AlternativePayments.RefundAlternativePaymentRequest
     .ctor()
     Decimal? Amount { get; set; }
-    List<Product> Products { get; set; }
+    List<PayPartsProduct> Products { get; set; }
     String CallbackUrl { get; set; }
     String Currency { get; set; }
     String ExternalId { get; set; }
@@ -281,7 +286,7 @@ SYT.RozetkaPay.Models.Batch.BatchConfirmOrder
 SYT.RozetkaPay.Models.Batch.BatchCustomer
     .ctor()
     BrowserFingerprint Fingerprint { get; set; }
-    PaymentMethod PaymentMethod { get; set; }
+    CustomerRequestPaymentMethod PaymentMethod { get; set; }
     String Address { get; set; }
     String City { get; set; }
     String Country { get; set; }
@@ -1385,7 +1390,7 @@ SYT.RozetkaPay.Models.PayParts.RefundPPayRequest
 SYT.RozetkaPay.Models.PayParts.RefundPayPartsOrderRequest
     .ctor()
     Decimal? Amount { get; set; }
-    List<Product> Products { get; set; }
+    List<PayPartsProduct> Products { get; set; }
     String CallbackUrl { get; set; }
     String Currency { get; set; }
     String ExternalId { get; set; }
@@ -2318,6 +2323,7 @@ SYT.RozetkaPay.Models.Subscriptions.SubscriptionRecurrentIdPaymentMethod
     String RecurrentId { get; set; }
 SYT.RozetkaPay.Models.Subscriptions.SubscriptionResponse
     .ctor()
+    CustomerRequestUserDetails Customer { get; set; }
     DateTime? CreatedAt { get; set; }
     Decimal? Amount { get; set; }
     Int32? CompletedPayments { get; set; }
@@ -2329,7 +2335,6 @@ SYT.RozetkaPay.Models.Subscriptions.SubscriptionResponse
     String Id { get; set; }
     String NextPaymentDate { get; set; }
     String Status { get; set; }
-    SubscriptionCustomer Customer { get; set; }
     SubscriptionError Error { get; set; }
 SYT.RozetkaPay.Models.Subscriptions.SubscriptionState
     Int32 value__
@@ -2416,7 +2421,7 @@ SYT.RozetkaPay.Services.CustomerService
     Task<WalletItem> GetWalletItemAsync(String customerId, String cardId, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.FinMonService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
-    Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(Int32 recipientIpn, CancellationToken cancellationToken)
+    Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(Int64 recipientIpn, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IAlternativePaymentService
     Task<AlternativePaymentCallbackResendResponse> ResendCallbackAsync(ResendAlternativePaymentCallbackRequest request, CancellationToken cancellationToken)
     Task<AlternativePaymentOperationResult> CreateAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
@@ -2437,7 +2442,7 @@ SYT.RozetkaPay.Services.ICustomerService
     Task<SetDefaultCardResponse> SetDefaultCardAsync(String customerId, SetDefaultCardRequest request, CancellationToken cancellationToken)
     Task<WalletItem> GetWalletItemAsync(String customerId, String cardId, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IFinMonService
-    Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(Int32 recipientIpn, CancellationToken cancellationToken)
+    Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(Int64 recipientIpn, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IInStorePaymentService
     Task<InStorePaymentConfirmResponse> ConfirmAsync(InStorePaymentConfirmRequest request, CancellationToken cancellationToken)
     Task<InStorePaymentCreateResponse> CreateAsync(InStorePaymentCreateRequest request, CancellationToken cancellationToken)
