@@ -262,20 +262,51 @@ jobs:
             exit 1
           fi
 
-          built_hash="$(sha256sum "$NUPKG_PATH" | cut -d' ' -f1)"
-          published_hash="$(sha256sum published.nupkg | cut -d' ' -f1)"
+          # Compare the payload, not the archive. nuget.org repository-signs on ingestion, which
+          # appends a .signature.p7s entry, so the downloaded archive never matches the pushed bytes.
+          #
+          # This used to hash the two .nupkg files whole. That made the step a race rather than a
+          # check: signing is asynchronous and the poll loop above stops at the first successful
+          # download, so the result depended on whether the CDN had served the signed copy yet.
+          # v1.0.0 passed because it downloaded first; v2.0.0 failed on the identical package,
+          # reporting a previous run that did not exist. Green-or-red by timing is worse than always
+          # red, because it looks like it works.
+          #
+          # Dropping .signature.p7s and re-hashing the archive would not fix it either - removing an
+          # entry shifts the zip central-directory offsets, so the archive hash still differs. The
+          # comparison has to be per entry.
+          manifest() {
+            local pkg="$1" dir="$2"
+            rm -rf "$dir" && mkdir -p "$dir"
+            unzip -qq "$pkg" -d "$dir"
+            # Signature is nuget.org's, not ours. Everything else must match exactly.
+            ( cd "$dir" && find . -type f ! -name '.signature.p7s' -print0 |
+                sort -z | xargs -0 sha256sum | sed 's|  \./|  |' )
+          }
 
-          echo "built     : ${built_hash}"
-          echo "published : ${published_hash}"
+          manifest "$NUPKG_PATH" built > built.manifest
+          manifest published.nupkg published > published.manifest
 
-          if [ "$built_hash" != "$published_hash" ]; then
+          echo "Payload entries compared: $(wc -l < built.manifest)"
+
+          if ! diff -u built.manifest published.manifest > manifest.diff; then
             echo "::error::The package on nuget.org is not the package this run built. A previous run \
           published a different build under the same version. Do not attach these artifacts to a \
           release: publish a new version instead."
+            echo "Differing entries (built vs published):"
+            cat manifest.diff
             exit 1
           fi
 
-          echo "Published package is byte-identical to the one built here."
+          if [ ! -s built.manifest ]; then
+            echo "::error::Payload manifest is empty; the comparison proved nothing."
+            exit 1
+          fi
+
+          # Said explicitly so nobody reads the pass as byte-equality of the archives: it is not,
+          # and cannot be, once the package is repository-signed.
+          echo "Published payload is identical to the one built here, entry for entry."
+          echo "Archive bytes differ by nuget.org's .signature.p7s, which is expected."
 
       - name: Create GitHub Release
         shell: bash
