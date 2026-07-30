@@ -502,21 +502,20 @@ public class LegacyLoggingRedactionTests
     }
 
     /// <summary>
-    /// A fallback whose two targets are both static: the real routes are their own labels, so the fallback
-    /// entry stays as informative as it was.
+    /// The banks route is its own log label: it carries no caller value, so redacting it would cost
+    /// route-level observability for nothing.
     /// </summary>
     [Fact]
-    public async Task PayPartsBanks_ShouldLogBothStaticRoutes()
+    public async Task PayPartsBanks_ShouldLogItsStaticRoute()
     {
         (RedactionHandler handler, CapturingLoggerProvider logs, PayPartsService service) =
-            Arrange(static (c, h, l) => new PayPartsService(c, h, l));
+            Arrange(static (c, h, l) => new PayPartsService(c, h, l), responseBody: "[]");
 
         await service.GetBanksAsync();
 
         Assert.Single(handler.Requests);
 
         LoggingRedactionAssert.Logged(logs, "/api/payparts/v1/banks/info");
-        LoggingRedactionAssert.Logged(logs, "/api/payparts/v1/banks");
         LoggingRedactionAssert.NotLogged(logs, LoggingRedactionContext.RedactedLabel);
         LoggingRedactionAssert.NoScopes(logs);
     }
@@ -1151,12 +1150,12 @@ public class LegacyLoggingRedactionTests
     /// </summary>
     private static (RedactionHandler Handler, CapturingLoggerProvider Logs, TService Service) Arrange<TService>(
         Func<RozetkaPayConfiguration, HttpClient, ILogger, TService> factory,
-        bool fallback = false)
+        string responseBody = "{}")
         where TService : BaseService
     {
         CapturingLoggerProvider logs = new();
         ILogger logger = logs.CreateLogger(typeof(TService).FullName!);
-        RedactionHandler handler = RedactionHandler.Json();
+        RedactionHandler handler = RedactionHandler.Json(responseBody);
         TService service = factory(
             LoggingRedactionContext.Configuration(),
             LoggingRedactionContext.Client(handler),

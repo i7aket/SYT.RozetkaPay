@@ -94,7 +94,7 @@ public interface IPayPartsService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts banks information</returns>
-    Task<PayPartsBanksResponse> GetBanksAsync(CancellationToken cancellationToken = default);
+    Task<List<PayPartsBankInfo>> GetBanksAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resend PayParts callback

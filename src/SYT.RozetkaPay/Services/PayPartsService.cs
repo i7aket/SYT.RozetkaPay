@@ -255,13 +255,19 @@ public class PayPartsService : BaseService, IPayPartsService
 
     /// <summary>
     /// Get banks info for PayParts
-    /// GET /api/payparts/v1/banks
+    /// GET /api/payparts/v1/banks/info
     /// </summary>
+    /// <remarks>
+    /// The operation answers with a bare JSON array. It was being deserialized into an object with a
+    /// <c>banks</c> property, which no response ever carries, so every call threw a
+    /// <see cref="System.Text.Json.JsonException"/> - found by calling the live gateway, because the
+    /// contract tests assert the request and say nothing about the shape of the reply.
+    /// </remarks>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>PayParts banks information</returns>
-    public async Task<PayPartsBanksResponse> GetBanksAsync(CancellationToken cancellationToken = default)
+    /// <returns>The banks offering instalments, as the operation returns them.</returns>
+    public async Task<List<PayPartsBankInfo>> GetBanksAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsync<PayPartsBanksResponse>(
+        return await GetAsync<List<PayPartsBankInfo>>(
             BanksInfoEndpoint,
             BanksInfoEndpoint,
             cancellationToken);

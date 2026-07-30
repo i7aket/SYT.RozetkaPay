@@ -1392,12 +1392,6 @@ SYT.RozetkaPay.Models.PayParts.PayPartsBankLimits
 SYT.RozetkaPay.Models.PayParts.PayPartsBanksInfo
     .ctor()
     List<PayPartsBankInfo> Banks { get; set; }
-SYT.RozetkaPay.Models.PayParts.PayPartsBanksResponse
-    .ctor()
-    Int32? TotalCount { get; set; }
-    List<PayPartsBankInfo> Banks { get; set; }
-    String Message { get; set; }
-    String Status { get; set; }
 SYT.RozetkaPay.Models.PayParts.PayPartsCardPaymentMethod
     .ctor()
     Int32 ExpirationMonth { get; set; }
@@ -2951,7 +2945,7 @@ SYT.RozetkaPay.Services.IPartnerService
     Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(String merchantEntityId, CancellationToken cancellationToken)
     Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(String merchantEntityId, PartnerTransactionDetailsOptions options, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IPayPartsService
-    Task<PayPartsBanksResponse> GetBanksAsync(CancellationToken cancellationToken)
+    Task<List<PayPartsBankInfo>> GetBanksAsync(CancellationToken cancellationToken)
     Task<PayPartsOperationResponse> GetOperationInfoAsync(String operationId, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
@@ -3034,7 +3028,7 @@ SYT.RozetkaPay.Services.PartnerService
     Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(String merchantEntityId, PartnerTransactionDetailsOptions options, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.PayPartsService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
-    Task<PayPartsBanksResponse> GetBanksAsync(CancellationToken cancellationToken)
+    Task<List<PayPartsBankInfo>> GetBanksAsync(CancellationToken cancellationToken)
     Task<PayPartsOperationResponse> GetOperationInfoAsync(String operationId, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
