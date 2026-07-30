@@ -86,6 +86,12 @@ so a broken configuration fails before the first request instead of during one. 
 `RozetkaPayConfiguration` overloads are unchanged. See
 [Configuration](src/SYT.RozetkaPay/README.md#configuration) in the package README.
 
+`Sandbox` needs credentials issued for the sandbox host. RozetkaPay's publicly published test pair
+is not one of them: against `api-epdev.rozetkapay.com` it answers `401`, while against production
+the same pair authenticates and creates real hosted checkouts. A first run that pairs `Sandbox`
+with the published test credentials therefore fails at authentication, which reads like a broken
+SDK and is not.
+
 Callback signatures must be checked against the raw request body before the payload is
 deserialized; the package README documents the full flow under
 [Webhook Signature Verification](src/SYT.RozetkaPay/README.md#webhook-signature-verification).
