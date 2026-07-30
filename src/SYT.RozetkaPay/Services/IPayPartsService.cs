@@ -22,7 +22,7 @@ public interface IPayPartsService
     /// <param name="request">PayParts confirm request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts order response</returns>
-    Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken = default);
+    Task<PayPartsOperationResult> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancel PayParts order
@@ -30,7 +30,7 @@ public interface IPayPartsService
     /// <param name="request">PayParts cancel request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts order response</returns>
-    Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken = default);
+    Task<PayPartsOperationResult> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Refund PayParts order
@@ -38,7 +38,7 @@ public interface IPayPartsService
     /// <param name="request">PayParts refund request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts refund response</returns>
-    Task<PayPartsRefundResponse> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken = default);
+    Task<PayPartsOperationResult> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retry pending PayParts refund operation

@@ -80,9 +80,9 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="request">Recurrent payment request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    public async Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<PaymentOperationResult> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreateRecurrentPaymentRequest, PaymentResponse>(RecurrentEndpoint, RecurrentEndpoint, request, cancellationToken);
+        return await PostAsync<CreateRecurrentPaymentRequest, PaymentOperationResult>(RecurrentEndpoint, RecurrentEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -168,9 +168,9 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="externalId">External payment ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment receipt response</returns>
-    public async Task<PaymentReceiptResponse> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default)
+    public async Task<PaymentReceiptResult> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<PaymentReceiptResponse>(
+        return await GetAsync<PaymentReceiptResult>(
             $"{ReceiptEndpoint}?external_id={Uri.EscapeDataString(externalId)}",
             ReceiptEndpoint,
             cancellationToken);

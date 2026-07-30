@@ -36,7 +36,7 @@ internal sealed class FakePaymentService : IPaymentService
         return Task.FromResult(CannedResponse);
     }
 
-    public Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken = default)
+    public Task<PaymentOperationResult> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
     public Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken = default)
@@ -57,7 +57,7 @@ internal sealed class FakePaymentService : IPaymentService
     public Task<PaymentStatusResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<PaymentReceiptResponse> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default)
+    public Task<PaymentReceiptResult> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
     public Task<PaymentOperationResult> CardLookupAsync(CreateLookupRequest request, CancellationToken cancellationToken = default)

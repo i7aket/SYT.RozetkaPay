@@ -114,7 +114,9 @@ public class OperationTypeMappingTests
                 continue;
             }
 
-            HashSet<string> modelled = [.. WireNames(returned)];
+            HashSet<string> modelled = [.. WireNames(
+                returned,
+                OpenApiSnapshot.ResponseIsArray(contract.Method, contract.PathTemplate))];
 
             gaps.AddRange(declared
                 .Where(field => !modelled.Contains(field))
@@ -165,7 +167,7 @@ public class OperationTypeMappingTests
                 continue;
             }
 
-            HashSet<string> modelled = [.. WireNames(body.ParameterType)];
+            HashSet<string> modelled = [.. WireNames(body.ParameterType, unwrapWrapper: false)];
 
             mismatches.AddRange(declared
                 .Where(field => !modelled.Contains(field))
@@ -348,8 +350,15 @@ public class OperationTypeMappingTests
     /// defect, but comparing the wrapper's one property against the array element's fields reported
     /// every element field as missing: 34 for <c>getSubscriptions</c> alone, all of them false. The
     /// element is what the document describes, so the element is what gets compared.
+    /// </para>
+    /// <para>
+    /// Only when the DECLARED response is an array, though. An object that happens to hold one list -
+    /// <c>PartnerTransactionDetailsListResponse</c> wrapping <c>transactions</c> - is not the same
+    /// thing, and unwrapping it reported the wrapper's own declared field as missing. Following the
+    /// document rather than the shape of the CLR type is what separates the two.
+    /// </para>
     /// </remarks>
-    private static IEnumerable<string> WireNames(Type type)
+    private static IEnumerable<string> WireNames(Type type, bool unwrapWrapper)
     {
         Type resolved = Nullable.GetUnderlyingType(type) ?? type;
 
@@ -363,7 +372,8 @@ public class OperationTypeMappingTests
             .Where(static property => property.GetCustomAttribute<JsonIgnoreAttribute>() is null)
             .ToArray();
 
-        if (declared.Length == 1 &&
+        if (unwrapWrapper &&
+            declared.Length == 1 &&
             declared[0].PropertyType.IsGenericType &&
             declared[0].PropertyType.GetGenericTypeDefinition() == typeof(List<>))
         {

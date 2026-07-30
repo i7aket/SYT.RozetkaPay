@@ -1,5 +1,6 @@
 using System.Globalization;
 using SYT.RozetkaPay.Configuration;
+using SYT.RozetkaPay.Models.Merchants;
 using SYT.RozetkaPay.Models.Payouts;
 using Microsoft.Extensions.Logging;
 
@@ -83,9 +84,9 @@ public class PayoutService : BaseService, IPayoutService
     /// <param name="merchantEntityId">Merchant entity ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Balance information</returns>
-    public async Task<BalanceResponse> GetAccountBalanceAsync(string merchantEntityId, CancellationToken cancellationToken = default)
+    public async Task<GetMerchantBalanceResponse> GetAccountBalanceAsync(string merchantEntityId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<BalanceResponse>(
+        return await GetAsync<GetMerchantBalanceResponse>(
             $"{AccountBalanceEndpoint}?merchant_entity_id={Uri.EscapeDataString(merchantEntityId)}",
             AccountBalanceEndpoint,
             cancellationToken);
