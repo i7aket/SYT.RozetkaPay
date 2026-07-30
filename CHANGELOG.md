@@ -10,6 +10,218 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-30
+
+A contract-correctness release. `1.0.0` was audited against RozetkaPay's live OpenAPI document and
+against the gateway itself, and the audit found that the SDK's own contract tests compared it to a
+**committed snapshot** and never to the published document. So 1480 green tests could not see any of
+the drift that shipped.
+
+Every defect below was already in `1.0.0`. Nothing here is a regression; it is the difference between
+a suite that agrees with the implementation and one that agrees with the provider.
+
+**This is a breaking release.** The removals are the point of it: a public method whose route returns
+`404`, or a property the provider silently discards, is worse than a missing one, because the caller
+learns at runtime, in production, against money. Read `Removed` and `Changed` before upgrading.
+
+### Removed
+
+- **Ten public operations whose routes the document does not declare (EXP-403).** They were held back
+  a release and listed by name while it was still possible they were earlier spellings of operations
+  now published elsewhere. They were then called against the live gateway with credentials that
+  answer `200` on a declared control route: all ten answered `404`, and the POST-only ones answered
+  `404` rather than `405`, which distinguishes an absent path from a wrong verb. Nothing replaces
+  them, because nothing is there.
+
+  | Removed member | Route |
+  | --- | --- |
+  | `IAlternativePaymentService.GetAvailableMethodsAsync` | `/api/alternative-payments/v1/methods` |
+  | `IAlternativePaymentService.GetOperationsAsync` | `/api/alternative-payments/v1/operations` |
+  | `IMerchantService.GetSettingsAsync` | `/api/merchant/v1/settings` |
+  | `IMerchantService.UpdateSettingsAsync` | `/api/merchant/v1/settings` |
+  | `IMerchantService.GetCommissionRatesAsync` | `/api/merchant/v1/commission-rates` |
+  | `IPayPartsService.GetOperationsAsync` | `/api/payparts/v1/operations` |
+  | `IPaymentService.ConfirmP2PAsync` | `/api/payments/v1/p2p/confirm` |
+  | `IPaymentService.GetListAsync` | `/api/payments/v1/list` |
+  | `IPayoutService.CreateAsync` | `/api/payouts/v1/new` |
+  | `IPayoutService.GetListAsync` | `/api/payouts/v1/list` |
+  | `IPayoutService.GetBalanceAsync` | `/api/payouts/v1/balance` |
+
+  Fourteen request and response types existed only to feed them and went too. None is declared as a
+  schema, so nothing that models a published contract was lost. `OffSpecRouteTests` now asserts an
+  empty set, making it the standing proof that the SDK invents no route — verified by adding a probe
+  constant, which fails the gate with the probe path named.
+
+- **Twenty-six model properties no schema declares (EXP-422).** On a request body an undeclared
+  property is a trap: the caller sets it, the SDK serializes it, the provider drops a field it does
+  not declare, and the intent vanishes with no error anywhere. Every one sat beside the declared
+  field it shadowed, under a name that read like the simpler way to do the same thing —
+  `apple_pay_token` next to `apple_pay`, `card_number` next to `cc_number`, `card` next to
+  `cc_token`, `category` next to `category_name`. The rest were fields of a neighbouring schema
+  (`amount` and `currency` on `RecipientRequestUserDetails`, `patronym` on `PayPartsCustomer`),
+  credentials the schema does not accept (`cvv` on `RecipientCCTokenRequestPaymentMethod`,
+  `exp_month` and `exp_year` on `RecipientCCNumberRequestPaymentMethod`), or plain inventions
+  (`user_info` on the customer object, `callback_url` on `ResendCallbackRequest`).
+
+- **`Product.sku` and `Product.price` (EXP-422).** `sku` is declared by nothing.
+  `AlternativePaymentProduct`, `PayPartsProduct`, `Plan` and `Subscription` each declare `price` and
+  the base `Product` does not, so `price` moved to `AlternativePaymentProduct` where it belongs;
+  carrying it on the base sent the field on every product shape the document says has no such
+  property.
+
+- **The `net9.0` target framework (EXP-425).** `net9.0` is STS and leaves support on `2026-11-10`.
+  Removing a target framework later would be a breaking change; removing it now, before the package
+  has consumers, is not. Nothing in the SDK used TFM-conditional compilation, so the second target
+  was pure build and test duplication. The package now ships a single `lib/net10.0`.
+
+- **Six fallback routes and the hidden retry that reached them (EXP-385).** A `404` silently
+  triggered a second request to a different path. That turned one operation into two possible ones
+  with no way for the caller to know which had run.
+
+### Changed
+
+- **`CustomerRequestPaymentMethod.Type` is `PaymentMethodType?` rather than `string?` (EXP-421).**
+  The document declares it as a closed set of six values and makes it the discriminator: which
+  sibling object becomes required depends on what it holds. A probe sent `"cc"` — not one of the six
+  — and the request was built, validated, serialized and sent with no complaint. Nullable rather than
+  a bare enum, deliberately: a non-nullable enum property defaults to its zero value, so a caller who
+  omits the field would silently send `cc_token` instead of failing validation.
+
+- **`PaymentService.BuildP2PRequest` signature (EXP-422).** Now
+  `(amount, currency, externalId, customerEmail, recipientCardNumber, description = null)`. It sent
+  `type: "card_number"`, which is not among the four values the schema's inline enum permits, so
+  every request it built was invalid before it left the process. It also hardcoded
+  `customer@example.com` to satisfy the `customer` field that `direct` mode requires — a fabricated
+  address attached to a real transfer, with nothing to tell the caller. The expiry parameters are
+  gone because `RecipientCCNumberRequestPaymentMethod` declares only `number`.
+
+- **Enums serialize to the tokens the document publishes (EXP-384).** Two enums inherit 184 values
+  through `allOf` and were modelled with three each. `JsonStringEnumMemberName` now carries the exact
+  wire spelling and integer values are refused, so an unknown token fails loudly instead of
+  deserializing to whatever member happens to sit at that ordinal.
+
+- **Retries are gated on idempotency (EXP-385).** A non-idempotent operation is no longer retried.
+  The provider's at-most-one-success guarantee is keyed on `external_id`, and retrying a request that
+  does not carry one can charge twice.
+
+- **Request bodies rebuilt from the published schemas** — create-payment and its dead twin (EXP-394),
+  recurrent payment (EXP-392), card lookup (EXP-391), the three batch bodies (EXP-393), the
+  PayParts order (EXP-396), the alternative-payment operation (EXP-395), plans and subscriptions
+  (EXP-397), set-default-card, which was missing `option_id` and `type` (EXP-398). Response models
+  now receive every field the schemas declare (EXP-401).
+
+- **`Confirm` and `Cancel` carry a partial amount (EXP-386).** Both operations declare `amount` and
+  `currency`; the SDK sent neither, so a partial capture or partial cancel was not expressible.
+
+- **`DateTime` values convert to UTC instead of being relabelled (EXP-390).** A local time was
+  stamped with `Z` rather than converted, which shifted every timestamp by the offset.
+
+- **Metadata is carried everywhere the document declares it (EXP-399)**, with a limits attribute that
+  names an offending key without ever quoting its value.
+
+- **`Microsoft.Extensions.*` tracks the runtime's own release line (EXP-406).** Pinning an older line
+  asked consumers to carry a second copy of assemblies their shared framework already provides.
+
+- **Validation runs before the transport is touched (EXP-402).** The models carried 202 `[Required]`
+  attributes and the SDK read none of them, which is worse than carrying none — a reader reasonably
+  assumes a marked field is checked. Sixteen of those annotations contradicted the document and were
+  corrected first, so enabling validation does not start rejecting requests the provider accepts.
+  Violation messages name the field and the rule and never quote the value, because a validation
+  message is a log line waiting to happen and a request body can carry a card number.
+
+### Fixed
+
+- **`GetBanksAsync` and `GetPlansAsync` expected a wrapper object where the API returns a bare array,
+  and `finmon.recipient_ipn` was typed as a string where the document declares `integer` (EXP-419).**
+  All three threw on the first real call. Found by calling the gateway, not by any test: nothing
+  compared property **types** — only names and required-ness — so `PropertyTypeParityTests` now does.
+
+- **Redirects are refused and clear-text endpoints rejected (EXP-383).** The SDK followed redirects
+  with both secret headers attached, so a redirect to another origin handed them over; proved with a
+  runtime probe showing both headers reaching a second host. The fix is enforced in the `BaseService`
+  constructor rather than only on the DI path, because `new RozetkaPayClient(config)` bypassed it.
+
+- **The SDK no longer writes to an `HttpClient` it does not own (EXP-388).** It set `BaseAddress` and
+  `Timeout` on the caller's instance, mutating shared state; both are now snapshotted, and timeouts
+  use a linked token that preserves the caller's own token identity.
+
+- **`SdkSerializerOptions` is a single frozen shared instance (EXP-389)** rather than a new options
+  object per call, which defeated `System.Text.Json`'s metadata cache on every request.
+
+- **Adjudicated the suspected name collisions (EXP-400)**, each decided against the document rather
+  than renamed en masse.
+
+### Added
+
+- **A drift job that checks the snapshot against the live document (EXP-387).** This is the gap that
+  let everything above ship: the contract tests compared the SDK to a committed snapshot and never to
+  what RozetkaPay publishes. `scripts/verify-openapi-drift.sh` downloads the document and fails CI on
+  any semantic difference. Currently `59` paths, `67` operations.
+
+- **`RequestBodyParityTests` (EXP-401, EXP-402)** — 15 request bodies compared in both directions,
+  `[Required]` included.
+
+- **`ModelFieldCoverageTests`** — no published schema may declare a field the SDK cannot receive.
+
+- **`UndeclaredPropertyTests` (EXP-422)** — the opposite direction, which nothing checked. Scoped to
+  properties a type declares itself; inherited extras are a different defect with a different remedy
+  and are tracked separately. Twenty-seven exemptions remain, each naming its field and reason, and two
+  tests keep the list honest: an entry must still be a real extra, and **none may name a schema a
+  request body can reach**, so it structurally cannot hold a request-side extra.
+
+- **`PublicApiSurfaceTests` and an approved surface file (EXP-404).** Nothing guarded the public
+  surface, so removing or retyping a member went out in a green build. The baseline is the surface
+  after this work rather than the one `1.0.0` published: comparing against `1.0.0` would report
+  several hundred intentional differences and be switched off within a week, which is how gates die.
+
+- **Release verification that proves the published package is the one that was built (EXP-405)** —
+  artifact contract and byte-for-byte determinism from two different filesystem roots.
+
+- **`PaymentMethodDiscriminatorTests`, `EnumWireTokenTests`, `RedirectSecurityTests`,
+  `ConsumerHttpClientOwnershipTests`, `DateTimeConversionTests`, `PartialCaptureContractTests`,
+  `MetadataContractTests`, `PropertyTypeParityTests`, `RequestValidationTests`.**
+
+  Each gate was **proven to fail** rather than assumed to work. This matters more than it sounds:
+  during the audit, six existing contract-test fixtures were found pinning the exact defect they were
+  meant to catch, because they had been written from the implementation instead of from the document.
+
+### Documentation
+
+- **The contract documentation describes only what the tests prove (EXP-407).**
+- **The sandbox host rejects RozetkaPay's published test credentials (EXP-424).** Against
+  `api-epdev.rozetkapay.com` they answer `401`; against production the same pair authenticates and
+  creates real hosted checkouts. A first run naturally pairs `Sandbox` with the only test credentials
+  a developer can find, and that combination fails at authentication — which reads like a broken SDK
+  and is not. The constant is unchanged: it is what the document publishes as the development server,
+  and quietly repointing an environment named `Sandbox` at production would be a worse surprise.
+
+### Migration
+
+- Calls to any of the ten removed operations have no replacement. The routes do not exist; code
+  calling them was already failing at runtime.
+- `CustomerRequestPaymentMethod.Type = "cc_token"` becomes `PaymentMethodType.CCToken`. An off-enum
+  string is now a compile error rather than a silent wire error.
+- `BuildP2PRequest` needs the paying customer's email and no longer takes card expiry.
+- Replace `apple_pay_token` / `google_pay_token` / `wallet_token` with the declared `ApplePay` /
+  `GooglePay` / `Wallet` objects; `card_number` / `card_token` with `CcNumber` / `CcToken`; `card` /
+  `recurrent_token` with `CcToken` / `RecurrentId`.
+- Requests are now validated before dispatch. A body that violated its own annotations previously
+  reached the provider and now throws `RozetkaPayValidationException`.
+- Consumers on `net9.0` must move to `net10.0` or stay on `1.0.0`.
+
+### Verification
+
+- **1607 tests** pass, 0 failed, 1 skipped, on `net10.0`.
+- Drift job green against the live document: `59` paths, `67` operations.
+- Package artifact verification: one dependency group `net10.0`, exactly `lib/net10.0` dll and xml,
+  no PDB in the primary package, exactly one PDB in the symbols package, Source Link `72` documents
+  all under `/_/` pinned to the commit.
+- Deterministic build: byte-identical by SHA-256 from two different filesystem roots.
+- Live smoke against the gateway: **zero SDK faults** — a hosted payment created a real checkout URL,
+  and every reply the gateway produced was readable. Direct-mode calls return
+  `payment_settings_not_found`, which is the shared test account's configuration and not an SDK
+  defect.
+
 ## [1.0.0] - 2026-07-29
 
 ### Added
@@ -628,7 +840,8 @@ immediately before tagging a release (see the release process in `README.md`).
 ### Added
 - Initial alpha SDK package.
 
-[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v1.0.0...main
+[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v2.0.0...main
+[2.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/2.0.0
 [1.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/1.0.0
 [0.1.0-alpha.2]: https://www.nuget.org/packages/SYT.RozetkaPay/0.1.0-alpha.2
 [0.1.0-alpha.1]: https://www.nuget.org/packages/SYT.RozetkaPay/0.1.0-alpha.1
