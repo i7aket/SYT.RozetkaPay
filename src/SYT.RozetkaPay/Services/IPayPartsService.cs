@@ -14,7 +14,7 @@ public interface IPayPartsService
     /// <param name="request">PayParts order creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts order response</returns>
-    Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken = default);
+    Task<PayPartsOperationResult> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Confirm PayParts order

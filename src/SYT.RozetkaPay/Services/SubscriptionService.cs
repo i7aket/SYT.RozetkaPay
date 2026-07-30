@@ -141,10 +141,10 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="request">Update subscription plan request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plan response</returns>
-    public async Task<SubscriptionPlanResponse> UpdatePlanAsync(string planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken = default)
+    public async Task<DefaultResponse> UpdatePlanAsync(string planId, UpdatePlanRequest request, CancellationToken cancellationToken = default)
     {
         string encodedPlanId = RequestTargetEncoding.EscapePathSegment(planId, nameof(planId));
-        return await PatchAsync<UpdateSubscriptionPlanRequest, SubscriptionPlanResponse>(
+        return await PatchAsync<UpdatePlanRequest, DefaultResponse>(
             $"{PlansEndpoint}/{encodedPlanId}",
             PlanLogLabel,
             request,

@@ -1,5 +1,6 @@
 using System.Net;
 using SYT.RozetkaPay.Exceptions;
+using SYT.RozetkaPay.Models.Common;
 using SYT.RozetkaPay.Models.InStorePayments;
 using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Models.Subscriptions;
@@ -144,11 +145,13 @@ public class Exp354ResponseDisposalTests
             Exp354TestContext.CreateConfiguration(),
             Exp354TestContext.CreateHttpClient(handler));
 
-        SubscriptionPlanResponse response = await service.UpdatePlanAsync(
+        DefaultResponse response = await service.UpdatePlanAsync(
             "plan-1",
-            new UpdateSubscriptionPlanRequest { Name = "Renamed" });
+            new UpdatePlanRequest { Name = "Renamed" });
 
-        Assert.Equal("plan-1", response.Id);
+        // PATCH /plans/{id} declares DefaultResponse - a message only. The plan id was never in
+        // the reply; the test read it off a legacy model the operation did not return.
+        Assert.NotNull(response);
         AssertDisposed(handler);
     }
 

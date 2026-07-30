@@ -962,7 +962,7 @@ internal static class OpenApiOperationManifest
             ExpectedBodyFragments = ["\"name\":\"op45-plan-name\""],
             InvokeAsync = (host, token) => host.Subscriptions.UpdatePlanAsync(
                 Raw("op45-plan-id"),
-                new UpdateSubscriptionPlanRequest { Name = "op45-plan-name" },
+                new UpdatePlanRequest { Name = "op45-plan-name" },
                 token)
         },
         new()

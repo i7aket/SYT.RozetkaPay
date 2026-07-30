@@ -77,10 +77,10 @@ public class CustomerService : BaseService, ICustomerService
     /// <param name="customerId">Customer ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Customer wallet response</returns>
-    public async Task<CustomerWalletResponse> GetCustomerWalletAsync(string customerId, CancellationToken cancellationToken = default)
+    public async Task<CustomerWallet> GetCustomerWalletAsync(string customerId, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint = $"{WalletEndpoint}?external_id={Uri.EscapeDataString(customerId)}";
-        return await GetAsync<CustomerWalletResponse>(
+        return await GetAsync<CustomerWallet>(
             primaryEndpoint,
             WalletEndpoint,
             cancellationToken);
