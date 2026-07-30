@@ -269,36 +269,7 @@ public class PaymentReceiptResponse
 
 // ===================== CARD LOOKUP MODELS =====================
 
-/// <summary>
-/// Card lookup request
-/// </summary>
-public class CardLookupRequest
-{
-    /// <summary>
-    /// Card number to lookup
-    /// </summary>
-    [Required]
-    [JsonPropertyName("card_number")]
-    public required string CardNumber { get; set; }
-}
 
-/// <summary>
-/// Card lookup response
-/// </summary>
-public class CardLookupResponse
-{
-    /// <summary>
-    /// Bank Identification Number
-    /// </summary>
-    [JsonPropertyName("bin")]
-    public string? Bin { get; set; }
-
-    /// <summary>
-    /// Available payment methods
-    /// </summary>
-    [JsonPropertyName("payment_methods")]
-    public List<string>? PaymentMethods { get; set; }
-}
 
 /// <summary>
 /// BIN information

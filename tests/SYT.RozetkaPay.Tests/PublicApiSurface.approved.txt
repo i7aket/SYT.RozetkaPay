@@ -1679,13 +1679,6 @@ SYT.RozetkaPay.Models.Payments.CardItemDetails
     String Mask { get; set; }
     String PaymentSystem { get; set; }
     String Token { get; set; }
-SYT.RozetkaPay.Models.Payments.CardLookupRequest
-    .ctor()
-    String CardNumber { get; set; }
-SYT.RozetkaPay.Models.Payments.CardLookupResponse
-    .ctor()
-    List<String> PaymentMethods { get; set; }
-    String Bin { get; set; }
 SYT.RozetkaPay.Models.Payments.ConfirmPaymentRequest
     .ctor()
     Decimal? Amount { get; set; }
@@ -2844,9 +2837,9 @@ SYT.RozetkaPay.Services.IPaymentInstructionService
     Task<PaymentInstructionsResult> CreateAsync(CreatePaymentInstructionsRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IPaymentService
     Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
-    Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)
+    Task<PaymentOperationResult> CardLookupAsync(CreateLookupRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
@@ -2919,9 +2912,9 @@ SYT.RozetkaPay.Services.PaymentService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
     CreatePaymentRequest BuildP2PRequest(Decimal amount, String currency, String externalId, String customerEmail, String recipientCardNumber, String description)
     Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
-    Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)
+    Task<PaymentOperationResult> CardLookupAsync(CreateLookupRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
