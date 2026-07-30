@@ -78,16 +78,38 @@ public class PaymentMethodDiscriminatorTests
     }
 
     /// <summary>
-    /// The probe that started this. <c>cc</c> is not one of the six, and the type system is now what
-    /// says so — there is no longer a way to express it.
+    /// The probe that started this. <c>cc</c> is not one of the six, and the type system is what says
+    /// so — there is no longer a way to express it.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// EXP-440 changed what happens when such a value is <em>read</em>: a nullable enum now yields
+    /// <c>null</c> for a token this version does not know, rather than making the whole response
+    /// unreadable. Two of this SDK's own guarantees met here, and the resolution is by direction.
+    /// </para>
+    /// <para>
+    /// Tolerance is for reading what the provider sent, where losing one token beats losing the fifty
+    /// beside it. Strictness is for what a caller writes, and that is unchanged and stronger than a
+    /// runtime check ever was: <c>Type = "cc"</c> does not compile. A caller who leaves the
+    /// discriminator unset still fails validation before dispatch, because it is <c>[Required]</c>.
+    /// </para>
+    /// </remarks>
     [Fact]
-    public void AValueOutsideTheDeclaredSet_ShouldNotBeReadable()
+    public void AValueOutsideTheDeclaredSet_ShouldNotBeExpressibleAndShouldNotPoisonTheRead()
     {
         const string offEnum = """{"type":"cc"}""";
 
-        Assert.Throws<JsonException>(() =>
-            JsonSerializer.Deserialize<CustomerRequestPaymentMethod>(offEnum, SdkSerializerOptions.Value));
+        CustomerRequestPaymentMethod method =
+            JsonSerializer.Deserialize<CustomerRequestPaymentMethod>(offEnum, SdkSerializerOptions.Value)!;
+
+        // Unreadable token, readable object. The rest of the payload survives.
+        Assert.Null(method.Type);
+
+        // And omitting it is still a validation failure, so nothing silently defaults.
+        List<ValidationResult> failures = [];
+        Assert.False(Validator.TryValidateObject(
+            method, new ValidationContext(method), failures, validateAllProperties: true));
+        Assert.Contains(failures, f => f.MemberNames.Contains(nameof(CustomerRequestPaymentMethod.Type)));
     }
 
     /// <summary>

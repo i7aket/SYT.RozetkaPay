@@ -49,6 +49,10 @@ public static class SdkSerializerOptions
                 // is never a valid value on the wire. Accepting one would also make the numeric identity
                 // of a member part of the contract, and those numbers shift whenever a member is added
                 // or removed.
+                // Ordered deliberately: the factory claims nullable enums first, so a token the
+                // provider added after this release yields null instead of making the whole response
+                // unreadable. Non-nullable enums fall through to the strict converter below.
+                new TolerantNullableEnumConverterFactory(),
                 new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower, allowIntegerValues: false),
                 new FlexibleDecimalConverter(),
                 new FlexibleDecimalConverterNonNullable(),
