@@ -1050,7 +1050,7 @@ public class StructuredApiErrorTransportTests
             ErrorTestContext.SuccessResponse("""{"external_id":"payment-1"}""")));
         PaymentService service = new(ErrorTestContext.CreateConfiguration(), ErrorTestContext.CreateHttpClient(handler));
 
-        PaymentResponse response = await service.GetInfoAsync("payment-1");
+        PaymentStatusResult response = await service.GetInfoAsync("payment-1");
 
         Assert.Equal("payment-1", response.ExternalId);
     }

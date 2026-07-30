@@ -11,16 +11,16 @@ namespace SYT.RozetkaPay.Tests.TestInfrastructure;
 internal sealed class FakePaymentService : IPaymentService
 {
     public FakePaymentService()
-        : this(new PaymentResponse())
+        : this(new PaymentOperationResult())
     {
     }
 
-    public FakePaymentService(PaymentResponse cannedResponse)
+    public FakePaymentService(PaymentOperationResult cannedResponse)
     {
         CannedResponse = cannedResponse;
     }
 
-    public PaymentResponse CannedResponse { get; }
+    public PaymentOperationResult CannedResponse { get; }
 
     public CreatePaymentRequest? LastCreateRequest { get; private set; }
 
@@ -28,7 +28,7 @@ internal sealed class FakePaymentService : IPaymentService
 
     public int CreateCallCount { get; private set; }
 
-    public Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
+    public Task<PaymentOperationResult> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
     {
         LastCreateRequest = request;
         LastCancellationToken = cancellationToken;
@@ -39,13 +39,13 @@ internal sealed class FakePaymentService : IPaymentService
     public Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<PaymentResponse> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken = default)
+    public Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<PaymentResponse> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken = default)
+    public Task<PaymentOperationResult> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<PaymentResponse> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken = default)
+    public Task<PaymentOperationResult> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
     public Task<PaymentOperationResult> RetryRefundAsync(RetryRefundRequest request, CancellationToken cancellationToken = default)
@@ -54,7 +54,7 @@ internal sealed class FakePaymentService : IPaymentService
     public Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<PaymentResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
+    public Task<PaymentStatusResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
     public Task<PaymentReceiptResponse> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default)
@@ -66,7 +66,7 @@ internal sealed class FakePaymentService : IPaymentService
     public Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<PaymentResponse> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
+    public Task<PaymentOperationResult> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
     public Task<PaymentResponse> ConfirmP2PAsync(string externalId, decimal? amount = null, CancellationToken cancellationToken = default)

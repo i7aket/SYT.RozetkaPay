@@ -366,11 +366,14 @@ public class PublicInterfacesTests
     [Fact]
     public async Task ConsumerDependingOnIPaymentService_ShouldWorkWithHandWrittenFake()
     {
-        PaymentResponse cannedResponse = new()
+        PaymentOperationResult cannedResponse = new()
         {
             Id = "pay-1",
             ExternalId = "order-1",
-            Status = "success"
+
+            // The declared outcome flag. PaymentOperationResult has no Status - that belonged to
+            // the legacy PaymentResponse this operation never actually returned.
+            IsSuccess = true
         };
         FakePaymentService fake = new(cannedResponse);
         CheckoutPaymentGateway gateway = new(fake);
@@ -385,7 +388,7 @@ public class PublicInterfacesTests
         };
 
         using CancellationTokenSource cancellationTokenSource = new();
-        PaymentResponse response = await gateway.PayAsync(request, cancellationTokenSource.Token);
+        PaymentOperationResult response = await gateway.PayAsync(request, cancellationTokenSource.Token);
 
         Assert.Same(cannedResponse, response);
         Assert.Same(request, fake.LastCreateRequest);
@@ -569,7 +572,7 @@ public class PublicInterfacesTests
             _payments = payments;
         }
 
-        public Task<PaymentResponse> PayAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
+        public Task<PaymentOperationResult> PayAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
         {
             return _payments.CreateAsync(request, cancellationToken);
         }

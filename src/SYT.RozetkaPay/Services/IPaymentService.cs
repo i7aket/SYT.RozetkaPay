@@ -14,7 +14,7 @@ public interface IPaymentService
     /// <param name="request">Payment creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default);
+    Task<PaymentOperationResult> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create a recurrent payment using existing recurrent ID
@@ -30,7 +30,7 @@ public interface IPaymentService
     /// <param name="request">Payment confirmation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    Task<PaymentResponse> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken = default);
+    Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancel a payment
@@ -38,7 +38,7 @@ public interface IPaymentService
     /// <param name="request">Payment cancellation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    Task<PaymentResponse> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken = default);
+    Task<PaymentOperationResult> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Refund a payment
@@ -46,7 +46,7 @@ public interface IPaymentService
     /// <param name="request">Payment refund request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    Task<PaymentResponse> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken = default);
+    Task<PaymentOperationResult> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retry pending refund operation
@@ -70,7 +70,7 @@ public interface IPaymentService
     /// <param name="externalId">External payment ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    Task<PaymentResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default);
+    Task<PaymentStatusResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default);
 
 
     /// <summary>
@@ -103,6 +103,6 @@ public interface IPaymentService
     /// <param name="request">P2P payment request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    Task<PaymentResponse> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default);
+    Task<PaymentOperationResult> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default);
 
 }
