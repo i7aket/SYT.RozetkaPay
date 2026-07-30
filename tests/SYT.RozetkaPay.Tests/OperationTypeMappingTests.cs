@@ -34,9 +34,29 @@ namespace SYT.RozetkaPay.Tests;
 public class OperationTypeMappingTests
 {
     /// <summary>
-    /// Service-contract methods that dispatch no HTTP request, so map to no operation.
+    /// Methods with no manifest entry of their own, and why that is not a defect.
     /// </summary>
-    private static readonly Dictionary<string, string> NotAnOperation = new(StringComparer.Ordinal);
+    /// <remarks>
+    /// <para>
+    /// Both are conveniences over an operation the manifest already covers, so a second entry would
+    /// duplicate a mapping rather than add one.
+    /// </para>
+    /// <para>
+    /// The exemption is safe for a reason worth stating, because "it is only a wrapper" is exactly
+    /// the kind of claim that ages badly. <c>DispatchedRouteTests</c> observes the route every
+    /// operation really sends and its undeclared list is empty, so nothing can reach an undeclared
+    /// route by hiding behind an entry here — that gate would catch it independently, from the wire
+    /// rather than from a note in a dictionary.
+    /// </para>
+    /// </remarks>
+    private static readonly Dictionary<string, string> NotAnOperation = new(StringComparer.Ordinal)
+    {
+        ["IPaymentService.CreateP2PAsync"] =
+            "delegates to CreateAsync after checking the recipient; sends POST /api/payments/v1/new, "
+            + "which createPayment already maps",
+        ["IAlternativePaymentService.CreateAsync"] =
+            "the same POST /api/alternative-payments/v1/create that CreateOperationAsync maps",
+    };
 
     /// <summary>
     /// Every method on a service contract corresponds to an operation the document declares.
