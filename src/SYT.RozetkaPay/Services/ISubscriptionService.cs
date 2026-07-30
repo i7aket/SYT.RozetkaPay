@@ -87,14 +87,6 @@ public interface ISubscriptionService
     /// <exception cref="ArgumentNullException"><paramref name="externalId"/> is null.</exception>
     Task<SubscriptionList> GetSubscriptionsAsync(string externalId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get customer subscriptions
-    /// </summary>
-    /// <param name="customerId">Customer ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Customer subscriptions response</returns>
-    [Obsolete("Use GetSubscriptionsAsync(...). This member calls the legacy /api/subscriptions/v1/subscriptions/customer/{customerId} route and returns the legacy wrapper model.")]
-    Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(string customerId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deactivate subscription
@@ -184,13 +176,4 @@ public interface ISubscriptionService
         UpdateSubscriptionPaymentMethodRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Cancel subscription
-    /// </summary>
-    /// <param name="subscriptionId">Subscription ID</param>
-    /// <param name="request">Cancel subscription request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>A task that completes when the subscription is cancelled</returns>
-    [Obsolete("Use CancelCustomerSubscriptionAsync(...). The legacy Reason and Immediate fields cannot be mapped safely to the official refund query option.")]
-    Task CancelAsync(string subscriptionId, CancelSubscriptionRequest request, CancellationToken cancellationToken = default);
 }

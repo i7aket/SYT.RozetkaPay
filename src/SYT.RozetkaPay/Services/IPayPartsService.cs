@@ -56,13 +56,6 @@ public interface IPayPartsService
     /// <returns>PayParts operation result</returns>
     Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get operation info
-    /// </summary>
-    /// <param name="operationId">Operation ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>PayParts operation info</returns>
-    Task<PayPartsOperationResponse> GetOperationInfoAsync(string operationId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get operation info by external ID and operation ID

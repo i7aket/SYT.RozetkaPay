@@ -4,13 +4,7 @@
 
 ## unmapped-operation
 IAlternativePaymentService.CreateAsync
-IAlternativePaymentService.GetStatusAsync
-ICustomerService.DeletePaymentFromWalletAsync
-ICustomerService.GetCustomerCardsAsync
 IPaymentService.CreateP2PAsync
-ISubscriptionService.CancelAsync
-ISubscriptionService.GetCustomerSubscriptionsAsync
-
 ## request-field
 addCustomerPayment -> AddCardToWalletRequest cannot send 'callback_url'
 addCustomerPayment -> AddCardToWalletRequest cannot send 'fingerprint'
@@ -57,7 +51,6 @@ updatePlan -> UpdateSubscriptionPlanRequest cannot send 'price'
 updatePlan -> UpdateSubscriptionPlanRequest sends undeclared 'amount'
 updatePlan -> UpdateSubscriptionPlanRequest sends undeclared 'currency'
 updatePlan -> UpdateSubscriptionPlanRequest sends undeclared 'trial_days'
-
 ## response-field
 addCustomerPayment -> AddCardToWalletResponse cannot receive 'action'
 addCustomerPayment -> AddCardToWalletResponse cannot receive 'action_required'

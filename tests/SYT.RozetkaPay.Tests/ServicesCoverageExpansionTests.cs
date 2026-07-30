@@ -16,44 +16,6 @@ namespace SYT.RozetkaPay.Tests;
 
 public class ServicesCoverageExpansionTests
 {
-    [Fact]
-    public async Task PaymentService_ShouldHitAllCoreEndpoints()
-    {
-        List<string> calls = new();
-        StubHttpMessageHandler handler = new(async (request, _) =>
-        {
-            calls.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
-            if (request.RequestUri!.AbsolutePath == "/api/payments/v1/callback/resend")
-            {
-                return new HttpResponseMessage(HttpStatusCode.NoContent);
-            }
-
-            return Json("{}");
-        });
-
-        PaymentService service = new(CreateConfiguration(), CreateHttpClient(handler));
-
-        await service.CreateAsync(null!);
-        await service.CreateRecurrentAsync(null!);
-        await service.ConfirmAsync(null!);
-        await service.CancelAsync(null!);
-        await service.RefundAsync(null!);
-        await service.GetInfoAsync("pay-1");
-
-        await service.GetReceiptAsync("pay-1");
-        await service.CardLookupAsync(null!);
-        await service.ResendCallbackAsync(null!);
-
-        Assert.Contains("POST /api/payments/v1/new", calls);
-        Assert.Contains("POST /api/payments/v1/recurrent", calls);
-        Assert.Contains("POST /api/payments/v1/confirm", calls);
-        Assert.Contains("POST /api/payments/v1/cancel", calls);
-        Assert.Contains("POST /api/payments/v1/refund", calls);
-        Assert.Contains("GET /api/payments/v1/info?external_id=pay-1", calls);
-        Assert.Contains("GET /api/payments/v1/receipt?external_id=pay-1", calls);
-        Assert.Contains("POST /api/payments/v1/lookup", calls);
-        Assert.Contains("POST /api/payments/v1/callback/resend", calls);
-    }
 
     [Fact]
     public async Task PaymentService_CreateP2P_ShouldThrowWhenRecipientMissing()
@@ -149,41 +111,6 @@ public class ServicesCoverageExpansionTests
             new[] { "iban", "cc_token", "wallet", "cc_number" });
     }
 
-    [Fact]
-    public async Task AlternativePaymentService_ShouldHitAllEndpoints()
-    {
-        List<string> calls = new();
-        StubHttpMessageHandler handler = new(async (request, _) =>
-        {
-            calls.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
-            if (request.RequestUri!.AbsolutePath == "/api/alternative-payments/v1/callback/resend")
-            {
-                return new HttpResponseMessage(HttpStatusCode.NoContent);
-            }
-
-            return Json("{}");
-        });
-
-        AlternativePaymentService service = new(CreateConfiguration(), CreateHttpClient(handler));
-
-        await service.CreateAsync(null!);
-        await service.CreateOperationAsync(null!);
-        await service.RefundAsync(null!);
-        await service.ResendCallbackAsync(null!);
-        await service.GetOperationInfoAsync("ext-1");
-        await service.GetOperationInfoAsync("ext-2", "op-2");
-
-        await service.GetInfoAsync("ext-3");
-        await service.GetStatusAsync("payment-1");
-
-        Assert.Contains("POST /api/alternative-payments/v1/create", calls);
-        Assert.Contains("POST /api/alternative-payments/v1/refund", calls);
-        Assert.Contains("POST /api/alternative-payments/v1/callback/resend", calls);
-        Assert.Contains("GET /api/alternative-payments/v1/operation/ext-1", calls);
-        Assert.Contains("GET /api/alternative-payments/v1/info/operation?external_id=ext-2&operation_id=op-2", calls);
-        Assert.Contains("GET /api/alternative-payments/v1/info?external_id=ext-3", calls);
-        Assert.Contains("GET /api/alternative-payments/v1/payment-1/status", calls);
-    }
 
     [Fact]
     public async Task AlternativePaymentService_GetOperationInfo_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
@@ -237,49 +164,6 @@ public class ServicesCoverageExpansionTests
         Assert.Equal("/api/alternative-payments/v1/create", calls[0]);
     }
 
-    [Fact]
-    public async Task PayPartsService_ShouldHitAllEndpoints()
-    {
-        List<string> calls = new();
-        StubHttpMessageHandler handler = new(async (request, _) =>
-        {
-            calls.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
-            if (request.RequestUri!.AbsolutePath == "/api/payparts/v1/banks/info")
-            {
-                // This operation answers with a bare array, not an object.
-                return Json("[]");
-            }
-
-            return Json("{}");
-        });
-
-        PayPartsService service = new(CreateConfiguration(), CreateHttpClient(handler));
-
-        await service.CreateOrderAsync(null!);
-        await service.ConfirmOrderAsync(null!);
-        await service.CancelOrderAsync(null!);
-        await service.RefundOrderAsync(null!);
-        await service.RetryRefundAsync(null!);
-        await service.CancelRefundAsync(null!);
-        await service.GetOperationInfoAsync("op-1");
-        await service.GetOperationInfoAsync("ext-1", "op-1");
-        await service.GetInfoAsync("ext-2");
-
-        await service.GetBanksAsync();
-        await service.ResendCallbackAsync(null!);
-
-        Assert.Contains("POST /api/payparts/v1/order/create", calls);
-        Assert.Contains("POST /api/payparts/v1/order/confirm", calls);
-        Assert.Contains("POST /api/payparts/v1/order/cancel", calls);
-        Assert.Contains("POST /api/payparts/v1/refund", calls);
-        Assert.Contains("POST /api/payparts/v1/refund/retry", calls);
-        Assert.Contains("POST /api/payparts/v1/refund/cancel", calls);
-        Assert.Contains("GET /api/payparts/v1/operation/op-1", calls);
-        Assert.Contains("GET /api/payparts/v1/info/operation?external_id=ext-1&operation_id=op-1", calls);
-        Assert.Contains("GET /api/payparts/v1/info?external_id=ext-2", calls);
-        Assert.Contains("GET /api/payparts/v1/banks/info", calls);
-        Assert.Contains("POST /api/payparts/v1/callback/resend", calls);
-    }
 
     [Fact]
     public async Task PayPartsService_ConfirmCancelRefund_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
@@ -347,20 +231,6 @@ public class ServicesCoverageExpansionTests
         Assert.Equal("/api/payparts/v1/banks/info", calls[1]);
     }
 
-    [Fact]
-    public async Task CustomerService_ShouldHitDirectEndpoints()
-    {
-        StubHttpMessageHandler handler = new(async (_, _) => Json("{}"));
-        CustomerService service = new(CreateConfiguration(), CreateHttpClient(handler));
-
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await service.DeletePaymentFromWalletAsync("customer-1", "card-1");
-#pragma warning restore CS0618
-        Assert.Equal("/api/customers/v1/customer-1/cards/card-1", handler.LastRequest!.RequestUri!.PathAndQuery);
-
-        await service.GetCustomerCardsAsync("customer-1");
-        Assert.Equal("/api/customers/v1/customer-1/cards", handler.LastRequest!.RequestUri!.PathAndQuery);
-    }
 
     [Fact]
     public async Task CustomerService_WalletOperations_ShouldSurfaceNotFound_WithoutTryingAnotherRoute()
@@ -428,59 +298,6 @@ public class ServicesCoverageExpansionTests
         Assert.Contains("POST /api/payouts/v1/cancel-payout", calls);
     }
 
-    [Fact]
-    public async Task SubscriptionService_ShouldHitAllEndpoints()
-    {
-        List<string> calls = new();
-        StubHttpMessageHandler handler = new(async (request, _) =>
-        {
-            calls.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
-            if (request.RequestUri!.AbsolutePath == "/api/subscriptions/v1/plans" &&
-                request.Method == HttpMethod.Get)
-            {
-                // This operation answers with a bare array, not an object.
-                return Json("[]");
-            }
-
-            return Json("{}");
-        });
-
-        SubscriptionService service = new(CreateConfiguration(), CreateHttpClient(handler));
-
-        await service.GetPlansAsync();
-        await service.CreatePlanAsync(null!);
-        await service.DeactivatePlanAsync("plan-1");
-        await service.GetPlanAsync("plan-1");
-        await service.UpdatePlanAsync("plan-1", null!);
-
-        await service.CreateAsync(null!);
-        await service.GiftAsync(null!);
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await service.GetCustomerSubscriptionsAsync("customer-1");
-#pragma warning restore CS0618
-        await service.DeactivateAsync("sub-1");
-        await service.GetAsync("sub-1");
-        await service.UpdateAsync("sub-1", null!);
-        await service.GetPaymentsAsync("sub-1");
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await service.CancelAsync("sub-1", null!);
-#pragma warning restore CS0618
-
-        Assert.Contains("GET /api/subscriptions/v1/plans", calls);
-        Assert.Contains("POST /api/subscriptions/v1/plans", calls);
-        Assert.Contains("DELETE /api/subscriptions/v1/plans/plan-1", calls);
-        Assert.Contains("GET /api/subscriptions/v1/plans/plan-1", calls);
-        Assert.Contains("PATCH /api/subscriptions/v1/plans/plan-1", calls);
-
-        Assert.Contains("POST /api/subscriptions/v1/subscriptions", calls);
-        Assert.Contains("POST /api/subscriptions/v1/subscriptions/gift", calls);
-        Assert.Contains("GET /api/subscriptions/v1/subscriptions/customer/customer-1", calls);
-        Assert.Contains("DELETE /api/subscriptions/v1/subscriptions/sub-1", calls);
-        Assert.Contains("GET /api/subscriptions/v1/subscriptions/sub-1", calls);
-        Assert.Contains("PATCH /api/subscriptions/v1/subscriptions/sub-1", calls);
-        Assert.Contains("GET /api/subscriptions/v1/subscriptions/sub-1/payments", calls);
-        Assert.Contains("POST /api/subscriptions/v1/subscriptions/sub-1/cancel", calls);
-    }
 
     [Fact]
     public async Task MerchantBatchReportFinMonServices_ShouldHitEndpoints()

@@ -42,20 +42,8 @@ public class DispatchedRouteTests
     /// Deliberately a literal list, and deliberately small. Every entry is a public method a caller
     /// can reach that cannot succeed.
     /// </remarks>
-    private static readonly Dictionary<string, string> KnownUndeclared = new(StringComparer.Ordinal)
-    {
-        ["DELETE /api/customers/v1/{}/cards/{}"] = "EXP-429; declared form is DELETE /api/customers/v1/wallet",
-        ["GET /api/alternative-payments/v1/operation/{}"] = "EXP-429; declared form is /info/operation, 404 live",
-        ["GET /api/alternative-payments/v1/{}/status"] = "EXP-429; no declared equivalent, 404 live",
-        ["GET /api/customers/v1/{}/cards"] = "EXP-429; declared form is GET /api/customers/v1/wallet, 404 live",
-        ["GET /api/payparts/v1/operation/{}"] = "EXP-429; declared form is /info/operation, 404 live",
-
-        // Found only by this gate. Static reading missed both: the manifest maps these methods to
-        // declared operations, and the targets are interpolated so the constant-based gate skipped
-        // them too.
-        ["GET /api/subscriptions/v1/subscriptions/customer/{}"] = "EXP-429; no declared equivalent",
-        ["POST /api/subscriptions/v1/subscriptions/{}/cancel"] = "EXP-429; the declared cancel is DELETE",
-    };
+    private static readonly Dictionary<string, string> KnownUndeclared =
+        new(StringComparer.Ordinal);
 
     [Fact]
     public async Task EveryDispatchedRoute_ShouldBeDeclaredInTheDocument()

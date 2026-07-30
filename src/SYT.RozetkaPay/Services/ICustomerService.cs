@@ -50,15 +50,6 @@ public interface ICustomerService
     /// <exception cref="ArgumentNullException"><paramref name="externalId"/> or <paramref name="request"/> is null.</exception>
     Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(string externalId, DeleteCustomerPaymentRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Delete customer payment from wallet
-    /// </summary>
-    /// <param name="customerId">Customer ID</param>
-    /// <param name="cardId">Card ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Card deletion response</returns>
-    [Obsolete("Use DeleteCustomerPaymentAsync(...). This member calls the legacy /api/customers/v1/{customerId}/cards/{cardId} route.")]
-    Task<DeleteCardFromWalletResponse> DeletePaymentFromWalletAsync(string customerId, string cardId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Find customer wallet item
@@ -87,11 +78,4 @@ public interface ICustomerService
     /// <returns>Set default card response</returns>
     Task<SetDefaultCardResponse> SetDefaultCardAsync(string customerId, SetDefaultCardRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get all customer cards
-    /// </summary>
-    /// <param name="customerId">Customer ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Customer cards response</returns>
-    Task<CustomerCardsResponse> GetCustomerCardsAsync(string customerId, CancellationToken cancellationToken = default);
 }

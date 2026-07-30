@@ -56,94 +56,18 @@ public class PathSegmentEncodingTests
     /// </summary>
     private static readonly (string MethodKey, string ParameterName)[] PathInsertionMethods =
     {
-        ("AlternativePaymentService.GetOperationInfoAsync", "externalId"),
-        ("AlternativePaymentService.GetStatusAsync", "paymentId"),
-        ("PayPartsService.GetOperationInfoAsync", "operationId"),
-        ("CustomerService.DeletePaymentFromWalletAsync/customerId", "customerId"),
-        ("CustomerService.DeletePaymentFromWalletAsync/cardId", "cardId"),
-        ("CustomerService.GetCustomerCardsAsync", "customerId"),
         ("SubscriptionService.DeactivatePlanAsync", "planId"),
         ("SubscriptionService.GetPlanAsync", "planId"),
         ("SubscriptionService.UpdatePlanAsync", "planId"),
-        ("SubscriptionService.GetCustomerSubscriptionsAsync", "customerId"),
         ("SubscriptionService.DeactivateAsync", "subscriptionId"),
         ("SubscriptionService.GetAsync", "subscriptionId"),
         ("SubscriptionService.UpdateAsync", "subscriptionId"),
         ("SubscriptionService.GetPaymentsAsync", "subscriptionId"),
-        ("SubscriptionService.CancelAsync", "subscriptionId"),
         ("SubscriptionService.CancelCustomerSubscriptionAsync", "subscriptionId"),
         ("SubscriptionService.CancelCustomerSubscriptionAsync/options", "subscriptionId")
     };
 
     // ===================== Hostile input matrix: every affected method =====================
-
-    [Fact]
-    public async Task AlternativePaymentService_GetOperationInfo_ShouldKeepHostileExternalIdInOneSegment()
-    {
-        RequestRecordingHandler handler = new();
-
-        await PathEncodingTestContext.AlternativePayments(handler).GetOperationInfoAsync(HostileRawId);
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Get, recorded.Method);
-        AssertRequestTarget(recorded, $"/api/alternative-payments/v1/operation/{HostileEncodedId}");
-    }
-
-    [Fact]
-    public async Task AlternativePaymentService_GetStatus_ShouldKeepHostilePaymentIdInOneSegment()
-    {
-        RequestRecordingHandler handler = new();
-
-        await PathEncodingTestContext.AlternativePayments(handler).GetStatusAsync(HostileRawId);
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Get, recorded.Method);
-        AssertRequestTarget(recorded, $"/api/alternative-payments/v1/{HostileEncodedId}/status");
-    }
-
-    [Fact]
-    public async Task PayPartsService_GetOperationInfo_ShouldKeepHostileOperationIdInOneSegment()
-    {
-        RequestRecordingHandler handler = new();
-
-        await PathEncodingTestContext.PayParts(handler).GetOperationInfoAsync(HostileRawId);
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Get, recorded.Method);
-        AssertRequestTarget(recorded, $"/api/payparts/v1/operation/{HostileEncodedId}");
-    }
-
-    [Fact]
-    public async Task CustomerService_DeletePaymentFromWallet_ShouldEncodeBothSegmentsIndependently()
-    {
-        RequestRecordingHandler handler = new();
-
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await PathEncodingTestContext.Customers(handler)
-            .DeletePaymentFromWalletAsync(HostileCustomerRawId, HostileCardRawId);
-#pragma warning restore CS0618
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Delete, recorded.Method);
-        AssertRequestTarget(
-            recorded,
-            $"/api/customers/v1/{HostileCustomerEncodedId}/cards/{HostileCardEncodedId}");
-
-        // The legacy wallet delete has never carried a request body; encoding must not introduce one.
-        Assert.Null(recorded.Body);
-    }
-
-    [Fact]
-    public async Task CustomerService_GetCustomerCards_ShouldKeepHostileCustomerIdInOneSegment()
-    {
-        RequestRecordingHandler handler = new();
-
-        await PathEncodingTestContext.Customers(handler).GetCustomerCardsAsync(HostileRawId);
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Get, recorded.Method);
-        AssertRequestTarget(recorded, $"/api/customers/v1/{HostileEncodedId}/cards");
-    }
 
     [Fact]
     public async Task SubscriptionService_DeactivatePlan_ShouldKeepHostilePlanIdInOneSegment()
@@ -181,20 +105,6 @@ public class PathSegmentEncodingTests
         Assert.Equal(HttpMethod.Patch, recorded.Method);
         AssertRequestTarget(recorded, $"/api/subscriptions/v1/plans/{HostileEncodedId}");
         Assert.Equal("{\"name\":\"renamed\",\"amount\":12.34}", recorded.Body);
-    }
-
-    [Fact]
-    public async Task SubscriptionService_GetCustomerSubscriptions_ShouldKeepHostileCustomerIdInOneSegment()
-    {
-        RequestRecordingHandler handler = new();
-
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await PathEncodingTestContext.Subscriptions(handler).GetCustomerSubscriptionsAsync(HostileRawId);
-#pragma warning restore CS0618
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Get, recorded.Method);
-        AssertRequestTarget(recorded, $"/api/subscriptions/v1/subscriptions/customer/{HostileEncodedId}");
     }
 
     [Fact]
@@ -245,29 +155,6 @@ public class PathSegmentEncodingTests
         RecordedRequest recorded = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Get, recorded.Method);
         AssertRequestTarget(recorded, $"/api/subscriptions/v1/subscriptions/{HostileEncodedId}/payments");
-    }
-
-    [Fact]
-    public async Task SubscriptionService_Cancel_ShouldKeepHostileSubscriptionIdInOneSegmentAndStayPost()
-    {
-        RequestRecordingHandler handler = new();
-        CancelSubscriptionRequest request = new()
-        {
-            ExternalId = "ext-1",
-            Reason = "user requested",
-            Immediate = true
-        };
-
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await PathEncodingTestContext.Subscriptions(handler).CancelAsync(HostileRawId, request);
-#pragma warning restore CS0618
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Post, recorded.Method);
-        AssertRequestTarget(recorded, $"/api/subscriptions/v1/subscriptions/{HostileEncodedId}/cancel");
-        Assert.Equal(
-            "{\"external_id\":\"ext-1\",\"reason\":\"user requested\",\"immediate\":true}",
-            recorded.Body);
     }
 
     // ===================== Dot segments =====================
@@ -321,33 +208,6 @@ public class PathSegmentEncodingTests
     }
 
     [Fact]
-    public async Task AlternativePaymentService_GetStatus_ShouldTreatPercentLookingInputAsRawValue()
-    {
-        RequestRecordingHandler handler = new();
-
-        await PathEncodingTestContext.AlternativePayments(handler).GetStatusAsync(LooksEncodedRawId);
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        AssertRequestTarget(recorded, $"/api/alternative-payments/v1/{LooksEncodedExpected}/status");
-    }
-
-    [Fact]
-    public async Task CustomerService_DeletePaymentFromWallet_ShouldTreatBothPercentLookingInputsAsRawValues()
-    {
-        RequestRecordingHandler handler = new();
-
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await PathEncodingTestContext.Customers(handler)
-            .DeletePaymentFromWalletAsync(LooksEncodedRawId, LooksEncodedRawId);
-#pragma warning restore CS0618
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        AssertRequestTarget(
-            recorded,
-            $"/api/customers/v1/{LooksEncodedExpected}/cards/{LooksEncodedExpected}");
-    }
-
-    [Fact]
     public async Task SubscriptionService_GetPlan_ShouldMatchDocumentedIdentifierEncodingExample()
     {
         // Pins the example in the package README ("Request Identifier Encoding") to real behavior.
@@ -368,20 +228,6 @@ public class PathSegmentEncodingTests
 
         RecordedRequest recorded = Assert.Single(handler.Requests);
         AssertRequestTarget(recorded, $"/api/subscriptions/v1/plans/{OrdinaryId}");
-    }
-
-    [Fact]
-    public async Task CustomerService_DeletePaymentFromWallet_ShouldLeaveUnreservedIdentifiersUnchanged()
-    {
-        RequestRecordingHandler handler = new();
-
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await PathEncodingTestContext.Customers(handler)
-            .DeletePaymentFromWalletAsync("cust-1", "card-2");
-#pragma warning restore CS0618
-
-        RecordedRequest recorded = Assert.Single(handler.Requests);
-        AssertRequestTarget(recorded, "/api/customers/v1/cust-1/cards/card-2");
     }
 
     // ===================== Fallback: encoded exactly once on both requests =====================
@@ -525,18 +371,6 @@ public class PathSegmentEncodingTests
 
         Task invocation = methodKey switch
         {
-            "AlternativePaymentService.GetOperationInfoAsync" =>
-                PathEncodingTestContext.AlternativePayments(handler).GetOperationInfoAsync(value),
-            "AlternativePaymentService.GetStatusAsync" =>
-                PathEncodingTestContext.AlternativePayments(handler).GetStatusAsync(value),
-            "PayPartsService.GetOperationInfoAsync" =>
-                PathEncodingTestContext.PayParts(handler).GetOperationInfoAsync(value),
-            "CustomerService.DeletePaymentFromWalletAsync/customerId" =>
-                InvokeLegacyWalletDelete(handler, value, Other),
-            "CustomerService.DeletePaymentFromWalletAsync/cardId" =>
-                InvokeLegacyWalletDelete(handler, Other, value),
-            "CustomerService.GetCustomerCardsAsync" =>
-                PathEncodingTestContext.Customers(handler).GetCustomerCardsAsync(value),
             "SubscriptionService.DeactivatePlanAsync" =>
                 PathEncodingTestContext.Subscriptions(handler).DeactivatePlanAsync(value),
             "SubscriptionService.GetPlanAsync" =>
@@ -544,8 +378,6 @@ public class PathSegmentEncodingTests
             "SubscriptionService.UpdatePlanAsync" =>
                 PathEncodingTestContext.Subscriptions(handler)
                     .UpdatePlanAsync(value, new UpdateSubscriptionPlanRequest()),
-            "SubscriptionService.GetCustomerSubscriptionsAsync" =>
-                InvokeLegacyCustomerSubscriptions(handler, value),
             "SubscriptionService.DeactivateAsync" =>
                 PathEncodingTestContext.Subscriptions(handler).DeactivateAsync(value),
             "SubscriptionService.GetAsync" =>
@@ -555,8 +387,6 @@ public class PathSegmentEncodingTests
                     .UpdateAsync(value, new UpdateSubscriptionRequest()),
             "SubscriptionService.GetPaymentsAsync" =>
                 PathEncodingTestContext.Subscriptions(handler).GetPaymentsAsync(value),
-            "SubscriptionService.CancelAsync" =>
-                InvokeLegacyCancel(handler, value, Other),
             "SubscriptionService.CancelCustomerSubscriptionAsync" =>
                 PathEncodingTestContext.Subscriptions(handler).CancelCustomerSubscriptionAsync(value),
             "SubscriptionService.CancelCustomerSubscriptionAsync/options" =>
@@ -574,21 +404,8 @@ public class PathSegmentEncodingTests
     // that an accidental obsolete call anywhere else still fails the build.
 
 #pragma warning disable CS0618 // Deliberate legacy regression call.
-    private static Task InvokeLegacyWalletDelete(RequestRecordingHandler handler, string customerId, string cardId)
-    {
-        return PathEncodingTestContext.Customers(handler).DeletePaymentFromWalletAsync(customerId, cardId);
-    }
 
-    private static Task InvokeLegacyCustomerSubscriptions(RequestRecordingHandler handler, string customerId)
-    {
-        return PathEncodingTestContext.Subscriptions(handler).GetCustomerSubscriptionsAsync(customerId);
-    }
 
-    private static Task InvokeLegacyCancel(RequestRecordingHandler handler, string subscriptionId, string externalId)
-    {
-        return PathEncodingTestContext.Subscriptions(handler)
-            .CancelAsync(subscriptionId, new CancelSubscriptionRequest { ExternalId = externalId });
-    }
 #pragma warning restore CS0618
 }
 
