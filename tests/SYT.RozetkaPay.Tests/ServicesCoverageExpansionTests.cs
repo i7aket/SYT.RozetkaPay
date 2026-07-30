@@ -89,12 +89,12 @@ public class ServicesCoverageExpansionTests
             {
                 PaymentMethod = new RecipientRequestPaymentMethod
                 {
-                    Type = "card_number",
-                    CardNumber = new RecipientCCNumberRequestPaymentMethod
+                    // cc_number is one of the four values the schema's inline enum permits.
+                    // The card object declares number and nothing else.
+                    Type = "cc_number",
+                    CcNumber = new RecipientCCNumberRequestPaymentMethod
                     {
-                        Number = "4111111111111111",
-                        ExpirationMonth = 12,
-                        ExpirationYear = 2030
+                        Number = "4111111111111111"
                     }
                 }
             }
@@ -112,17 +112,41 @@ public class ServicesCoverageExpansionTests
             amount: 50m,
             currency: "UAH",
             externalId: "p2p-3",
-            recipientCardNumber: "4111111111111111",
-            recipientExpMonth: "01",
-            recipientExpYear: "2030");
+            customerEmail: "payer@merchant.example",
+            recipientCardNumber: "4111111111111111");
 
         Assert.Equal(PaymentMode.Direct, request.Mode);
         Assert.Equal("p2p-3", request.ExternalId);
+
+        // The customer is the caller's, not a fabricated default. The earlier helper hardcoded
+        // customer@example.com and sent it to the provider on real transfers.
+        Assert.Equal("payer@merchant.example", request.Customer!.Email);
+
         Assert.NotNull(request.Recipient);
-        Assert.Equal("card_number", request.Recipient!.PaymentMethod.Type);
-        Assert.Equal("4111111111111111", request.Recipient.PaymentMethod.CardNumber!.Number);
-        Assert.Equal(1, request.Recipient.PaymentMethod.CardNumber.ExpirationMonth);
-        Assert.Equal(2030, request.Recipient.PaymentMethod.CardNumber.ExpirationYear);
+        Assert.Equal("cc_number", request.Recipient!.PaymentMethod.Type);
+        Assert.Equal("4111111111111111", request.Recipient.PaymentMethod.CcNumber!.Number);
+    }
+
+    /// <summary>
+    /// The helper's discriminator is one the schema permits.
+    /// </summary>
+    /// <remarks>
+    /// It used to be <c>card_number</c>, which is not among the four the inline enum declares, so
+    /// every request the helper built was invalid before it left the process.
+    /// </remarks>
+    [Fact]
+    public void PaymentService_BuildP2PRequest_ShouldUseADeclaredRecipientType()
+    {
+        CreatePaymentRequest request = PaymentService.BuildP2PRequest(
+            amount: 50m,
+            currency: "UAH",
+            externalId: "p2p-4",
+            customerEmail: "payer@merchant.example",
+            recipientCardNumber: "4111111111111111");
+
+        Assert.Contains(
+            request.Recipient!.PaymentMethod.Type,
+            new[] { "iban", "cc_token", "wallet", "cc_number" });
     }
 
     [Fact]

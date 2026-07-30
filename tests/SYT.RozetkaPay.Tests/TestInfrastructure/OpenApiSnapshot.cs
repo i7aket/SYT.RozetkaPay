@@ -214,6 +214,135 @@ internal static class OpenApiSnapshot
     }
 
     /// <summary>
+    /// Every schema reachable from the request body of any declared operation.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Reachability, not direct reference. An operation's <c>requestBody</c> is usually a
+    /// <c>$ref</c> into <c>components.requestBodies</c>, which refs a schema, which refs more — so
+    /// the walk has to cross every component section, not just <c>components.schemas</c>. Stopping
+    /// at the first hop reports nothing as request-side, which is wrong in the dangerous direction:
+    /// it would let a request model be treated as a response one.
+    /// </para>
+    /// <para>
+    /// A schema can be both. Anything reachable from a request body is included here whether or not
+    /// a response uses it too, because a property on a shared type is still sent.
+    /// </para>
+    /// </remarks>
+    internal static IEnumerable<string> RequestReachableSchemas()
+    {
+        HashSet<string> visited = [];
+        HashSet<string> schemas = [];
+        Queue<string> pending = new();
+
+        foreach (JsonProperty path in Document.Value.RootElement.GetProperty("paths").EnumerateObject())
+        {
+            foreach (JsonProperty operation in path.Value.EnumerateObject())
+            {
+                if (operation.Value.ValueKind == JsonValueKind.Object &&
+                    operation.Value.TryGetProperty("requestBody", out JsonElement body))
+                {
+                    foreach (string reference in References(body))
+                    {
+                        pending.Enqueue(reference);
+                    }
+                }
+            }
+        }
+
+        while (pending.Count > 0)
+        {
+            string reference = pending.Dequeue();
+            if (!visited.Add(reference))
+            {
+                continue;
+            }
+
+            const string schemaPrefix = "#/components/schemas/";
+            if (reference.StartsWith(schemaPrefix, StringComparison.Ordinal))
+            {
+                schemas.Add(reference[schemaPrefix.Length..]);
+            }
+
+            if (!TryResolvePointer(reference, out JsonElement target))
+            {
+                continue;
+            }
+
+            foreach (string next in References(target))
+            {
+                pending.Enqueue(next);
+            }
+        }
+
+        return schemas;
+    }
+
+    /// <summary>
+    /// Every <c>$ref</c> string anywhere beneath a node.
+    /// </summary>
+    private static IEnumerable<string> References(JsonElement node)
+    {
+        switch (node.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (JsonProperty property in node.EnumerateObject())
+                {
+                    if (property.NameEquals("$ref") && property.Value.ValueKind == JsonValueKind.String)
+                    {
+                        yield return property.Value.GetString()!;
+                        continue;
+                    }
+
+                    foreach (string nested in References(property.Value))
+                    {
+                        yield return nested;
+                    }
+                }
+
+                break;
+
+            case JsonValueKind.Array:
+                foreach (JsonElement item in node.EnumerateArray())
+                {
+                    foreach (string nested in References(item))
+                    {
+                        yield return nested;
+                    }
+                }
+
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Walks a local JSON pointer such as <c>#/components/requestBodies/CreatePaymentRequestDev</c>.
+    /// </summary>
+    private static bool TryResolvePointer(string reference, out JsonElement target)
+    {
+        target = Document.Value.RootElement;
+
+        if (!reference.StartsWith("#/", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        foreach (string segment in reference[2..].Split('/'))
+        {
+            // Per RFC 6901, in that order.
+            string name = segment.Replace("~1", "/", StringComparison.Ordinal)
+                .Replace("~0", "~", StringComparison.Ordinal);
+
+            if (target.ValueKind != JsonValueKind.Object || !target.TryGetProperty(name, out target))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Every named schema with the JSON kind it declares for each property.
     /// </summary>
     /// <remarks>

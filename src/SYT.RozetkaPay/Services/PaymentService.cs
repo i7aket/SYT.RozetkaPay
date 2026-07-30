@@ -220,23 +220,42 @@ public class PaymentService : BaseService, IPaymentService
 
 
     /// <summary>
-    /// Build P2P payment request helper
+    /// Builds the body of a card-to-card transfer for <c>POST /api/payments/v1/new</c>.
     /// </summary>
-    /// <param name="amount">Payment amount in UAH</param>
-    /// <param name="currency">Payment currency</param>
-    /// <param name="externalId">External payment ID</param>
-    /// <param name="recipientCardNumber">Recipient card number</param>
-    /// <param name="recipientExpMonth">Recipient card expiry month</param>
-    /// <param name="recipientExpYear">Recipient card expiry year</param>
-    /// <param name="description">Payment description</param>
-    /// <returns>P2P payment request</returns>
+    /// <remarks>
+    /// <para>
+    /// The recipient half of this request is spelled exactly as the document declares it:
+    /// <c>type</c> is <c>cc_number</c>, one of the four values the schema's inline enum permits
+    /// (<c>iban</c>, <c>cc_token</c>, <c>wallet</c>, <c>cc_number</c>), and the card sits under
+    /// <c>cc_number</c> carrying <c>number</c> alone.
+    /// </para>
+    /// <para>
+    /// Expiry is not a parameter because <c>RecipientCCNumberRequestPaymentMethod</c> declares only
+    /// <c>number</c>. The earlier signature took a month and a year, wrote them to properties no
+    /// schema declares, and sent <c>type: "card_number"</c>, which is not among the four — so every
+    /// request it built was invalid on two counts.
+    /// </para>
+    /// <para>
+    /// <paramref name="customerEmail"/> is required rather than defaulted. The document makes
+    /// <c>customer</c> required when <c>mode</c> is <c>direct</c>, and the earlier version satisfied
+    /// that by hardcoding <c>customer@example.com</c> — sending a fabricated address to the provider
+    /// on a real transfer, attached to a real payment, with no sign to the caller that it had
+    /// happened.
+    /// </para>
+    /// </remarks>
+    /// <param name="amount">Payment amount.</param>
+    /// <param name="currency">Payment currency.</param>
+    /// <param name="externalId">Caller's own identifier for the payment.</param>
+    /// <param name="customerEmail">The paying customer's address. Required in <c>direct</c> mode.</param>
+    /// <param name="recipientCardNumber">Recipient card number.</param>
+    /// <param name="description">Payment description.</param>
+    /// <returns>A request body ready for <see cref="CreateAsync"/>.</returns>
     public static CreatePaymentRequest BuildP2PRequest(
         decimal amount,
         string currency,
         string externalId,
+        string customerEmail,
         string recipientCardNumber,
-        string recipientExpMonth,
-        string recipientExpYear,
         string? description = null)
     {
         return new CreatePaymentRequest
@@ -248,18 +267,16 @@ public class PaymentService : BaseService, IPaymentService
             Description = description ?? "P2P Transfer",
             Customer = new CustomerInfo
             {
-                Email = "customer@example.com" // Default customer for P2P
+                Email = customerEmail
             },
             Recipient = new RecipientRequestUserDetails
             {
                 PaymentMethod = new RecipientRequestPaymentMethod
                 {
-                    Type = "card_number",
-                    CardNumber = new RecipientCCNumberRequestPaymentMethod
+                    Type = "cc_number",
+                    CcNumber = new RecipientCCNumberRequestPaymentMethod
                     {
-                        Number = recipientCardNumber,
-                        ExpirationMonth = int.Parse(recipientExpMonth),
-                        ExpirationYear = int.Parse(recipientExpYear)
+                        Number = recipientCardNumber
                     }
                 }
             }

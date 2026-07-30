@@ -444,17 +444,7 @@ public class SubscriptionPaymentMethod
     [Required]
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Card details (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("card")]
-    public SubscriptionCard? Card { get; set; }
 
-    /// <summary>
-    /// Recurrent token (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("recurrent_token")]
-    public string? RecurrentToken { get; set; }
 
     /// <summary>
     /// Provider field &lt;c&gt;apple_pay&lt;/c&gt;.

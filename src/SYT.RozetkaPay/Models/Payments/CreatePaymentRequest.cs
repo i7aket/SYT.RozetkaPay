@@ -185,11 +185,6 @@ public class CustomerInfo : BaseRequestUserDetails
     [JsonPropertyName("fingerprint")]
     public BrowserFingerprint? Fingerprint { get; set; }
 
-    /// <summary>
-    /// User information with additional customer details (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("user_info")]
-    public CustomerUserInfo? UserInfo { get; set; }
 
     /// <summary>
     /// Provider field &lt;c&gt;browser_user_agent&lt;/c&gt;.

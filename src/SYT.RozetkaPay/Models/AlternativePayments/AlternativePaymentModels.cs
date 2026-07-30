@@ -212,29 +212,9 @@ public class AlternativePaymentCustomerDetails : UserInfo
 /// </summary>
 public class AlternativePaymentMethod
 {
-    /// <summary>
-    /// Payment method code (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("code")]
-    public string? Code { get; set; }
 
-    /// <summary>
-    /// Payment method name (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
 
-    /// <summary>
-    /// Payment method logo URL (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("logo_url")]
-    public string? LogoUrl { get; set; }
 
-    /// <summary>
-    /// Whether payment method is active (JSON boolean as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("is_active")]
-    public bool IsActive { get; set; }
 
     /// <summary>
     /// Provider field &lt;c&gt;blik&lt;/c&gt;.
@@ -253,12 +233,17 @@ public class AlternativePaymentMethod
 /// </summary>
 public class AlternativePaymentProduct : Product
 {
-
     /// <summary>
-    /// Product image URL (JSON string as per CDN documentation)
+    /// Unit price. Required by this schema.
     /// </summary>
-    [JsonPropertyName("image_url")]
-    public string? ImageUrl { get; set; }
+    /// <remarks>
+    /// Declared here rather than inherited. <c>AlternativePaymentProduct</c>, <c>PayPartsProduct</c>,
+    /// <c>Plan</c> and <c>Subscription</c> each declare <c>price</c>; the base <c>Product</c> does
+    /// not, and carrying it there sent the field on every product shape the document says has no
+    /// such property.
+    /// </remarks>
+    [JsonPropertyName("price")]
+    public decimal? Price { get; set; }
 
     /// <summary>
     /// Provider field &lt;c&gt;tax_category&lt;/c&gt;.
@@ -279,11 +264,6 @@ public class BlikRequestAlternativePaymentMethod
     [Required]
     public string BlikCode { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Payment type (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
 }
 
 /// <summary>

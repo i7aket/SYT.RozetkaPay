@@ -251,11 +251,6 @@ public class PayPartsCustomer
     [JsonPropertyName("last_name")]
     public required string LastName { get; set; }
 
-    /// <summary>
-    /// Customer patronym (middle name)
-    /// </summary>
-    [JsonPropertyName("patronym")]
-    public string? Patronym { get; set; }
 
     /// <summary>
     /// Customer phone number
@@ -269,11 +264,6 @@ public class PayPartsCustomer
     [JsonPropertyName("email")]
     public string? Email { get; set; }
 
-    /// <summary>
-    /// Customer date of birth
-    /// </summary>
-    [JsonPropertyName("birth_date")]
-    public DateTime? BirthDate { get; set; }
 
     /// <summary>
     /// Provider field &lt;c&gt;account_number&lt;/c&gt;.
@@ -318,17 +308,7 @@ public class PayPartsProduct
     [JsonPropertyName("quantity")]
     public int Quantity { get; set; } = 1;
 
-    /// <summary>
-    /// Product category
-    /// </summary>
-    [JsonPropertyName("category")]
-    public string? Category { get; set; }
 
-    /// <summary>
-    /// Product URL
-    /// </summary>
-    [JsonPropertyName("url")]
-    public string? Url { get; set; }
 
     /// <summary>
     /// First-level product category (top level in hierarchy, most general)

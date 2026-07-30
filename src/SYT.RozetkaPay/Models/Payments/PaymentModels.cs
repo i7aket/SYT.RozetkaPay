@@ -350,11 +350,6 @@ public class ResendCallbackRequest
     [JsonPropertyName("external_id")]
     public required string ExternalId { get; set; }
 
-    /// <summary>
-    /// New callback URL (optional)
-    /// </summary>
-    [JsonPropertyName("callback_url")]
-    public string? CallbackUrl { get; set; }
 
     /// <summary>
     /// Operation whose callback is being resent.
@@ -478,23 +473,8 @@ public class CustomerRequestPaymentMethod
     [JsonPropertyName("cc_token")]
     public CustomerCCTokenRequestPaymentMethod? CCToken { get; set; }
 
-    /// <summary>
-    /// Apple Pay token (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("apple_pay_token")]
-    public string? ApplePayToken { get; set; }
 
-    /// <summary>
-    /// Google Pay token (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("google_pay_token")]
-    public string? GooglePayToken { get; set; }
 
-    /// <summary>
-    /// Wallet token (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("wallet_token")]
-    public string? WalletToken { get; set; }
 
     /// <summary>
     /// Provider field &lt;c&gt;apple_pay&lt;/c&gt;.
@@ -712,17 +692,7 @@ public class RecipientRequestUserDetails : BaseRequestUserDetails
     [Required]
     public RecipientRequestPaymentMethod PaymentMethod { get; set; } = new();
 
-    /// <summary>
-    /// Recipient amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
 
-    /// <summary>
-    /// Recipient currency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
 
     /// <summary>
     /// Provider field &lt;c&gt;rid&lt;/c&gt;.
@@ -748,17 +718,7 @@ public class RecipientRequestPaymentMethod
     [Required]
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Card token details (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("card_token")]
-    public RecipientCCTokenRequestPaymentMethod? CardToken { get; set; }
 
-    /// <summary>
-    /// Card number details (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("card_number")]
-    public RecipientCCNumberRequestPaymentMethod? CardNumber { get; set; }
 
     /// <summary>
     /// Wallet details (JSON object as per CDN documentation)
@@ -795,11 +755,6 @@ public class RecipientCCTokenRequestPaymentMethod
     [Required]
     public string Token { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Card CVV (JSON string as per API validation)
-    /// </summary>
-    [JsonPropertyName("cvv")]
-    public string? CVV { get; set; }
 }
 
 /// <summary>
@@ -814,20 +769,7 @@ public class RecipientCCNumberRequestPaymentMethod
     [Required]
     public string Number { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Card expiration month (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("exp_month")]
-    [Required]
-    [Range(1, 12)]
-    public int ExpirationMonth { get; set; }
 
-    /// <summary>
-    /// Card expiration year (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("exp_year")]
-    [Required]
-    public int ExpirationYear { get; set; }
 }
 
 /// <summary>
