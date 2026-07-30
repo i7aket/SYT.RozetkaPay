@@ -6,15 +6,6 @@
 IAlternativePaymentService.CreateAsync
 IPaymentService.CreateP2PAsync
 ## request-field
-addCustomerPayment -> AddCardToWalletRequest cannot send 'callback_url'
-addCustomerPayment -> AddCardToWalletRequest cannot send 'fingerprint'
-addCustomerPayment -> AddCardToWalletRequest cannot send 'make_default'
-addCustomerPayment -> AddCardToWalletRequest cannot send 'mode'
-addCustomerPayment -> AddCardToWalletRequest cannot send 'payment_method'
-addCustomerPayment -> AddCardToWalletRequest cannot send 'result_url'
-addCustomerPayment -> AddCardToWalletRequest sends undeclared 'card'
-addCustomerPayment -> AddCardToWalletRequest sends undeclared 'set_as_default'
-addCustomerPayment -> AddCardToWalletRequest sends undeclared 'verification_amount'
 alternativePaymentRefund -> RefundAlternativePaymentRequest cannot send 'callback_url'
 alternativePaymentRefund -> RefundAlternativePaymentRequest cannot send 'currency'
 alternativePaymentRefund -> RefundAlternativePaymentRequest cannot send 'payload'
@@ -44,12 +35,6 @@ updatePlan -> UpdateSubscriptionPlanRequest sends undeclared 'amount'
 updatePlan -> UpdateSubscriptionPlanRequest sends undeclared 'currency'
 updatePlan -> UpdateSubscriptionPlanRequest sends undeclared 'trial_days'
 ## response-field
-addCustomerPayment -> AddCardToWalletResponse cannot receive 'action'
-addCustomerPayment -> AddCardToWalletResponse cannot receive 'action_required'
-addCustomerPayment -> AddCardToWalletResponse cannot receive 'created_at'
-addCustomerPayment -> AddCardToWalletResponse cannot receive 'customer'
-addCustomerPayment -> AddCardToWalletResponse cannot receive 'operation'
-addCustomerPayment -> AddCardToWalletResponse cannot receive 'payment_method'
 alternativePaymentRefund -> AlternativePaymentResponse cannot receive 'details'
 alternativePaymentRefund -> AlternativePaymentResponse cannot receive 'metadata'
 alternativePaymentRefund -> AlternativePaymentResponse cannot receive 'unified_external_id'

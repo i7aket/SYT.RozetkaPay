@@ -94,10 +94,10 @@ public class CustomerService : BaseService, ICustomerService
     /// <param name="request">Add card request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Card addition response</returns>
-    public async Task<AddCardToWalletResponse> AddCardToWalletAsync(string customerId, AddCardToWalletRequest request, CancellationToken cancellationToken = default)
+    public async Task<AddCustomerPaymentResult> AddCardToWalletAsync(string customerId, AddCustomerPaymentRequest request, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint = $"{WalletEndpoint}?external_id={Uri.EscapeDataString(customerId)}";
-        return await PostAsync<AddCardToWalletRequest, AddCardToWalletResponse>(
+        return await PostAsync<AddCustomerPaymentRequest, AddCustomerPaymentResult>(
             primaryEndpoint,
             WalletEndpoint,
             request,

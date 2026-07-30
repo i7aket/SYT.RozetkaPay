@@ -405,15 +405,19 @@ public class LegacyLoggingRedactionTests
 
         await service.AddCardToWalletAsync(
             LoggingRedactionContext.RawMarker(Row),
-            new AddCardToWalletRequest
+            new AddCustomerPaymentRequest
             {
-                Card = new WalletCardDetails
+                Mode = PaymentMode.Hosted,
+                PaymentMethod = new AddCustomerPaymentMethod
                 {
-                    Number = "0000000000000000",
-                    ExpMonth = "01",
-                    ExpYear = "30",
-                    Cvv = "000"
-                }
+                    Type = "cc_token",
+                    CCToken = new AddCustomerCCToken
+                    {
+                        Token = "0000000000000000",
+                        Mask = "000000XXXXXX0000",
+                        ExpiresAt = new DateTime(2030, 1, 31, 0, 0, 0, DateTimeKind.Utc),
+                    },
+                },
             });
 
         Assert.Single(handler.Requests);

@@ -843,17 +843,6 @@ SYT.RozetkaPay.Models.Common.UserInfo
     String LastName { get; set; }
     String Patronym { get; set; }
     String Phone { get; set; }
-SYT.RozetkaPay.Models.Customers.AddCardToWalletRequest
-    .ctor()
-    Boolean SetAsDefault { get; set; }
-    Int32? VerificationAmount { get; set; }
-    WalletCardDetails Card { get; set; }
-SYT.RozetkaPay.Models.Customers.AddCardToWalletResponse
-    .ctor()
-    Boolean? VerificationRequired { get; set; }
-    String CardId { get; set; }
-    String Status { get; set; }
-    WalletCard Card { get; set; }
 SYT.RozetkaPay.Models.Customers.AddCustomerCCToken
     .ctor()
     Boolean? Use3DSFlow { get; set; }
@@ -2776,7 +2765,7 @@ SYT.RozetkaPay.Services.BatchPaymentService
     Task<BatchPaymentResponse> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.CustomerService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
-    Task<AddCardToWalletResponse> AddCardToWalletAsync(String customerId, AddCardToWalletRequest request, CancellationToken cancellationToken)
+    Task<AddCustomerPaymentResult> AddCardToWalletAsync(String customerId, AddCustomerPaymentRequest request, CancellationToken cancellationToken)
     Task<CardConfirmationStatusResponse> GetCardConfirmationStatusAsync(String customerId, String cardId, CancellationToken cancellationToken)
     Task<CustomerWalletResponse> GetCustomerWalletAsync(String customerId, CancellationToken cancellationToken)
     Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
@@ -2798,7 +2787,7 @@ SYT.RozetkaPay.Services.IBatchPaymentService
     Task<BatchPaymentResponse> ConfirmBatchPaymentAsync(ConfirmBatchPaymentRequest request, CancellationToken cancellationToken)
     Task<BatchPaymentResponse> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.ICustomerService
-    Task<AddCardToWalletResponse> AddCardToWalletAsync(String customerId, AddCardToWalletRequest request, CancellationToken cancellationToken)
+    Task<AddCustomerPaymentResult> AddCardToWalletAsync(String customerId, AddCustomerPaymentRequest request, CancellationToken cancellationToken)
     Task<CardConfirmationStatusResponse> GetCardConfirmationStatusAsync(String customerId, String cardId, CancellationToken cancellationToken)
     Task<CustomerWalletResponse> GetCustomerWalletAsync(String customerId, CancellationToken cancellationToken)
     Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
