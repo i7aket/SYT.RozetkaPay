@@ -14,7 +14,7 @@ public interface ISubscriptionService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plans response</returns>
-    Task<List<SubscriptionPlanResponse>> GetPlansAsync(CancellationToken cancellationToken = default);
+    Task<List<Plan>> GetPlansAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create subscription plan
@@ -22,7 +22,7 @@ public interface ISubscriptionService
     /// <param name="request">Create subscription plan request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plan response</returns>
-    Task<SubscriptionPlanResponse> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken = default);
+    Task<Plan> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deactivate plan
@@ -38,7 +38,7 @@ public interface ISubscriptionService
     /// <param name="planId">Plan ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plan response</returns>
-    Task<SubscriptionPlanResponse> GetPlanAsync(string planId, CancellationToken cancellationToken = default);
+    Task<Plan> GetPlanAsync(string planId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Update plan
@@ -55,7 +55,7 @@ public interface ISubscriptionService
     /// <param name="request">Subscription creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription response</returns>
-    Task<SubscriptionResponse> CreateAsync(CreateSubscriptionRequest request, CancellationToken cancellationToken = default);
+    Task<CreateSubscriptionResponse> CreateAsync(CreateSubscriptionRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create gifted subscription
@@ -102,7 +102,7 @@ public interface ISubscriptionService
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription response</returns>
-    Task<SubscriptionResponse> GetAsync(string subscriptionId, CancellationToken cancellationToken = default);
+    Task<Subscription> GetAsync(string subscriptionId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Update subscription
@@ -119,7 +119,7 @@ public interface ISubscriptionService
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription payments response</returns>
-    Task<SubscriptionPaymentsResponse> GetPaymentsAsync(string subscriptionId, CancellationToken cancellationToken = default);
+    Task<List<SubscriptionPayment>> GetPaymentsAsync(string subscriptionId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancel a subscription with the provider default refund handling. Official operation

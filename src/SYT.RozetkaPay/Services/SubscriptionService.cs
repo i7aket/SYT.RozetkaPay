@@ -84,9 +84,9 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plans response</returns>
-    public async Task<List<SubscriptionPlanResponse>> GetPlansAsync(CancellationToken cancellationToken = default)
+    public async Task<List<Plan>> GetPlansAsync(CancellationToken cancellationToken = default)
     {
-        return await GetAsync<List<SubscriptionPlanResponse>>(PlansEndpoint, PlansEndpoint, cancellationToken);
+        return await GetAsync<List<Plan>>(PlansEndpoint, PlansEndpoint, cancellationToken);
     }
 
     /// <summary>
@@ -96,9 +96,9 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="request">Create subscription plan request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plan response</returns>
-    public async Task<SubscriptionPlanResponse> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken = default)
+    public async Task<Plan> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreatePlanRequest, SubscriptionPlanResponse>(
+        return await PostAsync<CreatePlanRequest, Plan>(
             PlansEndpoint,
             PlansEndpoint,
             request,
@@ -124,10 +124,10 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="planId">Plan ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plan response</returns>
-    public async Task<SubscriptionPlanResponse> GetPlanAsync(string planId, CancellationToken cancellationToken = default)
+    public async Task<Plan> GetPlanAsync(string planId, CancellationToken cancellationToken = default)
     {
         string encodedPlanId = RequestTargetEncoding.EscapePathSegment(planId, nameof(planId));
-        return await GetAsync<SubscriptionPlanResponse>(
+        return await GetAsync<Plan>(
             $"{PlansEndpoint}/{encodedPlanId}",
             PlanLogLabel,
             cancellationToken);
@@ -160,9 +160,9 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="request">Subscription creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription response</returns>
-    public async Task<SubscriptionResponse> CreateAsync(CreateSubscriptionRequest request, CancellationToken cancellationToken = default)
+    public async Task<CreateSubscriptionResponse> CreateAsync(CreateSubscriptionRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreateSubscriptionRequest, SubscriptionResponse>(
+        return await PostAsync<CreateSubscriptionRequest, CreateSubscriptionResponse>(
             SubscriptionsEndpoint,
             SubscriptionsEndpoint,
             request,
@@ -237,10 +237,10 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription response</returns>
-    public async Task<SubscriptionResponse> GetAsync(string subscriptionId, CancellationToken cancellationToken = default)
+    public async Task<Subscription> GetAsync(string subscriptionId, CancellationToken cancellationToken = default)
     {
         string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
-        return await GetAsync<SubscriptionResponse>(
+        return await GetAsync<Subscription>(
             $"{SubscriptionsEndpoint}/{encodedSubscriptionId}",
             SubscriptionLogLabel,
             cancellationToken);
@@ -271,10 +271,10 @@ public class SubscriptionService : BaseService, ISubscriptionService
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription payments response</returns>
-    public async Task<SubscriptionPaymentsResponse> GetPaymentsAsync(string subscriptionId, CancellationToken cancellationToken = default)
+    public async Task<List<SubscriptionPayment>> GetPaymentsAsync(string subscriptionId, CancellationToken cancellationToken = default)
     {
         string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
-        return await GetAsync<SubscriptionPaymentsResponse>(
+        return await GetAsync<List<SubscriptionPayment>>(
             $"{SubscriptionsEndpoint}/{encodedSubscriptionId}/payments",
             SubscriptionPaymentsLogLabel,
             cancellationToken);

@@ -625,7 +625,7 @@ public class LegacyLoggingRedactionTests
         const string Label = "/api/subscriptions/v1/subscriptions/{subscription_id}/payments";
 
         (RedactionHandler handler, CapturingLoggerProvider logs, SubscriptionService service) =
-            Arrange(static (c, h, l) => new SubscriptionService(c, h, l));
+            Arrange(static (c, h, l) => new SubscriptionService(c, h, l), "[]");
 
         await service.GetPaymentsAsync(LoggingRedactionContext.RawMarker(Row));
 
