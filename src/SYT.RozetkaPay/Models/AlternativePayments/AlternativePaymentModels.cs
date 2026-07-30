@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using SYT.RozetkaPay.Models.PayParts;
 using SYT.RozetkaPay.Converters;
 using SYT.RozetkaPay.Models.Common;
 
@@ -229,27 +230,55 @@ public class AlternativePaymentMethod
 }
 
 /// <summary>
-/// Alternative payment product information
+/// A line item on an alternative payment.
 /// </summary>
-public class AlternativePaymentProduct : Product
+/// <remarks>
+/// <para>
+/// Declared separately rather than derived from <c>Product</c>, and that is the whole point of this
+/// type. The document declares the same field names with <strong>different JSON types</strong> per
+/// operation: <c>createPayment</c>'s product carries <c>quantity</c>, <c>net_amount</c> and
+/// <c>vat_amount</c> as strings, while this one declares them as <c>integer</c> and <c>number</c>.
+/// </para>
+/// <para>
+/// Inheriting from <c>Product</c> meant inheriting its string converters, so EXP-429 — which was
+/// correct for payments — silently broke this operation: the gateway answered
+/// <c>400 invalid_request_body param: products.quantity</c> for every alternative payment carrying
+/// products, while the identical body with a numeric quantity passed. One shared base cannot serve
+/// two contracts that disagree.
+/// </para>
+/// </remarks>
+public class AlternativePaymentProduct
 {
-    /// <summary>
-    /// Unit price. Required by this schema.
-    /// </summary>
-    /// <remarks>
-    /// Declared here rather than inherited. <c>AlternativePaymentProduct</c>, <c>PayPartsProduct</c>,
-    /// <c>Plan</c> and <c>Subscription</c> each declare <c>price</c>; the base <c>Product</c> does
-    /// not, and carrying it there sent the field on every product shape the document says has no
-    /// such property.
-    /// </remarks>
+    /// <summary>Item name. Required.</summary>
+    [JsonPropertyName("name")]
+    [Required]
+    public string? Name { get; set; }
+
+    /// <summary>Item quantity. Required, and an integer here rather than a string.</summary>
+    [JsonPropertyName("quantity")]
+    [Required]
+    public int? Quantity { get; set; }
+
+    /// <summary>Unit price. Required, and a JSON number.</summary>
     [JsonPropertyName("price")]
+    [Required]
     public decimal? Price { get; set; }
 
-    /// <summary>
-    /// Provider field &lt;c&gt;tax_category&lt;/c&gt;.
-    /// </summary>
+    /// <summary>Item category.</summary>
+    [JsonPropertyName("category")]
+    public string? Category { get; set; }
+
+    /// <summary>Tax category.</summary>
     [JsonPropertyName("tax_category")]
     public string? TaxCategory { get; set; }
+
+    /// <summary>Net amount, as a JSON number.</summary>
+    [JsonPropertyName("net_amount")]
+    public decimal? NetAmount { get; set; }
+
+    /// <summary>VAT amount, as a JSON number.</summary>
+    [JsonPropertyName("vat_amount")]
+    public decimal? VatAmount { get; set; }
 }
 
 /// <summary>
@@ -598,7 +627,9 @@ public class RefundAlternativePaymentRequest
     /// Line items covered by the refund, for fiscalization.
     /// </summary>
     [JsonPropertyName("products")]
-    public List<Product>? Products { get; set; }
+    // the document declares PayPartsProduct here, not the payments-shaped Product: quantity is an integer and price is a
+    // required number, where Product writes both as strings for payments/new.
+    public List<PayPartsProduct>? Products { get; set; }
 
     /// <summary>
     /// Where the provider posts the result of this refund.

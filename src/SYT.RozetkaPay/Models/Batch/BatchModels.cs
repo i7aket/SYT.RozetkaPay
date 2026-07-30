@@ -175,7 +175,12 @@ public class BatchCustomer
     /// Payment method details
     /// </summary>
     [JsonPropertyName("payment_method")]
-    public PaymentMethod? PaymentMethod { get; set; }
+    // The document declares CustomerRequestPaymentMethod here, the same discriminated union
+    // createPayment uses. The legacy flat PaymentMethod sent apple_pay_token / cc_token / wallet_token
+    // as bare strings where the provider expects objects - {"cc_token":"tok"} instead of
+    // {"cc_token":{"token":"tok"}} - so every tokenized batch payment was off-contract, and `card` is
+    // not a declared property at all.
+    public CustomerRequestPaymentMethod? PaymentMethod { get; set; }
 
     /// <summary>
     /// Customer locale

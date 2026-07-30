@@ -35,7 +35,7 @@ public class FinMonService : BaseService, IFinMonService
     /// <param name="recipientIpn">IPN of recipient</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>P2P limits response</returns>
-    public async Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(int recipientIpn, CancellationToken cancellationToken = default)
+    public async Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(long recipientIpn, CancellationToken cancellationToken = default)
     {
         string ipn = recipientIpn.ToString(CultureInfo.InvariantCulture);
         return await GetAsync<FinMonP2PPaymentPreLimitsResponse>(

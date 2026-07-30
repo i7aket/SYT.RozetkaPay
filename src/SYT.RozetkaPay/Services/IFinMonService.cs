@@ -14,5 +14,5 @@ public interface IFinMonService
     /// <param name="recipientIpn">IPN of recipient</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>P2P limits response</returns>
-    Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(int recipientIpn, CancellationToken cancellationToken = default);
+    Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(long recipientIpn, CancellationToken cancellationToken = default);
 }

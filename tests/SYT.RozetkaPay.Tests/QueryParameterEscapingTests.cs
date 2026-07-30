@@ -227,10 +227,12 @@ public class QueryParameterEscapingTests
             new[] { typeof(string), typeof(CancellationToken) },
             ParameterTypes(typeof(IPayoutService), nameof(IPayoutService.GetInfoAsync)));
 
-        // The FinMon pre-limits parameter is an int in this SDK, matching the integer
-        // recipient_ipn query parameter of the published OpenAPI document.
+        // EXP-445 widened this to long. A Ukrainian RNOKPP encodes days since 31.12.1899 in its
+        // first five digits, so for anyone born after October 1958 the ten-digit value exceeds
+        // int.MaxValue - the operation was unusable for most living recipients, and the document
+        // declares the parameter as an unbounded integer.
         Assert.Equal(
-            new[] { typeof(int), typeof(CancellationToken) },
+            new[] { typeof(long), typeof(CancellationToken) },
             ParameterTypes(typeof(IFinMonService), nameof(IFinMonService.GetRulesAsync)));
     }
 

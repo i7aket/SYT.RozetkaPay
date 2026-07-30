@@ -401,7 +401,9 @@ public class RefundPayPartsOrderRequest
     /// Line items covered by the refund, for fiscalization.
     /// </summary>
     [JsonPropertyName("products")]
-    public List<Product>? Products { get; set; }
+    // same shape as the order it refunds: quantity is an integer and price is a
+    // required number, where Product writes both as strings for payments/new.
+    public List<PayPartsProduct>? Products { get; set; }
 
     /// <summary>
     /// Where the provider posts the result of this refund.

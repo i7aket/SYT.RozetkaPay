@@ -426,7 +426,7 @@ public class PublicInterfacesTests
             "M:SYT.RozetkaPay.Services.IPaymentService.CreateAsync(SYT.RozetkaPay.Models.Payments.CreatePaymentRequest,System.Threading.CancellationToken)",
             documented);
         Assert.Contains(
-            "M:SYT.RozetkaPay.Services.IFinMonService.GetRulesAsync(System.Int32,System.Threading.CancellationToken)",
+            "M:SYT.RozetkaPay.Services.IFinMonService.GetRulesAsync(System.Int64,System.Threading.CancellationToken)",
             documented);
     }
 
