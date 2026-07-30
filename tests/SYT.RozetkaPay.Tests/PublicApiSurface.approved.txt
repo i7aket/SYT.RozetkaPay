@@ -1781,9 +1781,9 @@ SYT.RozetkaPay.Models.Payments.CustomerRequestPaymentMethod
     CustomerDecryptedApplePayRequestPaymentMethod DecryptedApplePay { get; set; }
     CustomerDecryptedGooglePayRequestPaymentMethod DecryptedGooglePay { get; set; }
     CustomerWalletRequestPaymentMethod Wallet { get; set; }
+    PaymentMethodType? Type { get; set; }
     String ApplePayToken { get; set; }
     String GooglePayToken { get; set; }
-    String Type { get; set; }
     String WalletToken { get; set; }
 SYT.RozetkaPay.Models.Payments.CustomerRequestUserDetails
     .ctor()

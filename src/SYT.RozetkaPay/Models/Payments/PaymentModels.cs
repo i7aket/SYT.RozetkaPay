@@ -446,11 +446,25 @@ public class CreateLookupRequest
 public class CustomerRequestPaymentMethod
 {
     /// <summary>
-    /// Payment method type (JSON string as per CDN documentation)
+    /// Which of the sibling method objects below carries the payment details.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The schema declares this as <c>PaymentMethodType</c>, a closed set of six values, and makes it
+    /// the discriminator: which of <see cref="Card"/>, <see cref="CCToken"/>, <see cref="Wallet"/>,
+    /// <see cref="ApplePay"/>, <see cref="GooglePay"/> and the decrypted wallet methods becomes
+    /// required depends on what this says.
+    /// </para>
+    /// <para>
+    /// Nullable rather than a bare enum, deliberately. A non-nullable enum property defaults to its
+    /// zero value, so a caller who forgets this field would silently send <c>cc_token</c> instead of
+    /// failing validation — a wrong payment method in place of a loud error. Nullable plus
+    /// <c>[Required]</c> makes omission the validation failure the schema's <c>required</c> intends.
+    /// </para>
+    /// </remarks>
     [Required]
     [JsonPropertyName("type")]
-    public string? Type { get; set; }
+    public PaymentMethodType? Type { get; set; }
 
     /// <summary>
     /// Card details for card payments (JSON object as per CDN documentation)
