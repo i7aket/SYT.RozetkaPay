@@ -10,6 +10,113 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-07-30
+
+`2.0.0` shipped with 255 contract divergences that 1607 green tests could not see. This release
+removes all of them, and closes the structural gap that let them hide.
+
+**Why the tests missed it.** Every contract check matched an SDK type to a schema **of the same
+name**, and silently skipped any type whose name had no counterpart. Whole model families written
+against superseded documentation were therefore never compared to anything. Two further blind spots
+compounded it: the operation manifest proved every *declared* operation was reachable but never the
+converse, and the route check reflected over string constants, skipping any target built by
+interpolation.
+
+Two independent audits — one reading the document, one using the SDK as a consumer would — reached
+the same conclusion from opposite directions.
+
+**This is a breaking release, and larger than 2.0.0.** Read `Removed` and `Changed` before upgrading.
+
+### Added
+
+- **`OperationTypeMappingTests`** — every service method maps to a declared operation; every return
+  type can receive what its response declares; every request type sends **exactly** what its body
+  declares, both directions. The request rule is exact because both failure modes are silent: an
+  undeclared field is discarded by the provider, and a declared one the model cannot express is a
+  request the caller cannot make.
+- **`DispatchedRouteTests`** — builds every service over a recording handler and compares the route
+  that **actually left the process** against the document. This is what found two undeclared routes
+  the static checks could not see, and corrected one the source reading got wrong in the opposite
+  direction. It carries a coverage floor, because a gate that silently observes nothing passes
+  forever — the first run reported zero dispatches and would otherwise have looked green.
+- **`RequestJsonTypeTests`** — the sending direction is held to the declared JSON type.
+- **`KnownContractDivergences.txt`** — the divergence baseline, exact in both directions: a new
+  divergence fails because it is absent, and a fixed one fails because its line must be deleted in
+  the commit that fixes it. It went 7 / 45 / 203 → **0 / 0 / 0**.
+- **`CustomerWallet`** — the one model that had to be written rather than switched to.
+
+### Removed
+
+- **Seven operations dispatching routes the document does not declare** (EXP-430). Five duplicated
+  operations that already worked, the declared equivalent sitting on a neighbouring overload; two
+  were already `[Obsolete]`. All answered `404`.
+
+  ```
+  DELETE /api/customers/v1/{}/cards/{}          GET /api/customers/v1/{}/cards
+  GET    /api/payparts/v1/operation/{}          GET /api/alternative-payments/v1/operation/{}
+  GET    /api/alternative-payments/v1/{}/status GET /api/subscriptions/v1/subscriptions/customer/{}
+  POST   /api/subscriptions/v1/subscriptions/{}/cancel
+  ```
+
+- **`CardLookupRequest` / `CardLookupResponse` / `AddCardToWalletRequest` /
+  `AddCardToWalletResponse`** — none modelled anything the document declares.
+- **`reason` and `external_refund_id` from all three refund bodies**, and `callback_url` from the
+  PayParts resend. The gateway discards undeclared fields, so a caller who recorded a refund reason
+  believed it was stored. It never was, and nothing said so.
+- **`Product.sku`**, declared by nothing.
+
+### Changed
+
+- **Requests write the JSON type the document declares** (EXP-429). `Product.quantity`,
+  `net_amount` and `vat_amount` are declared as strings; the SDK sent numbers, so **any payment
+  carrying a product list was rejected**: `400 invalid_request_body param: products.quantity`, while
+  the identical body with `"quantity":"2"` answers `200`. The properties stay `decimal?` and `int?`
+  and a converter handles the wire — retyping them to `string` would hand every caller the
+  formatting problem, culture bug included.
+- **Twenty-five operations return the type the document declares.** `is_success` was unreachable on
+  the four money operations — a caller could not answer *did this payment succeed?* — and
+  `CheckoutUrl` was permanently `null` because the URL arrives under `action.value`. In all but one
+  case the correct model **already existed in the SDK, unused**.
+- **`AddCardToWalletAsync` takes a card token**, as the document declares. It previously invited a
+  raw PAN and CVV at an endpoint that does not accept them.
+- **`CardLookupAsync`** takes the checkout-shaped `CreateLookupRequest` and returns
+  `PaymentOperationResult`.
+- **The three refund bodies** gained the declared `currency`, `payload`, `products` and
+  `callback_url`; `PayPartsResendCallbackRequest` gained `operation`, which decides *which* callback
+  is resent.
+- **`DeactivatePlanAsync` and `DeactivateAsync`** return `DefaultResponse` instead of discarding the
+  provider's reply.
+
+### Fixed
+
+- The post-publish release check compared raw archive bytes against a package nuget.org
+  repository-signs on ingestion (EXP-427). It was not merely wrong but **racy** — `1.0.0` passed only
+  because it downloaded before signing propagated. It now compares payload entries.
+
+### Migration
+
+- Calls to the seven removed operations have no replacement; the routes do not exist. Use the
+  declared equivalent named in `Removed`.
+- Money operations return `PaymentOperationResult` / `PaymentStatusResult`. Read `IsSuccess`; the
+  hosted URL is `Action.Value`, not `CheckoutUrl`.
+- `AddCardToWalletAsync` takes `AddCustomerPaymentRequest` with a `cc_token`.
+- `CardLookupAsync` takes `CreateLookupRequest` with `Mode` required.
+- Subscription and plan reads return `Plan`, `Subscription`, `CreateSubscriptionResponse`,
+  `List<SubscriptionPayment>`.
+- `reason` and `external_refund_id` on refunds are gone; they were never sent anywhere the provider
+  kept them.
+
+### Verification
+
+- **1526 tests** pass on `net10.0`, 0 failed.
+- Divergence baseline empty in all three groups.
+- Integration pass against the live gateway through the SDK's public API: **0 SDK faults**. Hosted
+  payment with products, card lookup, PayParts banks, subscription plans, customer wallet and
+  merchant status all succeed; three calls are refused by the gateway for account reasons
+  (`data_not_found` on an unpaid checkout, `internal_error` on a nonexistent payout) and none is an
+  SDK defect.
+
+
 ## [2.0.0] - 2026-07-30
 
 A contract-correctness release. `1.0.0` was audited against RozetkaPay's live OpenAPI document and
@@ -840,7 +947,8 @@ learns at runtime, in production, against money. Read `Removed` and `Changed` be
 ### Added
 - Initial alpha SDK package.
 
-[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v2.0.0...main
+[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v3.0.0...main
+[3.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/3.0.0
 [2.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/2.0.0
 [1.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/1.0.0
 [0.1.0-alpha.2]: https://www.nuget.org/packages/SYT.RozetkaPay/0.1.0-alpha.2
