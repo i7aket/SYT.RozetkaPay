@@ -10,6 +10,87 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-07-31
+
+`3.0.0` made the SDK agree with the published contract. This release makes it safe to operate.
+
+The remaining defects came from a consumer-perspective audit, and none of them was a contract
+divergence — the document says nothing about any of them. They are about what happens when a call
+does not complete, when the provider ships a value this version has not seen, and when the natural
+thing to write in C# is the wrong thing.
+
+**Breaking.** Read `Changed` before upgrading.
+
+### Added
+
+- **`RozetkaPayTransportException`** — a request that failed before the provider's answer was read,
+  carrying `IsTimeout`, `AttemptsDispatched` and `MayHaveReachedProvider`. That last is always `true`,
+  deliberately: the SDK cannot prove a request did not arrive, and reporting otherwise would invite a
+  caller to skip reconciliation on the strength of a guess.
+- **`PaymentWebhook.EventKey`** — a deduplication key. The obvious choice was wrong: `Id` is the
+  *payment* identifier, identical across every delivery for that payment, so deduplicating on it drops
+  the refund notification for a payment already seen.
+- **`RefundPaymentRequest.RefundEntirePayment`** — `[JsonIgnore]`, so the wire is unchanged. It exists
+  so that "refund everything" has to be chosen rather than arrived at.
+
+### Changed
+
+- **A timeout is no longer retried, and no longer escapes the hierarchy.** It used to surface as a
+  bare `TaskCanceledException`, so a caller writing the documented `catch (RozetkaPayException)` did
+  not catch the one failure that leaves money in an unknown state. `RetryPolicy.Standard` then
+  repeated it, turning one ambiguous payment creation into **four real POSTs**. A caller's own
+  cancellation still arrives as their own `OperationCanceledException` carrying their own token.
+- **An unknown enum token costs one field, not the response.** `ResponseCode` carries 184 values and
+  the provider adds more; one unrecognised token used to make an entire reply unreadable — the payment
+  had succeeded, the money had moved, and reading it back threw permanently. Nullable enums now yield
+  `null`. Non-nullable ones stay strict: those are discriminators the SDK itself sets, where an
+  unknown value means a bug rather than a provider release.
+- **`CreatePaymentRequest.Mode` is `PaymentMode?`.** It was a non-nullable enum whose zero value is
+  `Direct` — raw card acceptance, the PCI-scope flow — so a caller who forgot the field was requesting
+  it silently, and `[Required]` on a value type cannot fail.
+- **`Amount` is range-checked**; `[Required]` on a `decimal` was decorative and `0` or `-5` reached the
+  gateway.
+- **A null refund amount is a validation failure** unless the full refund is declared. `decimal?`
+  arithmetic propagates null, so `(paid - refunded) / 2` yielded `null` and refunded everything — and
+  before `3.0.0` those figures really were always `null`.
+- **The provider's own message reaches the caller on every status.** It was parsed and discarded for
+  401/403/404/500, so a log line read `"Resource not found"` while the text naming the actual problem
+  sat only inside `RawBody`, which this SDK's documentation tells callers to scrub. `cf-ray` joins the
+  request-id chain, because production sends neither header the SDK looked for.
+- **An empty body on a `200` is an error**, not an object of defaults. Only `204` means no content.
+  After `3.0.0` an all-null `PaymentOperationResult` is exactly what a successful hosted creation also
+  looks like.
+- **A body the SDK cannot read** fails inside `RozetkaPayException` with the raw body attached, rather
+  than as a bare `JsonException` carrying no evidence.
+- **The unauthenticated decline client is created on first use.** `RozetkaPayClient` is registered
+  Scoped, so an eager one allocated a raw `HttpClient` — a fresh connection pool — per DI scope, that
+  is per inbound request, and disposed it with sockets in `TIME_WAIT`.
+- **Dates parse invariantly.** This exposed a real defect rather than being the tidy-up it looked
+  like: `dd.MM.yyyy` was handled by the culture-sensitive branch only on a day-first machine, and the
+  fallback used `AssumeUniversal` without `AdjustToUniversal`, so `SpecifyKind(Utc)` relabelled a
+  local value instead of converting it. Every such date was wrong by the machine's UTC offset.
+
+### Removed
+
+- **47 public types** nothing references and no component declares. `PaymentWebhook`,
+  `ErrorResponse` and `TooManyRequestsResponse` stay: consumers deserialize into them, so the SDK not
+  referencing them is the point.
+
+### Migration
+
+- Catch `RozetkaPayTransportException` where you previously caught `TaskCanceledException`, and read
+  `AttemptsDispatched` before deciding whether to reconcile or retry.
+- Set `Mode` explicitly; omitting it is now a validation error rather than a request for `direct`.
+- A refund with no amount needs `RefundEntirePayment = true`.
+- Deduplicate webhooks on `EventKey`, inside the same transaction as the state change it guards.
+
+### Verification
+
+- **1547 tests** pass on `net10.0`, 0 failed.
+- Contract divergence baseline empty in all three groups.
+- Integration pass against the live gateway through the public API: **0 SDK faults**.
+
+
 ## [3.0.0] - 2026-07-30
 
 `2.0.0` shipped with 255 contract divergences that 1607 green tests could not see. This release
@@ -947,7 +1028,8 @@ learns at runtime, in production, against money. Read `Removed` and `Changed` be
 ### Added
 - Initial alpha SDK package.
 
-[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v3.0.0...main
+[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v4.0.0...main
+[4.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/4.0.0
 [3.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/3.0.0
 [2.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/2.0.0
 [1.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/1.0.0
