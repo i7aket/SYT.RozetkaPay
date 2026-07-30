@@ -214,6 +214,99 @@ internal static class OpenApiSnapshot
     }
 
     /// <summary>
+    /// Every operation the document declares, as an uppercase verb and its path template.
+    /// </summary>
+    internal static IEnumerable<(string Method, string Path)> DeclaredOperations()
+    {
+        foreach (JsonProperty path in Document.Value.RootElement.GetProperty("paths").EnumerateObject())
+        {
+            foreach (JsonProperty operation in path.Value.EnumerateObject())
+            {
+                if (operation.Value.ValueKind == JsonValueKind.Object)
+                {
+                    yield return (operation.Name.ToUpperInvariant(), path.Name);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The field names the document declares in an operation's <c>200</c> response body.
+    /// </summary>
+    /// <remarks>
+    /// Empty when the operation declares no <c>200</c>, no JSON content, or a bare array of scalars —
+    /// there is nothing to compare a model against in those cases, and returning an empty set lets
+    /// the caller skip rather than guess.
+    /// </remarks>
+    internal static IReadOnlyCollection<string> ResponseFieldsOf(string method, string pathTemplate)
+    {
+        if (!TryGetOperation(method, pathTemplate, out JsonElement operation) ||
+            !operation.TryGetProperty("responses", out JsonElement responses) ||
+            !responses.TryGetProperty("200", out JsonElement ok))
+        {
+            return [];
+        }
+
+        return FieldsOfBody(ok);
+    }
+
+    /// <summary>
+    /// The field names the document declares in an operation's request body.
+    /// </summary>
+    internal static IReadOnlyCollection<string> RequestFieldsOf(string method, string pathTemplate)
+    {
+        if (!TryGetOperation(method, pathTemplate, out JsonElement operation) ||
+            !operation.TryGetProperty("requestBody", out JsonElement body))
+        {
+            return [];
+        }
+
+        return FieldsOfBody(body);
+    }
+
+    /// <summary>
+    /// Resolves a request-body or response wrapper down to its JSON schema's property names.
+    /// </summary>
+    /// <remarks>
+    /// The wrapper is usually a <c>$ref</c> into <c>components.requestBodies</c> or
+    /// <c>components.responses</c>, so it is resolved first and the schema read from
+    /// <c>content."application/json".schema</c>. An array schema is followed to its items, because a
+    /// bare array of objects is a shape several operations really return.
+    /// </remarks>
+    private static IReadOnlyCollection<string> FieldsOfBody(JsonElement wrapper)
+    {
+        JsonElement resolved = Resolve(wrapper);
+
+        if (!resolved.TryGetProperty("content", out JsonElement content) ||
+            !content.TryGetProperty("application/json", out JsonElement json) ||
+            !json.TryGetProperty("schema", out JsonElement schema))
+        {
+            return [];
+        }
+
+        schema = Resolve(schema);
+
+        if (schema.TryGetProperty("type", out JsonElement kind) &&
+            kind.ValueKind == JsonValueKind.String &&
+            kind.GetString() == "array" &&
+            schema.TryGetProperty("items", out JsonElement items))
+        {
+            schema = Resolve(items);
+        }
+
+        return [.. CollectPropertyNames(schema).Distinct(StringComparer.Ordinal)];
+    }
+
+    private static bool TryGetOperation(string method, string pathTemplate, out JsonElement operation)
+    {
+        operation = default;
+
+        return Document.Value.RootElement.GetProperty("paths")
+                   .TryGetProperty(pathTemplate, out JsonElement path)
+               && path.TryGetProperty(method.ToLowerInvariant(), out operation);
+    }
+
+    /// <summary>
     /// Every schema reachable from the request body of any declared operation.
     /// </summary>
     /// <remarks>
