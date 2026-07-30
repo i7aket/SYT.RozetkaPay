@@ -70,6 +70,29 @@ thing to write in C# is the wrong thing.
   fallback used `AssumeUniversal` without `AdjustToUniversal`, so `SpecifyKind(Utc)` relabelled a
   local value instead of converting it. Every such date was wrong by the machine's UTC offset.
 
+### Fixed — found by the pre-release audit
+
+- **Alternative payments carrying products were rejected outright**, and by a fix from `3.0.0`.
+  `Product` was taught to write `quantity` and the amounts as JSON strings because that is what
+  `createPayment` declares — and `AlternativePaymentProduct` derived from it, while the document
+  declares **the same field names with different types** there: `quantity` integer, `price` and the
+  amounts numbers. Live: `"quantity":"1"` answers `400 invalid_request_body param: products.quantity`,
+  `1` passes. The type is now declared from the document rather than derived; one shared base cannot
+  serve two contracts that disagree.
+- **Both refund operations** declare `PayPartsProduct` for their product list, not the
+  payments-shaped `Product`.
+- **Batch `customer.payment_method`** used the legacy flat model, sending `{"cc_token":"tok"}` where
+  the provider expects `{"cc_token":{"token":"tok"}}` — every tokenized batch payment was
+  off-contract.
+- **`EventKey` did not include the operation's state**, so a pending or 3-D Secure delivery and the
+  final one for the same operation shared a key. A consumer following the property's own advice would
+  have rejected the final delivery and never marked the payment paid.
+- **`IFinMonService.GetRulesAsync` took an `int`.** A Ukrainian RNOKPP encodes days since 31.12.1899
+  in its first five digits, so for anyone born after October 1958 the ten-digit value exceeds
+  `int.MaxValue` — the operation was unusable for most living recipients. It is a `long`.
+- **Gift subscription** now uses the customer type the document requires, the only one able to carry
+  the required `payment_method`.
+
 ### Removed
 
 - **47 public types** nothing references and no component declares. `PaymentWebhook`,
@@ -86,9 +109,14 @@ thing to write in C# is the wrong thing.
 
 ### Verification
 
-- **1547 tests** pass on `net10.0`, 0 failed.
+- **1548 tests** pass on `net10.0`, 0 failed.
 - Contract divergence baseline empty in all three groups.
 - Integration pass against the live gateway through the public API: **0 SDK faults**.
+- An independent pre-release audit ran the suite, resolved the live document, and attacked the new
+  failure semantics with 27 adversarial probes. It returned **DO NOT SHIP** with six findings, all
+  verified and fixed above; it also confirmed clean: every dispatched route declared, the refund
+  guard unbypassable, cancellation identity preserved, the webhook signature matching an independent
+  implementation of the published algorithm, and every enum member token-for-token.
 
 
 ## [3.0.0] - 2026-07-30
