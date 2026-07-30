@@ -57,6 +57,10 @@ SYT.RozetkaPay.Configuration.RozetkaPayTransportSecurity
     Int32 value__
     RozetkaPayTransportSecurity AllowClearTextLoopback
     RozetkaPayTransportSecurity HttpsOnly
+SYT.RozetkaPay.Converters.DecimalAsStringConverter
+    .ctor()
+    Decimal? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, Decimal? value, JsonSerializerOptions options)
 SYT.RozetkaPay.Converters.FlexibleDateTimeConverter
     .ctor()
     DateTime Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
@@ -85,6 +89,10 @@ SYT.RozetkaPay.Converters.FlexibleNullableInt64Converter
     .ctor()
     Int64? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
     Void Write(Utf8JsonWriter writer, Int64? value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.IntegerAsStringConverter
+    .ctor()
+    Int32? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, Int32? value, JsonSerializerOptions options)
 SYT.RozetkaPay.Converters.NullableFlexibleDateTimeConverter
     .ctor()
     DateTime? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)

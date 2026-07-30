@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using SYT.RozetkaPay.Converters;
 
 namespace SYT.RozetkaPay.Models.Common;
 
@@ -457,6 +458,7 @@ public class Product
     /// Product quantity (JSON number as per CDN documentation)
     /// </summary>
     [JsonPropertyName("quantity")]
+    [JsonConverter(typeof(IntegerAsStringConverter))]
     public int? Quantity { get; set; }
 
 
@@ -490,6 +492,7 @@ public class Product
     /// Provider field &lt;c&gt;net_amount&lt;/c&gt;.
     /// </summary>
     [JsonPropertyName("net_amount")]
+    [JsonConverter(typeof(DecimalAsStringConverter))]
     public decimal? NetAmount { get; set; }
     /// <summary>
     /// Tax group is required for projects with enabled fiscalization.
@@ -505,6 +508,7 @@ public class Product
     /// Provider field &lt;c&gt;vat_amount&lt;/c&gt;.
     /// </summary>
     [JsonPropertyName("vat_amount")]
+    [JsonConverter(typeof(DecimalAsStringConverter))]
     public decimal? VatAmount { get; set; }
 }
 

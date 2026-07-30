@@ -46,6 +46,13 @@ public class PropertyTypeParityTests
         ("number", "integer"),
 
         // The flexible converters read a JSON string into a number. See the class remarks.
+        //
+        // Response-side only, and EXP-429 is why that qualifier now matters. Reading a number out of
+        // a JSON string costs nothing and the provider genuinely sends both. WRITING a number where
+        // the document declares a string is a hard 400: products with a numeric quantity answered
+        // 400 invalid_request_body param: products.quantity while the same body with "quantity":"2"
+        // answered 200. This blanket exemption is what hid that, so the request side is now held to
+        // exact types by RequestJsonTypeTests and only responses reach this list.
         ("string", "number"),
         ("string", "integer"),
     ];
