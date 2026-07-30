@@ -549,6 +549,8 @@ SYT.RozetkaPay.Models.Common.ErrorType
     ErrorType PaymentMethodError
     ErrorType PaymentSettingsError
     Int32 value__
+SYT.RozetkaPay.Models.Common.ExplicitFullRefundAttribute
+    .ctor()
 SYT.RozetkaPay.Models.Common.FeeDetails
     .ctor()
     Decimal? Amount { get; set; }
@@ -1726,7 +1728,7 @@ SYT.RozetkaPay.Models.Payments.CreatePaymentRequest
     Decimal? CheckoutTtl { get; set; }
     Dictionary<String, String> Metadata { get; set; }
     List<Product> Products { get; set; }
-    PaymentMode Mode { get; set; }
+    PaymentMode? Mode { get; set; }
     RecipientRequestUserDetails Recipient { get; set; }
     String CallbackUrl { get; set; }
     String Currency { get; set; }
@@ -2086,6 +2088,7 @@ SYT.RozetkaPay.Models.Payments.RecipientWalletRequestPaymentMethod
     String OptionId { get; set; }
 SYT.RozetkaPay.Models.Payments.RefundPaymentRequest
     .ctor()
+    Boolean RefundEntirePayment { get; set; }
     Decimal? Amount { get; set; }
     List<Product> Products { get; set; }
     String CallbackUrl { get; set; }

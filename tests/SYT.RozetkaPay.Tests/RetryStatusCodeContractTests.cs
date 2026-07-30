@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using SYT.RozetkaPay.Models.Common;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Exceptions;
@@ -1268,7 +1269,8 @@ public class RetryStatusCodeContractTests
         {
             Amount = 10m,
             Currency = "UAH",
-            ExternalId = "order-1"
+            ExternalId = "order-1",
+            Mode = PaymentMode.Hosted
         });
 
         Assert.Equal(2, handler.AttemptCount);

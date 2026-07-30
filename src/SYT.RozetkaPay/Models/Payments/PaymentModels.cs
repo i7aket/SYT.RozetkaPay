@@ -177,6 +177,7 @@ public class CancelPaymentRequest
 /// <summary>
 /// Request to refund a payment
 /// </summary>
+[ExplicitFullRefund]
 public class RefundPaymentRequest
 {
     /// <summary>
@@ -221,6 +222,16 @@ public class RefundPaymentRequest
     /// </summary>
     [JsonPropertyName("products")]
     public List<Product>? Products { get; set; }
+
+    /// <summary>
+    /// Says the caller means to refund the entire payment when <see cref="Amount"/> is null.
+    /// </summary>
+    /// <remarks>
+    /// Never serialized: omitting the amount is what tells the provider to refund everything, and
+    /// that is unchanged. This exists so a null arrived at by arithmetic cannot pass for a decision.
+    /// </remarks>
+    [JsonIgnore]
+    public bool RefundEntirePayment { get; set; }
 }
 
 /// <summary>
