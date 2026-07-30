@@ -556,3 +556,67 @@ public class DeleteCustomerPaymentResult
     public PaymentMethodType Type { get; set; }
 }
 
+
+/// <summary>
+/// The customer record and their saved payment methods, as returned by
+/// <c>GET /api/customers/v1/wallet</c>.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The only type in this work that had to be written rather than switched to: every other declared
+/// model already existed in the SDK and was simply unused. <c>CustomerWalletResponse</c>, which this
+/// replaces, declared <c>customer_id</c>, <c>cards</c> and <c>default_card_id</c> — none of which the
+/// document declares here. Against a real response every one of its properties read <c>null</c>, so
+/// a caller would conclude the customer had no saved cards.
+/// </para>
+/// </remarks>
+public class CustomerWallet
+{
+    /// <summary>Caller's own identifier for the customer.</summary>
+    [JsonPropertyName("external_id")]
+    public string? ExternalId { get; set; }
+
+    /// <summary>Provider-side identifier for the customer.</summary>
+    [JsonPropertyName("rid")]
+    public string? Rid { get; set; }
+
+    /// <summary>Customer first name.</summary>
+    [JsonPropertyName("first_name")]
+    public string? FirstName { get; set; }
+
+    /// <summary>Customer last name.</summary>
+    [JsonPropertyName("last_name")]
+    public string? LastName { get; set; }
+
+    /// <summary>Customer patronymic.</summary>
+    [JsonPropertyName("patronym")]
+    public string? Patronym { get; set; }
+
+    /// <summary>Customer email address.</summary>
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+
+    /// <summary>Customer phone number.</summary>
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
+
+    /// <summary>Street address.</summary>
+    [JsonPropertyName("address")]
+    public string? Address { get; set; }
+
+    /// <summary>City.</summary>
+    [JsonPropertyName("city")]
+    public string? City { get; set; }
+
+    /// <summary>Country.</summary>
+    [JsonPropertyName("country")]
+    public string? Country { get; set; }
+
+    /// <summary>Postal code.</summary>
+    [JsonPropertyName("postal_code")]
+    public string? PostalCode { get; set; }
+
+    /// <summary>The customer's saved payment methods.</summary>
+    [JsonPropertyName("wallet")]
+    public List<WalletItem>? Wallet { get; set; }
+}

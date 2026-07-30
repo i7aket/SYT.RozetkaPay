@@ -14,7 +14,7 @@ public interface ICustomerService
     /// <param name="customerId">Customer ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Customer wallet response</returns>
-    Task<CustomerWalletResponse> GetCustomerWalletAsync(string customerId, CancellationToken cancellationToken = default);
+    Task<CustomerWallet> GetCustomerWalletAsync(string customerId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Add customer payment to wallet

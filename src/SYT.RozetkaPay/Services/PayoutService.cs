@@ -66,9 +66,9 @@ public class PayoutService : BaseService, IPayoutService
     /// <param name="externalId">External payout ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payout response</returns>
-    public async Task<PayoutResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
+    public async Task<PayoutTransactionResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<PayoutResponse>(
+        return await GetAsync<PayoutTransactionResult>(
             $"{InfoEndpoint}?external_id={Uri.EscapeDataString(externalId)}",
             InfoEndpoint,
             cancellationToken);

@@ -531,7 +531,7 @@ public class LegacyLoggingRedactionTests
 
         await service.UpdatePlanAsync(
             LoggingRedactionContext.RawMarker(Row),
-            new UpdateSubscriptionPlanRequest());
+            new UpdatePlanRequest());
 
         RedactionRequest request = handler.Single;
         Assert.Equal(HttpMethod.Patch, request.Method);

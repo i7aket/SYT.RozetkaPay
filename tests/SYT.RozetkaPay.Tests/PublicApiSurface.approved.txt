@@ -886,6 +886,20 @@ SYT.RozetkaPay.Models.Customers.CustomerCardsResponse
     Int32? TotalCount { get; set; }
     List<WalletCard> Cards { get; set; }
     String CustomerId { get; set; }
+SYT.RozetkaPay.Models.Customers.CustomerWallet
+    .ctor()
+    List<WalletItem> Wallet { get; set; }
+    String Address { get; set; }
+    String City { get; set; }
+    String Country { get; set; }
+    String Email { get; set; }
+    String ExternalId { get; set; }
+    String FirstName { get; set; }
+    String LastName { get; set; }
+    String Patronym { get; set; }
+    String Phone { get; set; }
+    String PostalCode { get; set; }
+    String Rid { get; set; }
 SYT.RozetkaPay.Models.Customers.CustomerWalletResponse
     .ctor()
     List<WalletCard> Cards { get; set; }
@@ -2767,7 +2781,7 @@ SYT.RozetkaPay.Services.CustomerService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
     Task<AddCustomerPaymentResult> AddCardToWalletAsync(String customerId, AddCustomerPaymentRequest request, CancellationToken cancellationToken)
     Task<CardConfirmationStatusResponse> GetCardConfirmationStatusAsync(String customerId, String cardId, CancellationToken cancellationToken)
-    Task<CustomerWalletResponse> GetCustomerWalletAsync(String customerId, CancellationToken cancellationToken)
+    Task<CustomerWallet> GetCustomerWalletAsync(String customerId, CancellationToken cancellationToken)
     Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
     Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(String externalId, DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
     Task<SetDefaultCardResponse> SetDefaultCardAsync(String customerId, SetDefaultCardRequest request, CancellationToken cancellationToken)
@@ -2789,7 +2803,7 @@ SYT.RozetkaPay.Services.IBatchPaymentService
 SYT.RozetkaPay.Services.ICustomerService
     Task<AddCustomerPaymentResult> AddCardToWalletAsync(String customerId, AddCustomerPaymentRequest request, CancellationToken cancellationToken)
     Task<CardConfirmationStatusResponse> GetCardConfirmationStatusAsync(String customerId, String cardId, CancellationToken cancellationToken)
-    Task<CustomerWalletResponse> GetCustomerWalletAsync(String customerId, CancellationToken cancellationToken)
+    Task<CustomerWallet> GetCustomerWalletAsync(String customerId, CancellationToken cancellationToken)
     Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
     Task<DeleteCustomerPaymentResult> DeleteCustomerPaymentAsync(String externalId, DeleteCustomerPaymentRequest request, CancellationToken cancellationToken)
     Task<SetDefaultCardResponse> SetDefaultCardAsync(String customerId, SetDefaultCardRequest request, CancellationToken cancellationToken)
@@ -2813,12 +2827,12 @@ SYT.RozetkaPay.Services.IPartnerService
 SYT.RozetkaPay.Services.IPayPartsService
     Task<List<PayPartsBankInfo>> GetBanksAsync(CancellationToken cancellationToken)
     Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOperationResult> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> RetryRefundAsync(RetryRefundPPayRequest request, CancellationToken cancellationToken)
     Task<PayPartsOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken)
     Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken)
-    Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken)
     Task<PayPartsRefundResponse> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken)
     Task<PayPartsResendCallbackResponse> ResendCallbackAsync(PayPartsResendCallbackRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IPaymentInstructionService
@@ -2840,8 +2854,8 @@ SYT.RozetkaPay.Services.IPaymentService
 SYT.RozetkaPay.Services.IPayoutService
     Task<BalanceResponse> GetAccountBalanceAsync(String merchantEntityId, CancellationToken cancellationToken)
     Task<PayoutCallbackResendResponse> ResendCallbackAsync(ResendPayoutCallbackRequest request, CancellationToken cancellationToken)
-    Task<PayoutResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayoutTransactionResult> CancelCashPayoutAsync(CancelCashPayoutRequest request, CancellationToken cancellationToken)
+    Task<PayoutTransactionResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayoutTransactionResult> RequestPayoutAsync(RequestPayoutRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IReportService
     Task<PaymentsReportResponse> GetPaymentsReportAsync(PaymentsReportRequest request, CancellationToken cancellationToken)
@@ -2853,6 +2867,7 @@ SYT.RozetkaPay.Services.ISubscriptionService
     Task<CreateSubscriptionResponse> GiftAsync(GiftSubscriptionRequest request, CancellationToken cancellationToken)
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken)
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<DefaultResponse> UpdatePlanAsync(String planId, UpdatePlanRequest request, CancellationToken cancellationToken)
     Task<List<Plan>> GetPlansAsync(CancellationToken cancellationToken)
     Task<List<SubscriptionPayment>> GetPaymentsAsync(String subscriptionId, CancellationToken cancellationToken)
     Task<Plan> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken)
@@ -2860,7 +2875,6 @@ SYT.RozetkaPay.Services.ISubscriptionService
     Task<Subscription> GetAsync(String subscriptionId, CancellationToken cancellationToken)
     Task<SubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken)
     Task<SubscriptionList> GetSubscriptionsAsync(String externalId, CancellationToken cancellationToken)
-    Task<SubscriptionPlanResponse> UpdatePlanAsync(String planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken)
     Task<SubscriptionResponse> UpdateAsync(String subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken)
     Task<UpdateSubscriptionPaymentMethodResponse> UpdatePaymentMethodAsync(String subscriptionId, UpdateSubscriptionPaymentMethodRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.InStorePaymentService
@@ -2884,12 +2898,12 @@ SYT.RozetkaPay.Services.PayPartsService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
     Task<List<PayPartsBankInfo>> GetBanksAsync(CancellationToken cancellationToken)
     Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken)
+    Task<PayPartsOperationResult> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> RetryRefundAsync(RetryRefundPPayRequest request, CancellationToken cancellationToken)
     Task<PayPartsOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken)
     Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken)
-    Task<PayPartsOrderResponse> CreateOrderAsync(CreatePayPartsOrder request, CancellationToken cancellationToken)
     Task<PayPartsRefundResponse> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken)
     Task<PayPartsResendCallbackResponse> ResendCallbackAsync(PayPartsResendCallbackRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.PaymentInstructionService
@@ -2916,8 +2930,8 @@ SYT.RozetkaPay.Services.PayoutService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
     Task<BalanceResponse> GetAccountBalanceAsync(String merchantEntityId, CancellationToken cancellationToken)
     Task<PayoutCallbackResendResponse> ResendCallbackAsync(ResendPayoutCallbackRequest request, CancellationToken cancellationToken)
-    Task<PayoutResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayoutTransactionResult> CancelCashPayoutAsync(CancelCashPayoutRequest request, CancellationToken cancellationToken)
+    Task<PayoutTransactionResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayoutTransactionResult> RequestPayoutAsync(RequestPayoutRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.ReportService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
@@ -2931,6 +2945,7 @@ SYT.RozetkaPay.Services.SubscriptionService
     Task<CreateSubscriptionResponse> GiftAsync(GiftSubscriptionRequest request, CancellationToken cancellationToken)
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken)
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<DefaultResponse> UpdatePlanAsync(String planId, UpdatePlanRequest request, CancellationToken cancellationToken)
     Task<List<Plan>> GetPlansAsync(CancellationToken cancellationToken)
     Task<List<SubscriptionPayment>> GetPaymentsAsync(String subscriptionId, CancellationToken cancellationToken)
     Task<Plan> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken)
@@ -2938,6 +2953,5 @@ SYT.RozetkaPay.Services.SubscriptionService
     Task<Subscription> GetAsync(String subscriptionId, CancellationToken cancellationToken)
     Task<SubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken)
     Task<SubscriptionList> GetSubscriptionsAsync(String externalId, CancellationToken cancellationToken)
-    Task<SubscriptionPlanResponse> UpdatePlanAsync(String planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken)
     Task<SubscriptionResponse> UpdateAsync(String subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken)
     Task<UpdateSubscriptionPaymentMethodResponse> UpdatePaymentMethodAsync(String subscriptionId, UpdateSubscriptionPaymentMethodRequest request, CancellationToken cancellationToken)

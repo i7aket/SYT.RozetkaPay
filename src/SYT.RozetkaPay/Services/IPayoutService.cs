@@ -23,7 +23,7 @@ public interface IPayoutService
     /// <param name="externalId">External payout ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payout response</returns>
-    Task<PayoutResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default);
+    Task<PayoutTransactionResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default);
 
 
 

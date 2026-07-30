@@ -47,7 +47,7 @@ public interface ISubscriptionService
     /// <param name="request">Update subscription plan request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plan response</returns>
-    Task<SubscriptionPlanResponse> UpdatePlanAsync(string planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken = default);
+    Task<DefaultResponse> UpdatePlanAsync(string planId, UpdatePlanRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create subscription

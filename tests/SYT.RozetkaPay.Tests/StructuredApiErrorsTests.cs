@@ -938,7 +938,7 @@ public class StructuredApiErrorTransportTests
         SubscriptionService service = new(ErrorTestContext.CreateConfiguration(), ErrorTestContext.CreateHttpClient(handler));
 
         RozetkaPayValidationException exception = await Assert.ThrowsAsync<RozetkaPayValidationException>(async () =>
-            await service.UpdatePlanAsync("plan-1", new UpdateSubscriptionPlanRequest { Name = "plan" }));
+            await service.UpdatePlanAsync("plan-1", new UpdatePlanRequest { Name = "plan" }));
 
         Assert.Equal(HttpMethod.Patch, handler.LastRequest!.Method);
         ErrorTestContext.AssertVerbDetails(exception);

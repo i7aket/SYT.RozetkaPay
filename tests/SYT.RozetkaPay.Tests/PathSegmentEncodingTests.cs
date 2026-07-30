@@ -97,14 +97,15 @@ public class PathSegmentEncodingTests
     public async Task SubscriptionService_UpdatePlan_ShouldKeepHostilePlanIdInOneSegmentAndKeepBody()
     {
         RequestRecordingHandler handler = new();
-        UpdateSubscriptionPlanRequest request = new() { Name = "renamed", Amount = 12.34m };
+        // UpdatePlanRequest declares price as an integer; the legacy model called it Amount.
+        UpdatePlanRequest request = new() { Name = "renamed", Price = 1234 };
 
         await PathEncodingTestContext.Subscriptions(handler).UpdatePlanAsync(HostileRawId, request);
 
         RecordedRequest recorded = Assert.Single(handler.Requests);
         Assert.Equal(HttpMethod.Patch, recorded.Method);
         AssertRequestTarget(recorded, $"/api/subscriptions/v1/plans/{HostileEncodedId}");
-        Assert.Equal("{\"name\":\"renamed\",\"amount\":12.34}", recorded.Body);
+        Assert.Equal("{\"name\":\"renamed\",\"price\":1234}", recorded.Body);
     }
 
     [Fact]
@@ -378,7 +379,7 @@ public class PathSegmentEncodingTests
                 PathEncodingTestContext.Subscriptions(handler).GetPlanAsync(value),
             "SubscriptionService.UpdatePlanAsync" =>
                 PathEncodingTestContext.Subscriptions(handler)
-                    .UpdatePlanAsync(value, new UpdateSubscriptionPlanRequest()),
+                    .UpdatePlanAsync(value, new UpdatePlanRequest()),
             "SubscriptionService.DeactivateAsync" =>
                 PathEncodingTestContext.Subscriptions(handler).DeactivateAsync(value),
             "SubscriptionService.GetAsync" =>
