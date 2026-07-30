@@ -280,9 +280,13 @@ internal static class OpenApiOperationManifest
             ExpectedPathAndQuery = "/api/payments/v1/lookup",
             Body = ContractBodyPolicy.Json,
             Auth = ContractAuthPolicy.Authenticated,
-            ExpectedBodyFragments = [$"\"card_number\":\"{CardNumberPlaceholder}-op10\""],
+            // The document's lookup body is checkout-shaped with mode required, not a bare card
+            // number. The old fragment pinned "card_number", a field this operation never declared,
+            // so the manifest agreed with the SDK while both disagreed with the provider - which
+            // answered 400 invalid_request_body param: mode.
+            ExpectedBodyFragments = ["\"mode\":\"hosted\""],
             InvokeAsync = (host, token) => host.Payments.CardLookupAsync(
-                new CardLookupRequest { CardNumber = $"{CardNumberPlaceholder}-op10" },
+                new CreateLookupRequest { Mode = PaymentMode.Hosted },
                 token)
         },
         new()

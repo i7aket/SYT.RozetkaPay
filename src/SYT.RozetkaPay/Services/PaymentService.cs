@@ -183,9 +183,9 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="request">Card lookup request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Card lookup response</returns>
-    public async Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken = default)
+    public async Task<PaymentOperationResult> CardLookupAsync(CreateLookupRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CardLookupRequest, CardLookupResponse>(LookupEndpoint, LookupEndpoint, request, cancellationToken);
+        return await PostAsync<CreateLookupRequest, PaymentOperationResult>(LookupEndpoint, LookupEndpoint, request, cancellationToken);
     }
 
     /// <summary>

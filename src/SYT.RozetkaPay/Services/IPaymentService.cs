@@ -87,7 +87,7 @@ public interface IPaymentService
     /// <param name="request">Card lookup request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Card lookup response</returns>
-    Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken = default);
+    Task<PaymentOperationResult> CardLookupAsync(CreateLookupRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resend payment callback
