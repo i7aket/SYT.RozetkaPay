@@ -885,6 +885,27 @@ public abstract class BaseService
                 retryCount++;
                 await DelayBeforeRetryAsync(retryCount, failure, retryPolicy, cancellationToken).ConfigureAwait(false);
             }
+            // A transport failure leaves the outcome unknown, and that is a different thing from the
+            // provider having answered. It is wrapped so the documented catch clause sees it and so the
+            // caller learns how many times the operation actually went out - the number that decides
+            // whether reconciliation is needed. The caller's own cancellation is excluded: their token
+            // must reach them unchanged, which is EXP-357's contract.
+            catch (Exception failure) when (
+                failure is HttpRequestException or OperationCanceledException &&
+                failure is not RozetkaPayException &&
+                !cancellationToken.IsCancellationRequested)
+            {
+                throw new RozetkaPayTransportException(
+                    failure is OperationCanceledException
+                        ? "The request timed out before the provider answered. The operation may still "
+                          + "have been carried out; reconcile before retrying with a new external id."
+                        : "The request failed in transport before the provider answered. The operation "
+                          + "may still have been carried out; reconcile before retrying with a new "
+                          + "external id.",
+                    isTimeout: failure is OperationCanceledException,
+                    attemptsDispatched: retryCount + 1,
+                    failure);
+            }
         }
     }
 

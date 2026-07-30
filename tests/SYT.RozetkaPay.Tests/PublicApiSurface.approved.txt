@@ -120,6 +120,11 @@ SYT.RozetkaPay.Exceptions.RozetkaPayRateLimitException
     .ctor()
     .ctor(String message)
     .ctor(String message, Exception innerException)
+SYT.RozetkaPay.Exceptions.RozetkaPayTransportException
+    .ctor(String message, Boolean isTimeout, Int32 attemptsDispatched, Exception innerException)
+    Boolean IsTimeout { get; }
+    Boolean MayHaveReachedProvider { get; }
+    Int32 AttemptsDispatched { get; }
 SYT.RozetkaPay.Exceptions.RozetkaPayValidationException
     .ctor()
     .ctor(String message)

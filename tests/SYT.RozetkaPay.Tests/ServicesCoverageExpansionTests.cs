@@ -523,7 +523,7 @@ public class BaseServiceResilienceAndErrorsTests
     }
 
     [Fact]
-    public async Task BaseService_ShouldRetryOnTaskCanceledExceptionWhenEnabled()
+    public async Task BaseService_ShouldNotRetryOnTaskCanceledException()
     {
         int calls = 0;
         StubHttpMessageHandler handler = new(async (_, _) =>
@@ -538,9 +538,16 @@ public class BaseServiceResilienceAndErrorsTests
         });
 
         PaymentService service = new(CreateConfiguration(retryPolicy: RetryOnceImmediately()), CreateHttpClient(handler));
-        await service.GetInfoAsync("id-9");
 
-        Assert.Equal(2, calls);
+        // EXP-432 stopped retrying on TaskCanceledException. It is what the SDK's own timeout raises,
+        // so a repeat sends a request that was already dispatched and may already have been carried
+        // out. The failure now names itself and says how many times it went out.
+        RozetkaPayTransportException failure =
+            await Assert.ThrowsAsync<RozetkaPayTransportException>(() => service.GetInfoAsync("id-9"));
+
+        Assert.Equal(1, calls);
+        Assert.True(failure.IsTimeout);
+        Assert.Equal(1, failure.AttemptsDispatched);
     }
 
     [Fact]

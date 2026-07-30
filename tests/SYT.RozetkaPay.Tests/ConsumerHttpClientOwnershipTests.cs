@@ -1,4 +1,5 @@
 using System.Net;
+using SYT.RozetkaPay.Exceptions;
 using SYT.RozetkaPay.Configuration;
 using SYT.RozetkaPay.Services;
 using SYT.RozetkaPay.Tests.TestInfrastructure;
@@ -88,7 +89,13 @@ public class ConsumerHttpClientOwnershipTests
 
         PaymentService service = new(configuration, consumerClient);
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.GetInfoAsync("order-1"));
+        // EXP-432: a timeout is now a RozetkaPayTransportException rather than a bare
+        // OperationCanceledException. What this test is about is unchanged - the call ends, and the
+        // consumer's own HttpClient never had a Timeout written onto it.
+        RozetkaPayTransportException failure =
+            await Assert.ThrowsAsync<RozetkaPayTransportException>(() => service.GetInfoAsync("order-1"));
+
+        Assert.True(failure.IsTimeout);
     }
 
 

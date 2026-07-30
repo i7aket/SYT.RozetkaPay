@@ -98,8 +98,12 @@ public class RetryPolicy
     {
         if (!Enabled) return false;
 
-        // Default logic: retry on network-related exceptions (like Stripe SDK)
-        return exception is HttpRequestException or TaskCanceledException or SocketException;
+        // TaskCanceledException is deliberately absent, and its absence is the point. It is exactly
+        // what the SDK's own timeout raises, so including it repeated a request that had already been
+        // dispatched and might already have been carried out: one ambiguous payment creation became
+        // four real POSTs, protected only by the provider's per-external_id promise and with nothing
+        // said to the caller. A connect failure and a timeout after dispatch are not the same risk.
+        return exception is HttpRequestException or SocketException;
     }
 
     private TimeSpan CalculateExponentialDelay(int attempt, bool withJitter)
