@@ -468,6 +468,13 @@ public class ServicesCoverageExpansionTests
         StubHttpMessageHandler handler = new(async (request, _) =>
         {
             calls.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
+            if (request.RequestUri!.AbsolutePath == "/api/subscriptions/v1/plans" &&
+                request.Method == HttpMethod.Get)
+            {
+                // This operation answers with a bare array, not an object.
+                return Json("[]");
+            }
+
             return Json("{}");
         });
 

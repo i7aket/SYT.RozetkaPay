@@ -624,7 +624,9 @@ SYT.RozetkaPay.Models.Common.PaymentMode
     PaymentMode Hosted
 SYT.RozetkaPay.Models.Common.Product
     .ctor()
+    Decimal? NetAmount { get; set; }
     Decimal? Price { get; set; }
+    Decimal? VatAmount { get; set; }
     Int32? Quantity { get; set; }
     Int32? TaxGroup { get; set; }
     String Category { get; set; }
@@ -633,10 +635,8 @@ SYT.RozetkaPay.Models.Common.Product
     String Id { get; set; }
     String Image { get; set; }
     String Name { get; set; }
-    String NetAmount { get; set; }
     String Sku { get; set; }
     String Url { get; set; }
-    String VatAmount { get; set; }
 SYT.RozetkaPay.Models.Common.RecipientIbanRequestPaymentMethod
     .ctor()
     String Iban { get; set; }
@@ -992,7 +992,7 @@ SYT.RozetkaPay.Models.FinMon.FinMonP2PPaymentPreLimitsResponse
     Decimal? AmountLeft { get; set; }
     Int32? CardOnlyCountLeft { get; set; }
     Int32? TotalCountLeft { get; set; }
-    String RecipientIpn { get; set; }
+    Int64? RecipientIpn { get; set; }
 SYT.RozetkaPay.Models.FinMon.FinMonRule
     .ctor()
     Boolean IsActive { get; set; }
@@ -2777,11 +2777,6 @@ SYT.RozetkaPay.Models.Subscriptions.SubscriptionPlanResponse
     String Id { get; set; }
     String Name { get; set; }
     String Status { get; set; }
-SYT.RozetkaPay.Models.Subscriptions.SubscriptionPlansResponse
-    .ctor()
-    Int32? Count { get; set; }
-    Int32? Total { get; set; }
-    List<SubscriptionPlanResponse> Plans { get; set; }
 SYT.RozetkaPay.Models.Subscriptions.SubscriptionRecurrentIdPaymentMethod
     .ctor()
     String RecurrentId { get; set; }
@@ -2995,13 +2990,13 @@ SYT.RozetkaPay.Services.ISubscriptionService
     Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(String customerId, CancellationToken cancellationToken)
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken)
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<List<SubscriptionPlanResponse>> GetPlansAsync(CancellationToken cancellationToken)
     Task<SubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken)
     Task<SubscriptionList> GetSubscriptionsAsync(String externalId, CancellationToken cancellationToken)
     Task<SubscriptionPaymentsResponse> GetPaymentsAsync(String subscriptionId, CancellationToken cancellationToken)
     Task<SubscriptionPlanResponse> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken)
     Task<SubscriptionPlanResponse> GetPlanAsync(String planId, CancellationToken cancellationToken)
     Task<SubscriptionPlanResponse> UpdatePlanAsync(String planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken)
-    Task<SubscriptionPlansResponse> GetPlansAsync(CancellationToken cancellationToken)
     Task<SubscriptionResponse> CreateAsync(CreateSubscriptionRequest request, CancellationToken cancellationToken)
     Task<SubscriptionResponse> GetAsync(String subscriptionId, CancellationToken cancellationToken)
     Task<SubscriptionResponse> UpdateAsync(String subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken)
@@ -3085,13 +3080,13 @@ SYT.RozetkaPay.Services.SubscriptionService
     Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(String customerId, CancellationToken cancellationToken)
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancelCustomerSubscriptionOptions options, CancellationToken cancellationToken)
     Task<DefaultResponse> CancelCustomerSubscriptionAsync(String subscriptionId, CancellationToken cancellationToken)
+    Task<List<SubscriptionPlanResponse>> GetPlansAsync(CancellationToken cancellationToken)
     Task<SubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken)
     Task<SubscriptionList> GetSubscriptionsAsync(String externalId, CancellationToken cancellationToken)
     Task<SubscriptionPaymentsResponse> GetPaymentsAsync(String subscriptionId, CancellationToken cancellationToken)
     Task<SubscriptionPlanResponse> CreatePlanAsync(CreatePlanRequest request, CancellationToken cancellationToken)
     Task<SubscriptionPlanResponse> GetPlanAsync(String planId, CancellationToken cancellationToken)
     Task<SubscriptionPlanResponse> UpdatePlanAsync(String planId, UpdateSubscriptionPlanRequest request, CancellationToken cancellationToken)
-    Task<SubscriptionPlansResponse> GetPlansAsync(CancellationToken cancellationToken)
     Task<SubscriptionResponse> CreateAsync(CreateSubscriptionRequest request, CancellationToken cancellationToken)
     Task<SubscriptionResponse> GetAsync(String subscriptionId, CancellationToken cancellationToken)
     Task<SubscriptionResponse> UpdateAsync(String subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken)

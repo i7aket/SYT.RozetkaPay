@@ -14,7 +14,7 @@ public interface ISubscriptionService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription plans response</returns>
-    Task<SubscriptionPlansResponse> GetPlansAsync(CancellationToken cancellationToken = default);
+    Task<List<SubscriptionPlanResponse>> GetPlansAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create subscription plan
