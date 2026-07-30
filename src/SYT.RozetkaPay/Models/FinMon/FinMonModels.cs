@@ -4,57 +4,6 @@ using SYT.RozetkaPay.Converters;
 
 namespace SYT.RozetkaPay.Models.FinMon;
 
-/// <summary>
-/// Request to submit transaction to FinMon for analysis
-/// </summary>
-public class FinMonTransactionRequest
-{
-    /// <summary>
-    /// Transaction amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    [Required]
-    public decimal Amount { get; set; }
-
-    /// <summary>
-    /// Transaction currency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("currency")]
-    [Required]
-    public string Currency { get; set; } = string.Empty;
-
-    /// <summary>
-    /// External transaction ID (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("external_id")]
-    [Required]
-    public string ExternalId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Transaction type (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("transaction_type")]
-    public string? TransactionType { get; set; }
-
-    /// <summary>
-    /// Customer information (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("customer")]
-    public FinMonCustomer? Customer { get; set; }
-
-    /// <summary>
-    /// Card information (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("card")]
-    public FinMonCard? Card { get; set; }
-
-    /// <summary>
-    /// Transaction timestamp (ISO 8601 format)
-    /// </summary>
-    [JsonPropertyName("timestamp")]
-    [JsonConverter(typeof(NullableFlexibleDateTimeConverter))]
-    public DateTime? Timestamp { get; set; }
-}
 
 /// <summary>
 /// Customer information for FinMon analysis
@@ -129,53 +78,6 @@ public class FinMonCard
     public string? IssuingCountry { get; set; }
 }
 
-/// <summary>
-/// FinMon transaction response
-/// </summary>
-public class FinMonTransactionResponse
-{
-    /// <summary>
-    /// Transaction ID (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("transaction_id")]
-    public string? TransactionId { get; set; }
-
-    /// <summary>
-    /// Analysis status (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Risk score (0-100) (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("risk_score")]
-    public decimal? RiskScore { get; set; }
-
-    /// <summary>
-    /// Risk level (low/medium/high) (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("risk_level")]
-    public string? RiskLevel { get; set; }
-
-    /// <summary>
-    /// Triggered rules (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("triggered_rules")]
-    public List<TriggeredRule>? TriggeredRules { get; set; }
-
-    /// <summary>
-    /// Recommended action (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("recommended_action")]
-    public string? RecommendedAction { get; set; }
-
-    /// <summary>
-    /// Additional details (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("details")]
-    public string? Details { get; set; }
-}
 
 /// <summary>
 /// Triggered rule information
@@ -207,36 +109,6 @@ public class TriggeredRule
     public string? Description { get; set; }
 }
 
-/// <summary>
-/// FinMon status response
-/// </summary>
-public class FinMonStatusResponse
-{
-    /// <summary>
-    /// Transaction ID (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("transaction_id")]
-    public string? TransactionId { get; set; }
-
-    /// <summary>
-    /// Current status (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Last update timestamp (ISO 8601 format)
-    /// </summary>
-    [JsonPropertyName("updated_at")]
-    [JsonConverter(typeof(NullableFlexibleDateTimeConverter))]
-    public DateTime? UpdatedAt { get; set; }
-
-    /// <summary>
-    /// Status history (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("status_history")]
-    public List<StatusHistoryItem>? StatusHistory { get; set; }
-}
 
 /// <summary>
 /// Status history item
@@ -263,23 +135,6 @@ public class StatusHistoryItem
     public string? Comment { get; set; }
 }
 
-/// <summary>
-/// FinMon rules response
-/// </summary>
-public class FinMonRulesResponse
-{
-    /// <summary>
-    /// List of rules (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("rules")]
-    public List<FinMonRule>? Rules { get; set; }
-
-    /// <summary>
-    /// Total count of rules (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("total")]
-    public int? Total { get; set; }
-}
 
 /// <summary>
 /// FinMon rule definition
@@ -353,57 +208,6 @@ public class RuleCondition
     public string? Value { get; set; }
 }
 
-/// <summary>
-/// Request to submit FinMon transaction
-/// </summary>
-public class SubmitFinMonTransactionRequest
-{
-    /// <summary>
-    /// Transaction amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    [Required]
-    public decimal Amount { get; set; }
-
-    /// <summary>
-    /// Transaction currency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("currency")]
-    [Required]
-    public string Currency { get; set; } = string.Empty;
-
-    /// <summary>
-    /// External transaction ID (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("external_id")]
-    [Required]
-    public string ExternalId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Transaction type (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("transaction_type")]
-    public string? TransactionType { get; set; }
-
-    /// <summary>
-    /// Customer information (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("customer")]
-    public FinMonCustomer? Customer { get; set; }
-
-    /// <summary>
-    /// Card information (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("card")]
-    public FinMonCard? Card { get; set; }
-
-    /// <summary>
-    /// Transaction timestamp (ISO 8601 format)
-    /// </summary>
-    [JsonPropertyName("timestamp")]
-    [JsonConverter(typeof(NullableFlexibleDateTimeConverter))]
-    public DateTime? Timestamp { get; set; }
-}
 
 /// <summary>
 /// FinMon P2P payment pre-limits response

@@ -231,86 +231,13 @@ public class WalletCard
 // ===================== ADD CARD TO WALLET MODELS =====================
 
 
-/// <summary>
-/// Card details for wallet
-/// </summary>
-public class WalletCardDetails
-{
-    /// <summary>
-    /// Card number
-    /// </summary>
-    [Required]
-    [JsonPropertyName("number")]
-    public required string Number { get; set; }
-
-    /// <summary>
-    /// Expiry month
-    /// </summary>
-    [Required]
-    [JsonPropertyName("exp_month")]
-    public required string ExpMonth { get; set; }
-
-    /// <summary>
-    /// Expiry year
-    /// </summary>
-    [Required]
-    [JsonPropertyName("exp_year")]
-    public required string ExpYear { get; set; }
-
-    /// <summary>
-    /// CVV
-    /// </summary>
-    [Required]
-    [JsonPropertyName("cvv")]
-    public required string Cvv { get; set; }
-
-    /// <summary>
-    /// Cardholder name
-    /// </summary>
-    [JsonPropertyName("holder_name")]
-    public string? HolderName { get; set; }
-}
 
 
 // ===================== DELETE CARD FROM WALLET MODELS =====================
 
-/// <summary>
-/// Response for deleting card from wallet
-/// </summary>
-public class DeleteCardFromWalletResponse
-{
-    /// <summary>
-    /// Operation status
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Status message
-    /// </summary>
-    [JsonPropertyName("message")]
-    public string? Message { get; set; }
-}
 
 // ===================== WALLET ITEM MODELS =====================
 
-/// <summary>
-/// Wallet item response
-/// </summary>
-public class WalletItemResponse
-{
-    /// <summary>
-    /// Card information
-    /// </summary>
-    [JsonPropertyName("card")]
-    public WalletCard? Card { get; set; }
-
-    /// <summary>
-    /// Card transactions history
-    /// </summary>
-    [JsonPropertyName("transactions")]
-    public List<WalletTransaction>? Transactions { get; set; }
-}
 
 /// <summary>
 /// Wallet transaction
@@ -356,35 +283,6 @@ public class WalletTransaction
 
 // ===================== CARD CONFIRMATION MODELS =====================
 
-/// <summary>
-/// Card confirmation status response
-/// </summary>
-public class CardConfirmationStatusResponse
-{
-    /// <summary>
-    /// Card ID
-    /// </summary>
-    [JsonPropertyName("card_id")]
-    public string? CardId { get; set; }
-
-    /// <summary>
-    /// Confirmation status
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Confirmation required
-    /// </summary>
-    [JsonPropertyName("confirmation_required")]
-    public bool? ConfirmationRequired { get; set; }
-
-    /// <summary>
-    /// Verification amount
-    /// </summary>
-    [JsonPropertyName("verification_amount")]
-    public int? VerificationAmount { get; set; }
-}
 
 // ===================== SET DEFAULT CARD MODELS =====================
 
@@ -460,29 +358,6 @@ public class SetDefaultCardResponse
 
 // ===================== CUSTOMER CARDS MODELS =====================
 
-/// <summary>
-/// Customer cards response
-/// </summary>
-public class CustomerCardsResponse
-{
-    /// <summary>
-    /// Customer ID
-    /// </summary>
-    [JsonPropertyName("customer_id")]
-    public string? CustomerId { get; set; }
-
-    /// <summary>
-    /// List of cards
-    /// </summary>
-    [JsonPropertyName("cards")]
-    public List<WalletCard>? Cards { get; set; }
-
-    /// <summary>
-    /// Total number of cards
-    /// </summary>
-    [JsonPropertyName("total_count")]
-    public int? TotalCount { get; set; }
-}
 
 /// <summary>
 /// Response when adding customer payment method

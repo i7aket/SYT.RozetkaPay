@@ -176,72 +176,6 @@ public enum PayoutType
 
 // ===================== PAYOUT RESPONSE MODELS =====================
 
-/// <summary>
-/// Payout response
-/// Based on official RozetkaPay CDN documentation: https://cdn.rozetkapay.com/public-docs/index.html
-/// </summary>
-public class PayoutResponse
-{
-    /// <summary>
-    /// Payout ID
-    /// </summary>
-    [JsonPropertyName("id")]
-    public string? Id { get; set; }
-
-    /// <summary>
-    /// External payout ID
-    /// </summary>
-    [JsonPropertyName("external_id")]
-    public string? ExternalId { get; set; }
-
-    /// <summary>
-    /// Payout status
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Payout amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
-
-    /// <summary>
-    /// Payout currency
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
-
-    /// <summary>
-    /// Payout description
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Recipient information
-    /// </summary>
-    [JsonPropertyName("recipient")]
-    public PayoutRecipient? Recipient { get; set; }
-
-    /// <summary>
-    /// Payout creation timestamp
-    /// </summary>
-    [JsonPropertyName("created_at")]
-    public DateTime? CreatedAt { get; set; }
-
-    /// <summary>
-    /// Payout processing timestamp
-    /// </summary>
-    [JsonPropertyName("processed_at")]
-    public DateTime? ProcessedAt { get; set; }
-
-    /// <summary>
-    /// Payout error details (if any)
-    /// </summary>
-    [JsonPropertyName("error")]
-    public PayoutError? Error { get; set; }
-}
 
 /// <summary>
 /// Payout error information
@@ -267,29 +201,6 @@ public class PayoutError
 
 // ===================== BALANCE MODELS =====================
 
-/// <summary>
-/// Balance response
-/// </summary>
-public class BalanceResponse
-{
-    /// <summary>
-    /// List of currency balances
-    /// </summary>
-    [JsonPropertyName("balances")]
-    public List<CurrencyBalance>? Balances { get; set; }
-
-    /// <summary>
-    /// Total balance amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("total_balance")]
-    public decimal? TotalBalance { get; set; }
-
-    /// <summary>
-    /// Base currency for total balance
-    /// </summary>
-    [JsonPropertyName("base_currency")]
-    public string? BaseCurrency { get; set; }
-}
 
 /// <summary>
 /// Currency balance information
@@ -321,23 +232,6 @@ public class CurrencyBalance
     public decimal? Reserved { get; set; }
 }
 
-/// <summary>
-/// Payout balance response
-/// </summary>
-public class PayoutBalanceResponse
-{
-    /// <summary>
-    /// Available balance amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
-
-    /// <summary>
-    /// Balance currency
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
-}
 
 // ===================== ADDITIONAL PAYOUT MODELS =====================
 

@@ -266,69 +266,11 @@ public class CancelRefundRequest
 
 // ===================== PAYMENT RECEIPT MODELS =====================
 
-/// <summary>
-/// Payment receipt response
-/// </summary>
-public class PaymentReceiptResponse
-{
-    /// <summary>
-    /// Receipt URL
-    /// </summary>
-    [JsonPropertyName("receipt_url")]
-    public string? ReceiptUrl { get; set; }
-
-    /// <summary>
-    /// Receipt PDF data
-    /// </summary>
-    [JsonPropertyName("receipt_pdf")]
-    public string? ReceiptPdf { get; set; }
-
-    /// <summary>
-    /// Receipt HTML data
-    /// </summary>
-    [JsonPropertyName("receipt_html")]
-    public string? ReceiptHtml { get; set; }
-}
 
 // ===================== CARD LOOKUP MODELS =====================
 
 
 
-/// <summary>
-/// BIN information
-/// </summary>
-public class BinInfo
-{
-    /// <summary>
-    /// Card payment system
-    /// </summary>
-    [JsonPropertyName("payment_system")]
-    public string? PaymentSystem { get; set; }
-
-    /// <summary>
-    /// Card type
-    /// </summary>
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
-
-    /// <summary>
-    /// Bank name
-    /// </summary>
-    [JsonPropertyName("bank_name")]
-    public string? BankName { get; set; }
-
-    /// <summary>
-    /// Country code
-    /// </summary>
-    [JsonPropertyName("country")]
-    public string? Country { get; set; }
-
-    /// <summary>
-    /// Country name
-    /// </summary>
-    [JsonPropertyName("country_name")]
-    public string? CountryName { get; set; }
-}
 
 // ===================== CALLBACK RESEND MODELS =====================
 
@@ -644,35 +586,6 @@ public class CustomerRequestUserDetails : BaseRequestUserDetails
     public BrowserFingerprint? Fingerprint { get; set; }
 }
 
-/// <summary>
-/// Customer address information
-/// </summary>
-public class CustomerAddress
-{
-    /// <summary>
-    /// Country (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("country")]
-    public string? Country { get; set; }
-
-    /// <summary>
-    /// City (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("city")]
-    public string? City { get; set; }
-
-    /// <summary>
-    /// Street address (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("street")]
-    public string? Street { get; set; }
-
-    /// <summary>
-    /// Postal code (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("postal_code")]
-    public string? PostalCode { get; set; }
-}
 
 /// <summary>
 /// Recipient request user details

@@ -204,17 +204,6 @@ public class CustomerInfo : BaseRequestUserDetails
     public string? BrowserUserAgent { get; set; }
 }
 
-/// <summary>
-/// Customer user information for payment request
-/// </summary>
-public class CustomerUserInfo
-{
-    /// <summary>
-    /// Customer locale (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("locale")]
-    public CustomerCheckoutLocale? Locale { get; set; }
-}
 
 /// <summary>
 /// Payment method information
@@ -319,29 +308,6 @@ public class GooglePayToken
     public string? Data { get; set; }
 }
 
-/// <summary>
-/// Recipient information for P2P payments
-/// </summary>
-public class RecipientInfo
-{
-    /// <summary>
-    /// Recipient payment method (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("payment_method")]
-    public RecipientPaymentMethod? PaymentMethod { get; set; }
-
-    /// <summary>
-    /// Recipient amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
-
-    /// <summary>
-    /// Recipient currency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
-}
 
 /// <summary>
 /// Recipient payment method
@@ -432,27 +398,4 @@ public class RecipientWallet
     [JsonPropertyName("provider")]
     public string? Provider { get; set; }
 }
-
-/// <summary>
-/// PayParts configuration
-/// </summary>
-public class PayPartsConfig
-{
-    /// <summary>
-    /// Number of payment parts (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("parts_count")]
-    public int? PartsCount { get; set; }
-
-    /// <summary>
-    /// Bank for PayParts (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("bank")]
-    public string? Bank { get; set; }
-
-    /// <summary>
-    /// Merchant ID for PayParts (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("merchant_id")]
-    public string? MerchantId { get; set; }
-} 
+ 

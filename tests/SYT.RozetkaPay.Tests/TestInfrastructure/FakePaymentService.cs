@@ -69,6 +69,4 @@ internal sealed class FakePaymentService : IPaymentService
     public Task<PaymentOperationResult> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<PaymentResponse> ConfirmP2PAsync(string externalId, decimal? amount = null, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
 }
