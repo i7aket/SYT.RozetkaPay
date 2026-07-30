@@ -1243,12 +1243,40 @@ public abstract class BaseService
 
     private TResponse DeserializeResponse<TResponse>(string content, HttpStatusCode statusCode)
     {
-        if (statusCode == HttpStatusCode.NoContent || string.IsNullOrWhiteSpace(content))
+        // Only 204 means "no content". A blank body on a 200 used to be synthesized into an object of
+        // defaults, which a caller cannot tell from a real reply - and after EXP-431 an all-null
+        // PaymentOperationResult is exactly what a truncating proxy and a successful creation both
+        // look like. It is an error now, and says so.
+        if (statusCode == HttpStatusCode.NoContent)
         {
             return CreateEmptyResponse<TResponse>();
         }
 
-        TResponse? response = JsonSerializer.Deserialize<TResponse>(content, GetJsonSerializerOptions());
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new RozetkaPayException(
+                $"The provider answered {(int)statusCode} with an empty body where a payload was "
+                + "expected. The operation may have been carried out; reconcile rather than retry.");
+        }
+
+        TResponse? response;
+
+        try
+        {
+            response = JsonSerializer.Deserialize<TResponse>(content, GetJsonSerializerOptions());
+        }
+        // A body the SDK cannot read is still evidence, and a raw JsonException carries none of it -
+        // it is not in this hierarchy, so the documented catch clause misses it, and the body that
+        // would explain the failure reaches nobody.
+        catch (JsonException failure)
+        {
+            throw new RozetkaPayException(
+                "The provider's response could not be read. The raw body is attached; treat it as "
+                + "sensitive.",
+                failure,
+                new RozetkaPayApiError(statusCode, code: null, requestId: null, rawBody: content));
+        }
+
         if (response is null)
         {
             throw new RozetkaPayException("Unable to deserialize API response");

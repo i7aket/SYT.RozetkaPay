@@ -97,6 +97,14 @@ SYT.RozetkaPay.Converters.NullableFlexibleDateTimeConverter
     .ctor()
     DateTime? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
     Void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.TolerantNullableEnumConverterFactory
+    .ctor()
+    Boolean CanConvert(Type typeToConvert)
+    JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+SYT.RozetkaPay.Converters.TolerantNullableEnumConverter`1
+    .ctor(JsonSerializerOptions options)
+    TEnum? Read(Utf8JsonReader& reader, Type typeToConvert, JsonSerializerOptions options)
+    Void Write(Utf8JsonWriter writer, TEnum? value, JsonSerializerOptions options)
 SYT.RozetkaPay.Exceptions.RozetkaPayApiError
     .ctor(HttpStatusCode statusCode, String code, String requestId, String rawBody)
     HttpStatusCode StatusCode { get; }
