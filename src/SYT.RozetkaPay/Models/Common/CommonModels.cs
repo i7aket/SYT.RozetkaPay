@@ -452,11 +452,6 @@ public class Product
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
-    /// <summary>
-    /// Product price (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("price")]
-    public decimal? Price { get; set; }
 
     /// <summary>
     /// Product quantity (JSON number as per CDN documentation)
@@ -464,11 +459,6 @@ public class Product
     [JsonPropertyName("quantity")]
     public int? Quantity { get; set; }
 
-    /// <summary>
-    /// Product SKU (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("sku")]
-    public string? Sku { get; set; }
 
     /// <summary>
     /// Product category (JSON string as per CDN documentation)

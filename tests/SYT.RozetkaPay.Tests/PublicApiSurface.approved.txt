@@ -157,10 +157,6 @@ SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethod
     .ctor()
     AlternativePaymentMethodType? Type { get; set; }
     BlikRequestAlternativePaymentMethod Blik { get; set; }
-    Boolean IsActive { get; set; }
-    String Code { get; set; }
-    String LogoUrl { get; set; }
-    String Name { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethodInfo
     .ctor()
     Boolean IsActive { get; set; }
@@ -239,7 +235,7 @@ SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationsResult
     String UnifiedExternalId { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentProduct
     .ctor()
-    String ImageUrl { get; set; }
+    Decimal? Price { get; set; }
     String TaxCategory { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentProvider
     AlternativePaymentProvider Imoje
@@ -264,7 +260,6 @@ SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentStatusResponse
 SYT.RozetkaPay.Models.AlternativePayments.BlikRequestAlternativePaymentMethod
     .ctor()
     String BlikCode { get; set; }
-    String Type { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.CreateAlternativePayment
     .ctor()
     AlternativePaymentCustomerDetails Customer { get; set; }
@@ -610,7 +605,6 @@ SYT.RozetkaPay.Models.Common.PaymentMode
 SYT.RozetkaPay.Models.Common.Product
     .ctor()
     Decimal? NetAmount { get; set; }
-    Decimal? Price { get; set; }
     Decimal? VatAmount { get; set; }
     Int32? Quantity { get; set; }
     Int32? TaxGroup { get; set; }
@@ -620,7 +614,6 @@ SYT.RozetkaPay.Models.Common.Product
     String Id { get; set; }
     String Image { get; set; }
     String Name { get; set; }
-    String Sku { get; set; }
     String Url { get; set; }
 SYT.RozetkaPay.Models.Common.RecipientIbanRequestPaymentMethod
     .ctor()
@@ -1373,13 +1366,11 @@ SYT.RozetkaPay.Models.PayParts.PayPartsCardPaymentMethod
 SYT.RozetkaPay.Models.PayParts.PayPartsCustomer
     .ctor()
     BrowserFingerprint Fingerprint { get; set; }
-    DateTime? BirthDate { get; set; }
     PayPartsPaymentMethod PaymentMethod { get; set; }
     String AccountNumber { get; set; }
     String Email { get; set; }
     String FirstName { get; set; }
     String LastName { get; set; }
-    String Patronym { get; set; }
     String Phone { get; set; }
 SYT.RozetkaPay.Models.PayParts.PayPartsDelivery
     .ctor()
@@ -1513,12 +1504,10 @@ SYT.RozetkaPay.Models.PayParts.PayPartsProduct
     Decimal Price { get; set; }
     Int32 Quantity { get; set; }
     Int32? TaxGroup { get; set; }
-    String Category { get; set; }
     String CategoryName { get; set; }
     String ExternalId { get; set; }
     String Name { get; set; }
     String SecondCategoryName { get; set; }
-    String Url { get; set; }
 SYT.RozetkaPay.Models.PayParts.PayPartsRefundResponse
     .ctor()
     DateTime? CreatedAt { get; set; }
@@ -1768,7 +1757,6 @@ SYT.RozetkaPay.Models.Payments.CustomerInfo
     CheckoutColorMode? ColorMode { get; set; }
     CustomerCheckoutLocale? Locale { get; set; }
     CustomerRequestPaymentMethod PaymentMethod { get; set; }
-    CustomerUserInfo UserInfo { get; set; }
     String AccountNumber { get; set; }
     String BrowserUserAgent { get; set; }
     String IpAddress { get; set; }
@@ -1782,9 +1770,6 @@ SYT.RozetkaPay.Models.Payments.CustomerRequestPaymentMethod
     CustomerDecryptedGooglePayRequestPaymentMethod DecryptedGooglePay { get; set; }
     CustomerWalletRequestPaymentMethod Wallet { get; set; }
     PaymentMethodType? Type { get; set; }
-    String ApplePayToken { get; set; }
-    String GooglePayToken { get; set; }
-    String WalletToken { get; set; }
 SYT.RozetkaPay.Models.Payments.CustomerRequestUserDetails
     .ctor()
     BrowserFingerprint Fingerprint { get; set; }
@@ -2034,12 +2019,9 @@ SYT.RozetkaPay.Models.Payments.PaymentWebhookDetails
     WebhookFee Fee { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientCCNumberRequestPaymentMethod
     .ctor()
-    Int32 ExpirationMonth { get; set; }
-    Int32 ExpirationYear { get; set; }
     String Number { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientCCTokenRequestPaymentMethod
     .ctor()
-    String CVV { get; set; }
     String Token { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientCardNumber
     .ctor()
@@ -2063,18 +2045,14 @@ SYT.RozetkaPay.Models.Payments.RecipientPaymentMethod
     String Type { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientRequestPaymentMethod
     .ctor()
-    RecipientCCNumberRequestPaymentMethod CardNumber { get; set; }
     RecipientCCNumberRequestPaymentMethod CcNumber { get; set; }
-    RecipientCCTokenRequestPaymentMethod CardToken { get; set; }
     RecipientCCTokenRequestPaymentMethod CcToken { get; set; }
     RecipientIbanRequestPaymentMethod Iban { get; set; }
     RecipientWalletRequestPaymentMethod Wallet { get; set; }
     String Type { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientRequestUserDetails
     .ctor()
-    Decimal? Amount { get; set; }
     RecipientRequestPaymentMethod PaymentMethod { get; set; }
-    String Currency { get; set; }
     String Rid { get; set; }
     String Tin { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientWallet
@@ -2094,7 +2072,6 @@ SYT.RozetkaPay.Models.Payments.RefundPaymentRequest
 SYT.RozetkaPay.Models.Payments.ResendCallbackRequest
     .ctor()
     OperationType? Operation { get; set; }
-    String CallbackUrl { get; set; }
     String ExternalId { get; set; }
 SYT.RozetkaPay.Models.Payments.ResultPaymentMethod
     .ctor()
@@ -2657,9 +2634,7 @@ SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentMethod
     CustomerCCTokenRequestPaymentMethod CcToken { get; set; }
     CustomerWalletRequestPaymentMethod Wallet { get; set; }
     String RecurrentId { get; set; }
-    String RecurrentToken { get; set; }
     String Type { get; set; }
-    SubscriptionCard Card { get; set; }
 SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentMethodUpdate
     .ctor()
     CustomerAppleGooglePayRequestPaymentMethod ApplePay { get; set; }
@@ -2946,7 +2921,7 @@ SYT.RozetkaPay.Services.PaymentInstructionService
     Task<PaymentInstructionsResult> CreateAsync(CreatePaymentInstructionsRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.PaymentService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
-    CreatePaymentRequest BuildP2PRequest(Decimal amount, String currency, String externalId, String recipientCardNumber, String recipientExpMonth, String recipientExpYear, String description)
+    CreatePaymentRequest BuildP2PRequest(Decimal amount, String currency, String externalId, String customerEmail, String recipientCardNumber, String description)
     Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
     Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)

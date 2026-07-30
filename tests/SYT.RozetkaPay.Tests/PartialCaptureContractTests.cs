@@ -36,7 +36,9 @@ public class PartialCaptureContractTests
             Currency = "UAH",
             Payload = "payload-1",
             CallbackUrl = "https://merchant.example/callback",
-            Products = [new Product { Sku = "sku-1", Name = "Item", Quantity = 1, Price = 12.34m }],
+            // Declared fields only. Product carries id and net_amount; sku and price were SDK
+            // inventions and are gone.
+            Products = [new Product { Id = "sku-1", Name = "Item", Quantity = 1, NetAmount = 12.34m }],
         };
 
         string json = JsonSerializer.Serialize(request, SdkSerializerOptions.Value);

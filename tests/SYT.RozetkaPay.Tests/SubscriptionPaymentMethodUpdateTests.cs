@@ -468,10 +468,12 @@ public class SubscriptionPaymentMethodUpdateTests
             typeof(UpdateSubscriptionPaymentMethodRequest).GetProperty(
                 nameof(UpdateSubscriptionPaymentMethodRequest.PaymentMethod))!.PropertyType);
 
-        // The historical type keeps its shape for the operations that already use it.
-        Assert.NotNull(typeof(SubscriptionPaymentMethod).GetProperty(nameof(SubscriptionPaymentMethod.Card)));
+        // The historical type keeps its shape for the operations that already use it — as the
+        // document spells it. Card and RecurrentToken were SDK inventions sitting beside the
+        // declared cc_token and recurrent_id, and EXP-422 removed them.
+        Assert.NotNull(typeof(SubscriptionPaymentMethod).GetProperty(nameof(SubscriptionPaymentMethod.CcToken)));
         Assert.NotNull(
-            typeof(SubscriptionPaymentMethod).GetProperty(nameof(SubscriptionPaymentMethod.RecurrentToken)));
+            typeof(SubscriptionPaymentMethod).GetProperty(nameof(SubscriptionPaymentMethod.RecurrentId)));
     }
 
     private static UpdateSubscriptionPaymentMethodRequest MinimalRequest()
