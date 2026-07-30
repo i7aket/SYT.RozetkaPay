@@ -2,35 +2,6 @@ using System.Text.Json.Serialization;
 
 namespace SYT.RozetkaPay.Models.PayParts;
 
-/// <summary>
-/// PayParts banks response (alternative implementation for compatibility)
-/// </summary>
-public class PayPartsBanksResponse
-{
-    /// <summary>
-    /// List of available banks for PayParts
-    /// </summary>
-    [JsonPropertyName("banks")]
-    public List<PayPartsBankInfo>? Banks { get; set; }
-
-    /// <summary>
-    /// Response status
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Response message
-    /// </summary>
-    [JsonPropertyName("message")]
-    public string? Message { get; set; }
-
-    /// <summary>
-    /// Total number of banks
-    /// </summary>
-    [JsonPropertyName("total_count")]
-    public int? TotalCount { get; set; }
-}
 
 /// <summary>
 /// PayParts bank information (JSON object as per CDN documentation)

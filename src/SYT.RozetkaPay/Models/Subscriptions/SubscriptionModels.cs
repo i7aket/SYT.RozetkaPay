@@ -1122,29 +1122,6 @@ public class SubscriptionPlanResponse
     public DateTime? UpdatedAt { get; set; }
 }
 
-/// <summary>
-/// Subscription plans response
-/// </summary>
-public class SubscriptionPlansResponse
-{
-    /// <summary>
-    /// List of plans (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("plans")]
-    public List<SubscriptionPlanResponse>? Plans { get; set; }
-
-    /// <summary>
-    /// Total count of plans (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("total")]
-    public int? Total { get; set; }
-
-    /// <summary>
-    /// Current count in response (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int? Count { get; set; }
-}
 
 /// <summary>
 /// Customer subscriptions response

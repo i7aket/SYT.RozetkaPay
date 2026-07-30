@@ -414,7 +414,7 @@ public class FinMonP2PPaymentPreLimitsResponse
     /// Recipient IPN (JSON string as per CDN documentation)
     /// </summary>
     [JsonPropertyName("recipient_ipn")]
-    public string? RecipientIpn { get; set; }
+    public long? RecipientIpn { get; set; }
 
     /// <summary>
     /// Amount left for transfers (JSON number as per CDN documentation)

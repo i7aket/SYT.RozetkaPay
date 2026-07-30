@@ -213,6 +213,96 @@ internal static class OpenApiSnapshot
             .Select(static path => path.Name);
     }
 
+    /// <summary>
+    /// Every named schema with the JSON kind it declares for each property.
+    /// </summary>
+    /// <remarks>
+    /// Kinds only — <c>string</c>, <c>integer</c>, <c>number</c>, <c>boolean</c>, <c>array</c>,
+    /// <c>object</c>, <c>enum</c>. Formats are not reported: whether a date-time string is read as
+    /// <c>DateTime</c> or left as text is a modelling choice, while reading a number into a string is
+    /// a defect, and only the second is worth failing a build over.
+    /// </remarks>
+    internal static IEnumerable<(string Name, IReadOnlyDictionary<string, string> Properties)> SchemaPropertyKinds()
+    {
+        JsonElement components = Document.Value.RootElement.GetProperty("components");
+
+        foreach (string section in new[] { "schemas", "requestBodies", "responses" })
+        {
+            if (!components.TryGetProperty(section, out JsonElement group))
+            {
+                continue;
+            }
+
+            foreach (JsonProperty entry in group.EnumerateObject())
+            {
+                JsonElement schema = section == "schemas" ? entry.Value : BodySchemaOrDefault(entry.Value);
+                if (schema.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                Dictionary<string, string> kinds = [];
+                CollectPropertyKinds(schema, kinds);
+
+                if (kinds.Count > 0)
+                {
+                    yield return (entry.Name, kinds);
+                }
+            }
+        }
+    }
+
+    private static void CollectPropertyKinds(JsonElement schema, Dictionary<string, string> into, int depth = 0)
+    {
+        if (depth > 10)
+        {
+            return;
+        }
+
+        schema = Resolve(schema);
+
+        if (schema.TryGetProperty("allOf", out JsonElement composed))
+        {
+            foreach (JsonElement part in composed.EnumerateArray())
+            {
+                CollectPropertyKinds(part, into, depth + 1);
+            }
+        }
+
+        if (!schema.TryGetProperty("properties", out JsonElement properties))
+        {
+            return;
+        }
+
+        foreach (JsonProperty property in properties.EnumerateObject())
+        {
+            string? kind = KindOf(property.Value);
+            if (kind is not null)
+            {
+                into[property.Name] = kind;
+            }
+        }
+    }
+
+    private static string? KindOf(JsonElement node)
+    {
+        node = Resolve(node);
+
+        if (node.TryGetProperty("enum", out _))
+        {
+            return "enum";
+        }
+
+        if (node.TryGetProperty("type", out JsonElement type) && type.ValueKind == JsonValueKind.String)
+        {
+            return type.GetString();
+        }
+
+        bool composed = node.TryGetProperty("properties", out _) || node.TryGetProperty("allOf", out _);
+
+        return composed ? "object" : null;
+    }
+
     private static JsonElement Schemas()
     {
         return Document.Value.RootElement.GetProperty("components").GetProperty("schemas");

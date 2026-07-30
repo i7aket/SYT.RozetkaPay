@@ -500,7 +500,7 @@ public class Product
     /// Provider field &lt;c&gt;net_amount&lt;/c&gt;.
     /// </summary>
     [JsonPropertyName("net_amount")]
-    public string? NetAmount { get; set; }
+    public decimal? NetAmount { get; set; }
     /// <summary>
     /// Tax group is required for projects with enabled fiscalization.
     /// </summary>
@@ -515,7 +515,7 @@ public class Product
     /// Provider field &lt;c&gt;vat_amount&lt;/c&gt;.
     /// </summary>
     [JsonPropertyName("vat_amount")]
-    public string? VatAmount { get; set; }
+    public decimal? VatAmount { get; set; }
 }
 
 /// <summary>

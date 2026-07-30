@@ -249,6 +249,12 @@ public class ServicesCoverageExpansionTests
         StubHttpMessageHandler handler = new(async (request, _) =>
         {
             calls.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
+            if (request.RequestUri!.AbsolutePath == "/api/payparts/v1/banks/info")
+            {
+                // This operation answers with a bare array, not an object.
+                return Json("[]");
+            }
+
             return Json("{}");
         });
 
@@ -462,6 +468,13 @@ public class ServicesCoverageExpansionTests
         StubHttpMessageHandler handler = new(async (request, _) =>
         {
             calls.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
+            if (request.RequestUri!.AbsolutePath == "/api/subscriptions/v1/plans" &&
+                request.Method == HttpMethod.Get)
+            {
+                // This operation answers with a bare array, not an object.
+                return Json("[]");
+            }
+
             return Json("{}");
         });
 
@@ -545,6 +558,39 @@ public class ServicesCoverageExpansionTests
         Assert.Contains("POST /api/reports/v1/transactions", calls);
 
         Assert.Contains("GET /api/finmon/v1/p2p-payment/pre-limits?recipient_ipn=1234567890", calls);
+    }
+
+    /// <summary>
+    /// The banks operation answers with a bare JSON array, and the SDK reads it as one.
+    /// </summary>
+    /// <remarks>
+    /// It used to deserialize into an object with a <c>banks</c> property that no response carries, so
+    /// every call threw. Nothing caught it: the contract suite asserts the request a method sends and
+    /// says nothing about the shape of the reply. The payload below is trimmed from what the live
+    /// gateway actually returned.
+    /// </remarks>
+    [Fact]
+    public async Task PayPartsService_GetBanks_ShouldReadTheBareArrayTheOperationReturns()
+    {
+        StubHttpMessageHandler handler = new(async (_, _) => Json("""
+            [{"name":"monobank","product_name":"monobank instalments",
+              "logo_url":"https://cdn.example/monobank.png",
+              "limits":{"min_amount":1,"max_amount":250000},
+              "available_periods":[3,4,5]},
+             {"name":"privatbank","product_name":"privatbank instalments",
+              "limits":{"min_amount":300,"max_amount":250000},
+              "available_periods":[2,3]}]
+            """));
+
+        PayPartsService service = new(CreateConfiguration(), CreateHttpClient(handler));
+
+        List<PayPartsBankInfo> banks = await service.GetBanksAsync();
+
+        Assert.Equal(2, banks.Count);
+        Assert.Equal("monobank", banks[0].Name);
+        Assert.Equal([3, 4, 5], banks[0].AvailablePeriods);
+        Assert.Equal(1, banks[0].Limits!.MinAmount);
+        Assert.Equal("privatbank", banks[1].Name);
     }
 
     private static RozetkaPayConfiguration CreateConfiguration(RetryPolicy? retryPolicy = null, string? onBehalfOf = null, string? customerAuth = null)
