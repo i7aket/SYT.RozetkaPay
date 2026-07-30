@@ -39,6 +39,19 @@ public sealed class RozetkaPayOptions
     /// Sandbox endpoint, the <see cref="RozetkaPayEnvironment.Sandbox"/> (development) server published by
     /// the official RozetkaPay OpenAPI document.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This host needs credentials issued for it. RozetkaPay's publicly published test credentials
+    /// are not among them: against this host they answer <c>401</c>, and against
+    /// <see cref="ProductionBaseUrl"/> the same pair authenticates and creates real hosted
+    /// checkouts. Verified by direct call rather than inferred.
+    /// </para>
+    /// <para>
+    /// So a first run that points here with the published test pair fails at authentication, which
+    /// reads like a misconfigured SDK and is not. Use the credentials issued with the sandbox
+    /// account, or point at production with test credentials and non-live amounts.
+    /// </para>
+    /// </remarks>
     public const string SandboxBaseUrl = "https://api-epdev.rozetkapay.com";
 
     /// <summary>
