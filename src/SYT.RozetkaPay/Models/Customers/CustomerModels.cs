@@ -230,30 +230,6 @@ public class WalletCard
 
 // ===================== ADD CARD TO WALLET MODELS =====================
 
-/// <summary>
-/// Request to add card to wallet
-/// </summary>
-public class AddCardToWalletRequest
-{
-    /// <summary>
-    /// Card details
-    /// </summary>
-    [Required]
-    [JsonPropertyName("card")]
-    public required WalletCardDetails Card { get; set; }
-
-    /// <summary>
-    /// Whether to set as default card
-    /// </summary>
-    [JsonPropertyName("set_as_default")]
-    public bool SetAsDefault { get; set; } = false;
-
-    /// <summary>
-    /// Verification amount for card confirmation
-    /// </summary>
-    [JsonPropertyName("verification_amount")]
-    public int? VerificationAmount { get; set; }
-}
 
 /// <summary>
 /// Card details for wallet
@@ -295,35 +271,6 @@ public class WalletCardDetails
     public string? HolderName { get; set; }
 }
 
-/// <summary>
-/// Response for adding card to wallet
-/// </summary>
-public class AddCardToWalletResponse
-{
-    /// <summary>
-    /// Card ID
-    /// </summary>
-    [JsonPropertyName("card_id")]
-    public string? CardId { get; set; }
-
-    /// <summary>
-    /// Operation status
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Verification required
-    /// </summary>
-    [JsonPropertyName("verification_required")]
-    public bool? VerificationRequired { get; set; }
-
-    /// <summary>
-    /// Card information
-    /// </summary>
-    [JsonPropertyName("card")]
-    public WalletCard? Card { get; set; }
-}
 
 // ===================== DELETE CARD FROM WALLET MODELS =====================
 

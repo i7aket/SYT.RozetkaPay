@@ -23,7 +23,7 @@ public interface ICustomerService
     /// <param name="request">Add card request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Card addition response</returns>
-    Task<AddCardToWalletResponse> AddCardToWalletAsync(string customerId, AddCardToWalletRequest request, CancellationToken cancellationToken = default);
+    Task<AddCustomerPaymentResult> AddCardToWalletAsync(string customerId, AddCustomerPaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Delete a customer payment method from the wallet, identifying the customer through the

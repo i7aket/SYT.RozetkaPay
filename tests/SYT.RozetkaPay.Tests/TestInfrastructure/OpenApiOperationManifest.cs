@@ -795,18 +795,26 @@ internal static class OpenApiOperationManifest
             ExpectedPathAndQuery = "/api/customers/v1/wallet?external_id=" + "op37-wallet-add" + HostileEncodedSuffix,
             Body = ContractBodyPolicy.Json,
             Auth = ContractAuthPolicy.Authenticated,
-            ExpectedBodyFragments = [$"\"number\":\"{CardNumberPlaceholder}-op37\""],
+            ExpectedBodyFragments = [$"\"token\":\"{CardNumberPlaceholder}-op37\""],
             InvokeAsync = (host, token) => host.Customers.AddCardToWalletAsync(
                 Raw("op37-wallet-add"),
-                new AddCardToWalletRequest
+                new AddCustomerPaymentRequest
                 {
-                    Card = new WalletCardDetails
+                    // The document accepts a stored card TOKEN here, never a raw PAN and CVV. The
+                    // previous fixture sent card.number/cvv, fields this operation does not declare,
+                    // and pinned them as expected - so the test asserted the SDK pushed raw card
+                    // data at an endpoint that would not take it.
+                    Mode = PaymentMode.Hosted,
+                    PaymentMethod = new AddCustomerPaymentMethod
                     {
-                        Number = $"{CardNumberPlaceholder}-op37",
-                        ExpMonth = "12",
-                        ExpYear = "2030",
-                        Cvv = CardVerificationPlaceholder
-                    }
+                        Type = "cc_token",
+                        CCToken = new AddCustomerCCToken
+                        {
+                            Token = $"{CardNumberPlaceholder}-op37",
+                            Mask = "444455XXXXXX1111",
+                            ExpiresAt = new DateTime(2030, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+                        },
+                    },
                 },
                 token)
         },
