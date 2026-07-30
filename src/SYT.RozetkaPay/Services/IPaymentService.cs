@@ -22,7 +22,7 @@ public interface IPaymentService
     /// <param name="request">Recurrent payment request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken = default);
+    Task<PaymentOperationResult> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Confirm a payment (for two-step payments)
@@ -79,7 +79,7 @@ public interface IPaymentService
     /// <param name="externalId">External payment ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment receipt response</returns>
-    Task<PaymentReceiptResponse> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default);
+    Task<PaymentReceiptResult> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Perform card lookup

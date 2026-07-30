@@ -1,4 +1,5 @@
 using SYT.RozetkaPay.Configuration;
+using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Models.Customers;
 using Microsoft.Extensions.Logging;
 
@@ -154,11 +155,11 @@ public class CustomerService : BaseService, ICustomerService
     /// <param name="cardId">Card ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Wallet item response</returns>
-    public async Task<WalletItemResponse> GetWalletItemAsync(string customerId, string cardId, CancellationToken cancellationToken = default)
+    public async Task<WalletItem> GetWalletItemAsync(string customerId, string cardId, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint =
             $"{WalletFindEndpoint}?external_id={Uri.EscapeDataString(customerId)}&option_id={Uri.EscapeDataString(cardId)}";
-        return await GetAsync<WalletItemResponse>(
+        return await GetAsync<WalletItem>(
             primaryEndpoint,
             WalletFindEndpoint,
             cancellationToken);
@@ -172,11 +173,11 @@ public class CustomerService : BaseService, ICustomerService
     /// <param name="cardId">Card ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Card confirmation status</returns>
-    public async Task<CardConfirmationStatusResponse> GetCardConfirmationStatusAsync(string customerId, string cardId, CancellationToken cancellationToken = default)
+    public async Task<GetPaymentStatus> GetCardConfirmationStatusAsync(string customerId, string cardId, CancellationToken cancellationToken = default)
     {
         string primaryEndpoint =
             $"{WalletConfirmationStatusEndpoint}?external_id={Uri.EscapeDataString(customerId)}&option_id={Uri.EscapeDataString(cardId)}";
-        return await GetAsync<CardConfirmationStatusResponse>(
+        return await GetAsync<GetPaymentStatus>(
             primaryEndpoint,
             WalletConfirmationStatusEndpoint,
             cancellationToken);

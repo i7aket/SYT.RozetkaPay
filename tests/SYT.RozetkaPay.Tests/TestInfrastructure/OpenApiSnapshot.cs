@@ -214,6 +214,34 @@ internal static class OpenApiSnapshot
     }
 
     /// <summary>
+    /// Whether an operation's declared <c>200</c> body is a JSON array rather than an object.
+    /// </summary>
+    internal static bool ResponseIsArray(string method, string pathTemplate)
+    {
+        if (!TryGetOperation(method, pathTemplate, out JsonElement operation) ||
+            !operation.TryGetProperty("responses", out JsonElement responses) ||
+            !responses.TryGetProperty("200", out JsonElement ok))
+        {
+            return false;
+        }
+
+        JsonElement resolved = Resolve(ok);
+
+        if (!resolved.TryGetProperty("content", out JsonElement content) ||
+            !content.TryGetProperty("application/json", out JsonElement json) ||
+            !json.TryGetProperty("schema", out JsonElement schema))
+        {
+            return false;
+        }
+
+        schema = Resolve(schema);
+
+        return schema.TryGetProperty("type", out JsonElement kind)
+            && kind.ValueKind == JsonValueKind.String
+            && kind.GetString() == "array";
+    }
+
+    /// <summary>
     /// Every operation the document declares, as an uppercase verb and its path template.
     /// </summary>
     internal static IEnumerable<(string Method, string Path)> DeclaredOperations()

@@ -1,3 +1,4 @@
+using SYT.RozetkaPay.Models.Merchants;
 using SYT.RozetkaPay.Models.Payouts;
 
 namespace SYT.RozetkaPay.Services;
@@ -33,7 +34,7 @@ public interface IPayoutService
     /// <param name="merchantEntityId">Merchant entity ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Balance information</returns>
-    Task<BalanceResponse> GetAccountBalanceAsync(string merchantEntityId, CancellationToken cancellationToken = default);
+    Task<GetMerchantBalanceResponse> GetAccountBalanceAsync(string merchantEntityId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resend payout callback

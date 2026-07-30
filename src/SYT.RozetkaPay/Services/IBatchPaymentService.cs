@@ -14,7 +14,7 @@ public interface IBatchPaymentService
     /// <param name="request">Batch payment creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Batch payment response</returns>
-    Task<BatchPaymentResponse> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken = default);
+    Task<BatchPaymentOperationResult> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Confirm batch acquiring payment
@@ -22,7 +22,7 @@ public interface IBatchPaymentService
     /// <param name="request">Batch payment confirmation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Batch payment response</returns>
-    Task<BatchPaymentResponse> ConfirmBatchPaymentAsync(ConfirmBatchPaymentRequest request, CancellationToken cancellationToken = default);
+    Task<BatchPaymentOperationResult> ConfirmBatchPaymentAsync(ConfirmBatchPaymentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancel batch acquiring payment
@@ -30,5 +30,5 @@ public interface IBatchPaymentService
     /// <param name="request">Batch payment cancellation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Batch payment response</returns>
-    Task<BatchPaymentResponse> CancelBatchPaymentAsync(CancelBatchPaymentRequest request, CancellationToken cancellationToken = default);
+    Task<BatchPaymentOperationResult> CancelBatchPaymentAsync(CancelBatchPaymentRequest request, CancellationToken cancellationToken = default);
 }

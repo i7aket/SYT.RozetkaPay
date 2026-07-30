@@ -1,3 +1,4 @@
+using SYT.RozetkaPay.Models.Payments;
 using SYT.RozetkaPay.Models.Customers;
 
 namespace SYT.RozetkaPay.Services;
@@ -58,7 +59,7 @@ public interface ICustomerService
     /// <param name="cardId">Card ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Wallet item response</returns>
-    Task<WalletItemResponse> GetWalletItemAsync(string customerId, string cardId, CancellationToken cancellationToken = default);
+    Task<WalletItem> GetWalletItemAsync(string customerId, string cardId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get confirmation status of the card in wallet
@@ -67,7 +68,7 @@ public interface ICustomerService
     /// <param name="cardId">Card ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Card confirmation status</returns>
-    Task<CardConfirmationStatusResponse> GetCardConfirmationStatusAsync(string customerId, string cardId, CancellationToken cancellationToken = default);
+    Task<GetPaymentStatus> GetCardConfirmationStatusAsync(string customerId, string cardId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Set default card

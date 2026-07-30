@@ -33,9 +33,9 @@ public class BatchPaymentService : BaseService, IBatchPaymentService
     /// <param name="request">Batch payment creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Batch payment response</returns>
-    public async Task<BatchPaymentResponse> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<BatchPaymentOperationResult> CreateBatchPaymentAsync(CreateBatchPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CreateBatchPaymentRequest, BatchPaymentResponse>(NewEndpoint, NewEndpoint, request, cancellationToken);
+        return await PostAsync<CreateBatchPaymentRequest, BatchPaymentOperationResult>(NewEndpoint, NewEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -45,9 +45,9 @@ public class BatchPaymentService : BaseService, IBatchPaymentService
     /// <param name="request">Batch payment confirmation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Batch payment response</returns>
-    public async Task<BatchPaymentResponse> ConfirmBatchPaymentAsync(ConfirmBatchPaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<BatchPaymentOperationResult> ConfirmBatchPaymentAsync(ConfirmBatchPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<ConfirmBatchPaymentRequest, BatchPaymentResponse>(ConfirmEndpoint, ConfirmEndpoint, request, cancellationToken);
+        return await PostAsync<ConfirmBatchPaymentRequest, BatchPaymentOperationResult>(ConfirmEndpoint, ConfirmEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -57,8 +57,8 @@ public class BatchPaymentService : BaseService, IBatchPaymentService
     /// <param name="request">Batch payment cancellation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Batch payment response</returns>
-    public async Task<BatchPaymentResponse> CancelBatchPaymentAsync(CancelBatchPaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<BatchPaymentOperationResult> CancelBatchPaymentAsync(CancelBatchPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CancelBatchPaymentRequest, BatchPaymentResponse>(CancelEndpoint, CancelEndpoint, request, cancellationToken);
+        return await PostAsync<CancelBatchPaymentRequest, BatchPaymentOperationResult>(CancelEndpoint, CancelEndpoint, request, cancellationToken);
     }
 }

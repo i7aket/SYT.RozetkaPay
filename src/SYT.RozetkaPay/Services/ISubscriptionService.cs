@@ -30,7 +30,7 @@ public interface ISubscriptionService
     /// <param name="planId">Plan ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>A task that completes when the plan is deactivated</returns>
-    Task DeactivatePlanAsync(string planId, CancellationToken cancellationToken = default);
+    Task<DefaultResponse> DeactivatePlanAsync(string planId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get plan
@@ -94,7 +94,7 @@ public interface ISubscriptionService
     /// <param name="subscriptionId">Subscription ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>A task that completes when the subscription is deactivated</returns>
-    Task DeactivateAsync(string subscriptionId, CancellationToken cancellationToken = default);
+    Task<DefaultResponse> DeactivateAsync(string subscriptionId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get subscription
@@ -111,7 +111,7 @@ public interface ISubscriptionService
     /// <param name="request">Update subscription request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Subscription response</returns>
-    Task<SubscriptionResponse> UpdateAsync(string subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken = default);
+    Task<DefaultResponse> UpdateAsync(string subscriptionId, UpdateSubscriptionRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get subscription payments

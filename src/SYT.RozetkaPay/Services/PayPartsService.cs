@@ -83,9 +83,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <param name="request">PayParts confirm request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts order response</returns>
-    public async Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken = default)
+    public async Task<PayPartsOperationResult> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<ConfirmPayPartsRequest, PayPartsOrderResponse>(
+        return await PostAsync<ConfirmPayPartsRequest, PayPartsOperationResult>(
             OrderConfirmEndpoint,
             OrderConfirmEndpoint,
             request,
@@ -99,9 +99,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <param name="request">PayParts cancel request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts order response</returns>
-    public async Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken = default)
+    public async Task<PayPartsOperationResult> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CancelPayPartsRequest, PayPartsOrderResponse>(
+        return await PostAsync<CancelPayPartsRequest, PayPartsOperationResult>(
             OrderCancelEndpoint,
             OrderCancelEndpoint,
             request,
@@ -115,9 +115,9 @@ public class PayPartsService : BaseService, IPayPartsService
     /// <param name="request">PayParts refund request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>PayParts refund response</returns>
-    public async Task<PayPartsRefundResponse> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken = default)
+    public async Task<PayPartsOperationResult> RefundOrderAsync(RefundPayPartsOrderRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<RefundPayPartsOrderRequest, PayPartsRefundResponse>(
+        return await PostAsync<RefundPayPartsOrderRequest, PayPartsOperationResult>(
             RefundEndpoint,
             RefundEndpoint,
             request,
