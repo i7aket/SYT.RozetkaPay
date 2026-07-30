@@ -22,7 +22,7 @@ substitute them in unit tests. See [Interfaces and Testing](#interfaces-and-test
 ## Package
 
 - Package ID: `SYT.RozetkaPay`
-- Target frameworks: `net9.0`, `net10.0`
+- Target framework: `net10.0`
 - Repository: `https://github.com/i7aket/SYT.RozetkaPay`
 - Versioning: release versions are published from SemVer Git tags (`vX.Y.Z[-prerelease]`) via MinVer
 - The package ships an embedded icon, and a companion symbol package (`.snupkg`) is published to
@@ -68,7 +68,7 @@ the request it produces — verb, concrete request target, percent-encoding, bod
 headers — is asserted against the pinned document. The manifest and the document are compared as exact
 sets, so an operation that is added, removed, renamed, duplicated, or moved to another verb fails the
 build. Outbound authentication and the inbound webhook signature pipeline are additionally proven against
-a real Kestrel server over a real socket. All of it runs in ordinary CI, on `net9.0` and `net10.0`, with
+a real Kestrel server over a real socket. All of it runs in ordinary CI, on `net10.0`, with
 no network access.
 
 All of that is a statement about the **pinned document**, which a CI job compares against the live one
@@ -396,9 +396,11 @@ code, before the transport helper writes its `Making … request to …` log, be
 serialized to JSON, before any retry bookkeeping, before an `HttpRequestMessage` exists, and before
 `HttpClient` or your `HttpMessageHandler` is invoked. Your handler is called exactly **zero** times.
 
-This is the SDK's own guarantee, not the runtime's. `HttpClient` also has a pre-dispatch check, but it fires at
-different points on `net9.0` and `net10.0` and behaves differently per verb, so relying on it would make a
-cancelled request mean different things on different frameworks. It is not relied on.
+This is the SDK's own guarantee, not the runtime's. `HttpClient` also has a pre-dispatch check, but it fired
+at different points across the frameworks this package used to target and behaves differently per verb, so
+relying on it would make a cancelled request mean different things depending on where it ran. It is not
+relied on, and dropping the second target framework does not change that — the guarantee is ours to keep, not
+the runtime's to happen to provide.
 
 The contract covers every transport family, with no verb left out:
 

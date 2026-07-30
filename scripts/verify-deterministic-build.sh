@@ -24,7 +24,7 @@ set -euo pipefail
 readonly ASSEMBLY_NAME='SYT.RozetkaPay'
 readonly SOLUTION='SYT.RozetkaPay.sln'
 readonly PROJECT_REL='src/SYT.RozetkaPay'
-readonly TFMS=(net9.0 net10.0)
+readonly TFMS=(net10.0)
 readonly COMPARED_EXTENSIONS=(dll pdb xml)
 
 tmp_root=''
