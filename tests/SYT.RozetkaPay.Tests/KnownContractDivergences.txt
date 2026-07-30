@@ -3,7 +3,5 @@
 # Regenerate with APPROVE_DIVERGENCES=1. A new line appearing is a new defect.
 
 ## unmapped-operation
-IAlternativePaymentService.CreateAsync
-IPaymentService.CreateP2PAsync
 ## request-field
 ## response-field
