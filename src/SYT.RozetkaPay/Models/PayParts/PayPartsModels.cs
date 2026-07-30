@@ -470,17 +470,33 @@ public class RefundPayPartsOrderRequest
     [JsonPropertyName("amount")]
     public decimal? Amount { get; set; }
 
-    /// <summary>
-    /// Refund reason
-    /// </summary>
-    [JsonPropertyName("reason")]
-    public string? Reason { get; set; }
+    // reason and external_refund_id are gone with EXP-436. The document declares neither, so the
+    // gateway discarded both: a caller who recorded a refund reason or their own refund id believed
+    // it was stored, and it never left the process in any form the provider kept.
 
     /// <summary>
-    /// External refund ID
+    /// Refund currency. Declared by the document alongside the amount.
     /// </summary>
-    [JsonPropertyName("external_refund_id")]
-    public string? ExternalRefundId { get; set; }
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+
+    /// <summary>
+    /// Opaque value echoed back on the callback.
+    /// </summary>
+    [JsonPropertyName("payload")]
+    public string? Payload { get; set; }
+
+    /// <summary>
+    /// Line items covered by the refund, for fiscalization.
+    /// </summary>
+    [JsonPropertyName("products")]
+    public List<Product>? Products { get; set; }
+
+    /// <summary>
+    /// Where the provider posts the result of this refund.
+    /// </summary>
+    [JsonPropertyName("callback_url")]
+    public string? CallbackUrl { get; set; }
 }
 
 /// <summary>
@@ -661,11 +677,15 @@ public class PayPartsResendCallbackRequest
     [JsonPropertyName("external_id")]
     public required string ExternalId { get; set; }
 
+    // callback_url is gone with EXP-436: the document does not declare it for this operation, so
+    // the provider discarded it. Resending a callback goes to the URL recorded on the original
+    // payment, and offering an override that silently does nothing is worse than not offering one.
+
     /// <summary>
-    /// New callback URL (optional)
+    /// Which operation's callback to resend. Declared by the document; the SDK could not express it.
     /// </summary>
-    [JsonPropertyName("callback_url")]
-    public string? CallbackUrl { get; set; }
+    [JsonPropertyName("operation")]
+    public OperationType? Operation { get; set; }
 }
 
 /// <summary>

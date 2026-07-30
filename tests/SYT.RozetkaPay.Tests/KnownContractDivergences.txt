@@ -6,25 +6,6 @@
 IAlternativePaymentService.CreateAsync
 IPaymentService.CreateP2PAsync
 ## request-field
-alternativePaymentRefund -> RefundAlternativePaymentRequest cannot send 'callback_url'
-alternativePaymentRefund -> RefundAlternativePaymentRequest cannot send 'currency'
-alternativePaymentRefund -> RefundAlternativePaymentRequest cannot send 'payload'
-alternativePaymentRefund -> RefundAlternativePaymentRequest cannot send 'products'
-alternativePaymentRefund -> RefundAlternativePaymentRequest sends undeclared 'external_refund_id'
-alternativePaymentRefund -> RefundAlternativePaymentRequest sends undeclared 'reason'
-payPartsRefund -> RefundPayPartsOrderRequest cannot send 'callback_url'
-payPartsRefund -> RefundPayPartsOrderRequest cannot send 'currency'
-payPartsRefund -> RefundPayPartsOrderRequest cannot send 'payload'
-payPartsRefund -> RefundPayPartsOrderRequest cannot send 'products'
-payPartsRefund -> RefundPayPartsOrderRequest sends undeclared 'external_refund_id'
-payPartsRefund -> RefundPayPartsOrderRequest sends undeclared 'reason'
-refundPayment -> RefundPaymentRequest cannot send 'currency'
-refundPayment -> RefundPaymentRequest cannot send 'payload'
-refundPayment -> RefundPaymentRequest cannot send 'products'
-refundPayment -> RefundPaymentRequest sends undeclared 'external_refund_id'
-refundPayment -> RefundPaymentRequest sends undeclared 'reason'
-resendPayPartsCallback -> PayPartsResendCallbackRequest cannot send 'operation'
-resendPayPartsCallback -> PayPartsResendCallbackRequest sends undeclared 'callback_url'
 ## response-field
 alternativePaymentRefund -> AlternativePaymentResponse cannot receive 'details'
 alternativePaymentRefund -> AlternativePaymentResponse cannot receive 'metadata'

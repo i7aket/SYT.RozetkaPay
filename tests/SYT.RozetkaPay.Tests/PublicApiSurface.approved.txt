@@ -285,9 +285,11 @@ SYT.RozetkaPay.Models.AlternativePayments.CreateAlternativePayment
 SYT.RozetkaPay.Models.AlternativePayments.RefundAlternativePaymentRequest
     .ctor()
     Decimal? Amount { get; set; }
+    List<Product> Products { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
     String ExternalId { get; set; }
-    String ExternalRefundId { get; set; }
-    String Reason { get; set; }
+    String Payload { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.ResendAlternativePaymentCallbackRequest
     .ctor()
     AlternativePaymentCallbackOperation? Operation { get; set; }
@@ -1531,7 +1533,7 @@ SYT.RozetkaPay.Models.PayParts.PayPartsRefundResponse
     String Status { get; set; }
 SYT.RozetkaPay.Models.PayParts.PayPartsResendCallbackRequest
     .ctor()
-    String CallbackUrl { get; set; }
+    OperationType? Operation { get; set; }
     String ExternalId { get; set; }
 SYT.RozetkaPay.Models.PayParts.PayPartsResendCallbackResponse
     .ctor()
@@ -1548,9 +1550,11 @@ SYT.RozetkaPay.Models.PayParts.RefundPPayRequest
 SYT.RozetkaPay.Models.PayParts.RefundPayPartsOrderRequest
     .ctor()
     Decimal? Amount { get; set; }
+    List<Product> Products { get; set; }
+    String CallbackUrl { get; set; }
+    String Currency { get; set; }
     String ExternalId { get; set; }
-    String ExternalRefundId { get; set; }
-    String Reason { get; set; }
+    String Payload { get; set; }
 SYT.RozetkaPay.Models.PayParts.RetryRefundPPayRequest
     .ctor()
     String ExternalId { get; set; }
@@ -2069,10 +2073,11 @@ SYT.RozetkaPay.Models.Payments.RecipientWalletRequestPaymentMethod
 SYT.RozetkaPay.Models.Payments.RefundPaymentRequest
     .ctor()
     Decimal? Amount { get; set; }
+    List<Product> Products { get; set; }
     String CallbackUrl { get; set; }
+    String Currency { get; set; }
     String ExternalId { get; set; }
-    String ExternalRefundId { get; set; }
-    String Reason { get; set; }
+    String Payload { get; set; }
 SYT.RozetkaPay.Models.Payments.ResendCallbackRequest
     .ctor()
     OperationType? Operation { get; set; }

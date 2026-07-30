@@ -192,23 +192,35 @@ public class RefundPaymentRequest
     [JsonPropertyName("amount")]
     public decimal? Amount { get; set; }
 
-    /// <summary>
-    /// Refund reason
-    /// </summary>
-    [JsonPropertyName("reason")]
-    public string? Reason { get; set; }
 
-    /// <summary>
-    /// External refund ID
-    /// </summary>
-    [JsonPropertyName("external_refund_id")]
-    public string? ExternalRefundId { get; set; }
 
     /// <summary>
     /// Callback URL for refund notifications
     /// </summary>
     [JsonPropertyName("callback_url")]
     public string? CallbackUrl { get; set; }
+
+    // reason and external_refund_id are gone with EXP-436. The document declares neither, so the
+    // gateway discarded both: a caller who recorded a refund reason or their own refund id believed
+    // it was stored, and it never left the process in any form the provider kept.
+
+    /// <summary>
+    /// Refund currency. Declared by the document alongside the amount.
+    /// </summary>
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+
+    /// <summary>
+    /// Opaque value echoed back on the callback.
+    /// </summary>
+    [JsonPropertyName("payload")]
+    public string? Payload { get; set; }
+
+    /// <summary>
+    /// Line items covered by the refund, for fiscalization.
+    /// </summary>
+    [JsonPropertyName("products")]
+    public List<Product>? Products { get; set; }
 }
 
 /// <summary>
