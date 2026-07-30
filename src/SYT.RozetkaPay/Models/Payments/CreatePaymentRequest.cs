@@ -14,6 +14,10 @@ public class CreatePaymentRequest
     /// </summary>
     [JsonPropertyName("amount")]
     [Required]
+
+    // [Required] on a value type can never fail - it was decorative, and 0 or -5 reached the
+    // gateway. A price calculation that returns zero is a bug worth catching before it is a payment.
+    [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "Amount must be greater than zero.")]
     public decimal Amount { get; set; }
 
     /// <summary>
@@ -33,9 +37,16 @@ public class CreatePaymentRequest
     /// <summary>
     /// Payment mode (JSON string as per CDN documentation)
     /// </summary>
+    /// <remarks>
+    /// Nullable, and for the same reason <c>CustomerRequestPaymentMethod.Type</c> is: a non-nullable
+    /// enum property defaults to its zero value, which here is <see cref="PaymentMode.Direct"/> — raw
+    /// card acceptance, the PCI-scope flow. A caller who simply forgot the field was requesting it,
+    /// silently, and <c>[Required]</c> on a value type cannot fail. Nullable plus <c>[Required]</c>
+    /// turns the omission into the validation error it always should have been.
+    /// </remarks>
     [JsonPropertyName("mode")]
     [Required]
-    public PaymentMode Mode { get; set; }
+    public PaymentMode? Mode { get; set; }
 
     /// <summary>
     /// Callback URL for payment notifications (JSON string as per CDN documentation)

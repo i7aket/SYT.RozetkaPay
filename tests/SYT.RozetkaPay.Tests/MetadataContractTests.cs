@@ -92,6 +92,7 @@ public class MetadataContractTests
             Amount = 10m,
             Currency = "UAH",
             ExternalId = "order-1",
+            Mode = PaymentMode.Hosted,
             Metadata = new Dictionary<string, string> { ["promo_id"] = "12345-54321" },
         };
 
@@ -105,7 +106,7 @@ public class MetadataContractTests
     [Fact]
     public void Metadata_ShouldBeOmittedWhenAbsent()
     {
-        CreatePaymentRequest request = new() { Amount = 10m, Currency = "UAH", ExternalId = "order-1" };
+        CreatePaymentRequest request = new() { Amount = 10m, Currency = "UAH", ExternalId = "order-1", Mode = PaymentMode.Hosted };
 
         string json = JsonSerializer.Serialize(request, SdkSerializerOptions.Value);
 
@@ -179,6 +180,7 @@ public class MetadataContractTests
             Amount = 10m,
             Currency = "UAH",
             ExternalId = "order-1",
+            Mode = PaymentMode.Hosted,
             Metadata = metadata,
         };
 
