@@ -54,7 +54,8 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
         "X-CUSTOMER-AUTH"
     ];
 
-    private readonly HttpClient _declineHttpClient;
+    private readonly Lazy<HttpClient>? _ownedDeclineHttpClient;
+    private readonly HttpClient? _suppliedDeclineHttpClient;
 
     private readonly bool _ownsDeclineHttpClient;
 
@@ -78,7 +79,15 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
         ILogger? logger = null)
         : base(configuration, httpClient, logger)
     {
-        _declineHttpClient = CreateDeclineHttpClient(Configuration);
+        // Lazy, and the reason is not micro-optimisation. RozetkaPayClient is registered Scoped and
+        // builds this service in its constructor, so an eager client meant a raw
+        // new HttpClient(new SocketsHttpHandler()) - a fresh connection pool - for every DI scope, i.e.
+        // every inbound request, disposed at scope end with its sockets left in TIME_WAIT. That is the
+        // ephemeral-port-exhaustion antipattern IHttpClientFactory exists to prevent, and almost no
+        // consumer ever calls DeclineAsync. Now nothing is allocated unless the one operation that
+        // needs it is used.
+        _ownedDeclineHttpClient = new Lazy<HttpClient>(
+            () => CreateDeclineHttpClient(Configuration), LazyThreadSafetyMode.ExecutionAndPublication);
         _ownsDeclineHttpClient = true;
     }
 
@@ -115,7 +124,7 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
         ArgumentNullException.ThrowIfNull(declineHttpClient);
         EnsureNoCredentialHeaders(declineHttpClient);
 
-        _declineHttpClient = declineHttpClient;
+        _suppliedDeclineHttpClient = declineHttpClient;
         _ownsDeclineHttpClient = false;
     }
 
@@ -208,7 +217,10 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
 
         if (_ownsDeclineHttpClient)
         {
-            _declineHttpClient.Dispose();
+            if (_ownedDeclineHttpClient?.IsValueCreated == true)
+            {
+                _ownedDeclineHttpClient.Value.Dispose();
+            }
         }
 
         _disposed = true;
@@ -228,7 +240,7 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
 
         // ResponseHeadersRead: the result is a header, so the body - if the provider sends one on a
         // redirect - is never buffered, and the target is never fetched.
-        using HttpResponseMessage response = await _declineHttpClient
+        using HttpResponseMessage response = await DeclineHttpClient
             .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
             .ConfigureAwait(false);
 
@@ -300,6 +312,12 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
     /// credential header is set, and the handler keeps the platform TLS policy - no certificate callback
     /// is installed and no validation is relaxed.
     /// </remarks>
+    /// <summary>
+    /// The client the unauthenticated decline call goes out on, created on first use when owned.
+    /// </summary>
+    private HttpClient DeclineHttpClient =>
+        _suppliedDeclineHttpClient ?? _ownedDeclineHttpClient!.Value;
+
     private static HttpClient CreateDeclineHttpClient(RozetkaPayConfiguration configuration)
     {
         SocketsHttpHandler handler = new() { AllowAutoRedirect = false };

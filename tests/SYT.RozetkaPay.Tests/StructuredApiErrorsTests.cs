@@ -322,6 +322,11 @@ public class RozetkaPayExceptionCompatibilityTests
 /// </summary>
 public class StructuredApiErrorHttpTests
 {
+    // EXP-441: the provider's own message now reaches the caller on every status, not only on 400.
+    // It was parsed and discarded for 401/403/404/500, so a log line read "Resource not found" while
+    // the text that named the actual problem sat only inside RawBody - which this SDK's own docs tell
+    // callers to treat as sensitive and scrub. These tests assert the message comes through; the
+    // fallback strings are still covered by the body-less cases below.
     private const string StandardErrorBody = """
         {"code":"test_code","message":"test message","error_id":"body-error-id"}
         """;
@@ -645,6 +650,7 @@ public class StructuredApiErrorHttpTests
         RozetkaPayNotFoundException exception = await Assert.ThrowsAsync<RozetkaPayNotFoundException>(async () =>
             await service.GetInfoAsync("id-17"));
 
+        // A malformed body yields no parsable message, so the fallback is what the caller sees.
         Assert.Equal("Resource not found", exception.Message);
         Assert.Equal(body, exception.ApiError!.RawBody);
     }
@@ -715,7 +721,7 @@ public class StructuredApiErrorHttpTests
     }
 
     [Fact]
-    public async Task Unauthorized_ShouldKeepItsFixedMessage()
+    public async Task Unauthorized_ShouldCarryTheProviderMessage()
     {
         PaymentService service = ErrorTestContext.CreatePaymentService(
             ErrorTestContext.ErrorResponse(HttpStatusCode.Unauthorized, StandardErrorBody));
@@ -723,12 +729,12 @@ public class StructuredApiErrorHttpTests
         RozetkaPayAuthorizationException exception = await Assert.ThrowsAsync<RozetkaPayAuthorizationException>(async () =>
             await service.GetInfoAsync("id-23"));
 
-        Assert.Equal("Unauthorized: Invalid credentials or deactivated account", exception.Message);
+        Assert.Equal("test message", exception.Message);
         Assert.Equal(HttpStatusCode.Unauthorized, exception.ApiError!.StatusCode);
     }
 
     [Fact]
-    public async Task Forbidden_ShouldKeepItsFixedMessage()
+    public async Task Forbidden_ShouldCarryTheProviderMessage()
     {
         PaymentService service = ErrorTestContext.CreatePaymentService(
             ErrorTestContext.ErrorResponse(HttpStatusCode.Forbidden, StandardErrorBody));
@@ -736,12 +742,12 @@ public class StructuredApiErrorHttpTests
         RozetkaPayAuthorizationException exception = await Assert.ThrowsAsync<RozetkaPayAuthorizationException>(async () =>
             await service.GetInfoAsync("id-24"));
 
-        Assert.Equal("Forbidden: Access denied", exception.Message);
+        Assert.Equal("test message", exception.Message);
         Assert.Equal(HttpStatusCode.Forbidden, exception.ApiError!.StatusCode);
     }
 
     [Fact]
-    public async Task NotFound_ShouldKeepItsFixedMessage()
+    public async Task NotFound_ShouldCarryTheProviderMessage()
     {
         PaymentService service = ErrorTestContext.CreatePaymentService(
             ErrorTestContext.ErrorResponse(HttpStatusCode.NotFound, StandardErrorBody));
@@ -749,12 +755,12 @@ public class StructuredApiErrorHttpTests
         RozetkaPayNotFoundException exception = await Assert.ThrowsAsync<RozetkaPayNotFoundException>(async () =>
             await service.GetInfoAsync("id-25"));
 
-        Assert.Equal("Resource not found", exception.Message);
+        Assert.Equal("test message", exception.Message);
         Assert.Equal(HttpStatusCode.NotFound, exception.ApiError!.StatusCode);
     }
 
     [Fact]
-    public async Task InternalServerError_ShouldKeepItsFixedMessage()
+    public async Task InternalServerError_ShouldCarryTheProviderMessage()
     {
         PaymentService service = ErrorTestContext.CreatePaymentService(
             ErrorTestContext.ErrorResponse(HttpStatusCode.InternalServerError, StandardErrorBody));
@@ -762,7 +768,7 @@ public class StructuredApiErrorHttpTests
         RozetkaPayException exception = await Assert.ThrowsAsync<RozetkaPayException>(async () =>
             await service.GetInfoAsync("id-26"));
 
-        Assert.Equal("Internal server error", exception.Message);
+        Assert.Equal("test message", exception.Message);
         Assert.Equal(HttpStatusCode.InternalServerError, exception.ApiError!.StatusCode);
     }
 
