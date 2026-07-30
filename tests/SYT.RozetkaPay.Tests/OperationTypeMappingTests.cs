@@ -341,6 +341,14 @@ public class OperationTypeMappingTests
     /// <summary>
     /// The wire names a type can carry, following the collection element when it is a list.
     /// </summary>
+    /// <remarks>
+    /// A wrapper around a single collection is followed too. Several operations return a root JSON
+    /// array which the SDK maps onto a named wrapper through a converter -
+    /// <c>SubscriptionListJsonConverter</c> is the worked example. That is a deliberate design, not a
+    /// defect, but comparing the wrapper's one property against the array element's fields reported
+    /// every element field as missing: 34 for <c>getSubscriptions</c> alone, all of them false. The
+    /// element is what the document describes, so the element is what gets compared.
+    /// </remarks>
     private static IEnumerable<string> WireNames(Type type)
     {
         Type resolved = Nullable.GetUnderlyingType(type) ?? type;
@@ -348,6 +356,18 @@ public class OperationTypeMappingTests
         if (resolved.IsGenericType && resolved.GetGenericTypeDefinition() == typeof(List<>))
         {
             resolved = resolved.GetGenericArguments()[0];
+        }
+
+        PropertyInfo[] declared = resolved
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(static property => property.GetCustomAttribute<JsonIgnoreAttribute>() is null)
+            .ToArray();
+
+        if (declared.Length == 1 &&
+            declared[0].PropertyType.IsGenericType &&
+            declared[0].PropertyType.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            resolved = declared[0].PropertyType.GetGenericArguments()[0];
         }
 
         return resolved

@@ -148,7 +148,8 @@ public class PathSegmentEncodingTests
     [Fact]
     public async Task SubscriptionService_GetPayments_ShouldKeepHostileSubscriptionIdInOneSegment()
     {
-        RequestRecordingHandler handler = new();
+        // getSubscriptionPayments declares a root JSON array.
+        RequestRecordingHandler handler = new("[]");
 
         await PathEncodingTestContext.Subscriptions(handler).GetPaymentsAsync(HostileRawId);
 
@@ -423,11 +424,24 @@ internal sealed class RequestRecordingHandler : HttpMessageHandler
 {
     private const string ErrorBody = "{\"code\":\"not_found\",\"message\":\"Resource not found\"}";
 
+    /// <summary>
+    /// Body returned on success. Operations whose declared response is a JSON array need "[]"; the
+    /// default object body deserializes into a model but not into a List&lt;T&gt;.
+    /// </summary>
+    private readonly string _successBody;
+
     private readonly HttpStatusCode[] _statusSequence;
     private readonly List<RecordedRequest> _requests = new();
 
+    internal RequestRecordingHandler(string successBody, params HttpStatusCode[] statusSequence)
+        : this(statusSequence)
+    {
+        _successBody = successBody;
+    }
+
     internal RequestRecordingHandler(params HttpStatusCode[] statusSequence)
     {
+        _successBody = "{}";
         _statusSequence = statusSequence.Length == 0
             ? new[] { HttpStatusCode.OK }
             : statusSequence;
@@ -449,7 +463,7 @@ internal sealed class RequestRecordingHandler : HttpMessageHandler
         return new HttpResponseMessage(status)
         {
             Content = new StringContent(
-                status == HttpStatusCode.OK ? "{}" : ErrorBody,
+                status == HttpStatusCode.OK ? _successBody : ErrorBody,
                 Encoding.UTF8,
                 "application/json")
         };
