@@ -60,12 +60,12 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="request">Payment creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    public async Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<PaymentOperationResult> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
     {
         // The one mutation the provider makes an at-most-once promise about: "At most one success
         // payment is allowed with same external_id within single login." A repeat after a timeout or a
         // 5xx therefore cannot produce a second successful payment, so a retry is safe here and only here.
-        return await PostAsync<CreatePaymentRequest, PaymentResponse>(
+        return await PostAsync<CreatePaymentRequest, PaymentOperationResult>(
             NewEndpoint,
             NewEndpoint,
             request,
@@ -92,9 +92,9 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="request">Payment confirmation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    public async Task<PaymentResponse> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<ConfirmPaymentRequest, PaymentResponse>(ConfirmEndpoint, ConfirmEndpoint, request, cancellationToken);
+        return await PostAsync<ConfirmPaymentRequest, PaymentOperationResult>(ConfirmEndpoint, ConfirmEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -104,9 +104,9 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="request">Payment cancellation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    public async Task<PaymentResponse> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<PaymentOperationResult> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<CancelPaymentRequest, PaymentResponse>(CancelEndpoint, CancelEndpoint, request, cancellationToken);
+        return await PostAsync<CancelPaymentRequest, PaymentOperationResult>(CancelEndpoint, CancelEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -116,9 +116,9 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="request">Payment refund request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    public async Task<PaymentResponse> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<PaymentOperationResult> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        return await PostAsync<RefundPaymentRequest, PaymentResponse>(RefundEndpoint, RefundEndpoint, request, cancellationToken);
+        return await PostAsync<RefundPaymentRequest, PaymentOperationResult>(RefundEndpoint, RefundEndpoint, request, cancellationToken);
     }
 
     /// <summary>
@@ -152,9 +152,9 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="externalId">External payment ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    public async Task<PaymentResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
+    public async Task<PaymentStatusResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
     {
-        return await GetAsync<PaymentResponse>(
+        return await GetAsync<PaymentStatusResult>(
             $"{InfoEndpoint}?external_id={Uri.EscapeDataString(externalId)}",
             InfoEndpoint,
             cancellationToken);
@@ -210,7 +210,7 @@ public class PaymentService : BaseService, IPaymentService
     /// <param name="request">P2P payment request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Payment response</returns>
-    public async Task<PaymentResponse> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
+    public async Task<PaymentOperationResult> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Recipient == null)
             throw new ArgumentException("Recipient information is required for P2P payments", nameof(request));
