@@ -2005,6 +2005,7 @@ SYT.RozetkaPay.Models.Payments.PaymentWebhook
     Boolean ActionRequired { get; set; }
     Boolean IsSuccess { get; set; }
     PaymentWebhookDetails Details { get; set; }
+    String EventKey { get; }
     String ExternalId { get; set; }
     String Id { get; set; }
     String Operation { get; set; }

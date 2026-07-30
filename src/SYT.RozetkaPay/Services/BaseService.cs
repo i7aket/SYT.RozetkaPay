@@ -29,6 +29,11 @@ public abstract class BaseService
     private const string LegacyRequestIdHeaderName = "Request-Id";
 
     /// <summary>
+    /// Cloudflare's trace identifier, the one production actually sends.
+    /// </summary>
+    private const string CloudflareRayHeaderName = "cf-ray";
+
+    /// <summary>
     /// What a transport helper logs when the caller did not supply a static log label.
     /// </summary>
     /// <remarks>
@@ -1048,6 +1053,10 @@ public abstract class BaseService
 
         string? requestId = TryGetFirstNonBlankHeaderValue(response, RequestIdHeaderName)
             ?? TryGetFirstNonBlankHeaderValue(response, LegacyRequestIdHeaderName)
+            // Production sends neither of the two names above - it sends Cloudflare's cf-ray. Without
+            // this, RequestId was null on every real error except the few whose body carries error_id,
+            // leaving support with nothing to correlate against.
+            ?? TryGetFirstNonBlankHeaderValue(response, CloudflareRayHeaderName)
             ?? bodyErrorId;
 
         RozetkaPayApiError apiError = new RozetkaPayApiError(response.StatusCode, apiCode, requestId, rawBody);
@@ -1059,16 +1068,26 @@ public abstract class BaseService
             apiError.Code,
             apiError.RequestId);
 
+        // The provider's own message reaches the caller on every status, not only on 400. It was parsed
+        // and then discarded for 401/403/404/500, so a log line read "Resource not found" while the
+        // useful text - "Payment settings not found", naming the actual problem - sat only inside
+        // RawBody, which this SDK's own documentation tells callers to treat as sensitive and scrub.
+        // The message is provider-authored English about the request, not customer data; the 400 arm
+        // already trusted it, and there was never a reason the others should not.
+        string Describe(string fallback) =>
+            string.IsNullOrWhiteSpace(errorMessage) ? fallback : errorMessage!;
+
         switch (response.StatusCode)
         {
             case HttpStatusCode.Unauthorized:
-                throw new RozetkaPayAuthorizationException("Unauthorized: Invalid credentials or deactivated account", apiError);
+                throw new RozetkaPayAuthorizationException(
+                    Describe("Unauthorized: Invalid credentials or deactivated account"), apiError);
             case HttpStatusCode.Forbidden:
-                throw new RozetkaPayAuthorizationException("Forbidden: Access denied", apiError);
+                throw new RozetkaPayAuthorizationException(Describe("Forbidden: Access denied"), apiError);
             case HttpStatusCode.BadRequest:
-                throw new RozetkaPayValidationException(errorMessage ?? "Bad request", apiError);
+                throw new RozetkaPayValidationException(Describe("Bad request"), apiError);
             case HttpStatusCode.NotFound:
-                throw new RozetkaPayNotFoundException("Resource not found", apiError);
+                throw new RozetkaPayNotFoundException(Describe("Resource not found"), apiError);
             case HttpStatusCode.TooManyRequests:
                 ReadRetryAfter(response, out double retryAfter, out TimeSpan? retryAfterHint);
                 throw new RozetkaPayRateLimitException(
@@ -1076,7 +1095,7 @@ public abstract class BaseService
                     apiError,
                     retryAfterHint);
             case HttpStatusCode.InternalServerError:
-                throw new RozetkaPayException("Internal server error", null, apiError);
+                throw new RozetkaPayException(Describe("Internal server error"), null, apiError);
             default:
                 throw new RozetkaPayException(
                     errorMessage != null

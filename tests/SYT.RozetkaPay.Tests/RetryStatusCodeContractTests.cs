@@ -447,7 +447,7 @@ public class RetryStatusCodeContractTests
     }
 
     [Fact]
-    public async Task Exhausted500_ShouldKeepItsFixedMessageAndFinalEvidence()
+    public async Task Exhausted500_ShouldCarryTheProviderMessageAndFinalEvidence()
     {
         ScriptedRetryHandler handler = new(
             RetryOutcomes.Failure(HttpStatusCode.InternalServerError, RetryContractContext.ErrorBody));
@@ -459,7 +459,8 @@ public class RetryStatusCodeContractTests
             () => service.GetJsonAsync<RetryProbeResult>(RetryContractContext.Endpoint));
 
         Assert.Equal(2, handler.AttemptCount);
-        Assert.Equal("Internal server error", exception.Message);
+        // EXP-441: the provider's message reaches the caller on 500 too, not just on 400.
+        Assert.Equal(RetryContractContext.ProviderMessageMarker, exception.Message);
         AssertFinalEvidence(exception, HttpStatusCode.InternalServerError, attempt: 2);
     }
 

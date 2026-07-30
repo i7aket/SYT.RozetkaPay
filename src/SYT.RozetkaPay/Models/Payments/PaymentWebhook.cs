@@ -80,6 +80,32 @@ public class PaymentWebhook
     /// </summary>
     [JsonPropertyName("operation")]
     public string? Operation { get; set; }
+
+    /// <summary>
+    /// A key that identifies this delivery, for deduplication.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// RozetkaPay retries any delivery it does not see answered with a <c>200</c>, so a handler will
+    /// see the same event more than once and must be able to tell a repeat from a new event. Nothing
+    /// in the payload said which field to use, and the obvious choice is wrong: <see cref="Id"/> is
+    /// the <em>payment</em> identifier, identical across every event for that payment. Deduplicating
+    /// on it drops the refund notification for a payment already seen.
+    /// </para>
+    /// <para>
+    /// The tuple that does distinguish deliveries is the payment, the operation, and the operation's
+    /// own identifier. <c>Details.OperationId</c> is nullable, so the key falls back to the pair
+    /// without it — two events of different kinds for one payment stay distinct, while two deliveries
+    /// of the same event collapse, which is the property deduplication needs.
+    /// </para>
+    /// <para>
+    /// Storing this key and rejecting a repeat has to happen in the same transaction as the state
+    /// change it guards. The SDK can name the key; only the consumer can make the check atomic.
+    /// </para>
+    /// </remarks>
+    [JsonIgnore]
+    public string EventKey =>
+        string.Join('|', Id ?? string.Empty, Operation ?? string.Empty, Details?.OperationId ?? string.Empty);
 }
 
 /// <summary>
