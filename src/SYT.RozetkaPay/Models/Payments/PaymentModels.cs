@@ -239,65 +239,7 @@ public class CancelRefundRequest
 
 // ===================== PAYMENT LIST MODELS =====================
 
-/// <summary>
-/// Request parameters for payment list
-/// </summary>
-public class PaymentListRequest
-{
-    /// <summary>
-    /// Start date filter
-    /// </summary>
-    [JsonPropertyName("date_from")]
-    public DateTime? DateFrom { get; set; }
 
-    /// <summary>
-    /// End date filter
-    /// </summary>
-    [JsonPropertyName("date_to")]
-    public DateTime? DateTo { get; set; }
-
-    /// <summary>
-    /// Payment status filter
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Number of payments to return
-    /// </summary>
-    [JsonPropertyName("limit")]
-    public int? Limit { get; set; }
-
-    /// <summary>
-    /// Number of payments to skip
-    /// </summary>
-    [JsonPropertyName("offset")]
-    public int? Offset { get; set; }
-}
-
-/// <summary>
-/// Response containing list of payments
-/// </summary>
-public class PaymentListResponse
-{
-    /// <summary>
-    /// List of payments
-    /// </summary>
-    [JsonPropertyName("payments")]
-    public List<PaymentResponse>? Payments { get; set; }
-
-    /// <summary>
-    /// Total number of payments
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int? Count { get; set; }
-
-    /// <summary>
-    /// Offset for pagination
-    /// </summary>
-    [JsonPropertyName("offset")]
-    public int? Offset { get; set; }
-}
 
 // ===================== PAYMENT RECEIPT MODELS =====================
 
@@ -448,37 +390,6 @@ public class CallbackResendResponse
     }
 }
 
-/// <summary>
-/// P2P confirmation request
-/// </summary>
-public class P2PConfirmationRequest
-{
-    /// <summary>
-    /// External ID of the P2P payment to confirm
-    /// </summary>
-    [Required]
-    [JsonPropertyName("external_id")]
-    public required string ExternalId { get; set; }
-
-    /// <summary>
-    /// P2P confirmation amount in UAH
-    /// </summary>
-    [Required]
-    [JsonPropertyName("amount")]
-    public required decimal Amount { get; set; }
-
-    /// <summary>
-    /// Confirmation description
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Callback URL for confirmation notifications
-    /// </summary>
-    [JsonPropertyName("callback_url")]
-    public string? CallbackUrl { get; set; }
-}
 
 /// <summary>
 /// Request for creating a lookup payment

@@ -57,9 +57,6 @@ internal sealed class FakePaymentService : IPaymentService
     public Task<PaymentResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 
-    public Task<PaymentListResponse> GetListAsync(PaymentListRequest request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
-
     public Task<PaymentReceiptResponse> GetReceiptAsync(string externalId, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
 

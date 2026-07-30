@@ -17,7 +17,6 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
 
     private const string ResendCallbackEndpoint = "/api/alternative-payments/v1/callback/resend";
 
-    private const string MethodsEndpoint = "/api/alternative-payments/v1/methods";
 
     /// <summary>
     /// Static route template of the operation-by-external-ID lookup, used as the log label only. The real
@@ -37,11 +36,6 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     /// </summary>
     private const string InfoEndpoint = "/api/alternative-payments/v1/info";
 
-    /// <summary>
-    /// Route of the operations list, and its log label. The real target carries the caller's filter and
-    /// pagination values.
-    /// </summary>
-    private const string OperationsEndpoint = "/api/alternative-payments/v1/operations";
 
     /// <summary>
     /// Static route template of the status lookup, used as the log label only. The real request target
@@ -161,48 +155,6 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
             cancellationToken);
     }
 
-    /// <summary>
-    /// Get operations info
-    /// GET /api/alternative-payments/v1/operations
-    /// </summary>
-    /// <param name="request">Operations list request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Operations list response</returns>
-    public async Task<AlternativePaymentOperationsResponse> GetOperationsAsync(GetAlternativePaymentOperationsRequest request, CancellationToken cancellationToken = default)
-    {
-        List<string> queryParams = new List<string>();
-
-        if (!string.IsNullOrEmpty(request.DateFrom))
-        {
-            queryParams.Add($"date_from={Uri.EscapeDataString(request.DateFrom)}");
-        }
-
-        if (!string.IsNullOrEmpty(request.DateTo))
-        {
-            queryParams.Add($"date_to={Uri.EscapeDataString(request.DateTo)}");
-        }
-
-        if (!string.IsNullOrEmpty(request.Status))
-        {
-            queryParams.Add($"status={Uri.EscapeDataString(request.Status)}");
-        }
-
-        if (request.Limit.HasValue)
-        {
-            queryParams.Add($"limit={Uri.EscapeDataString(request.Limit.Value.ToString(CultureInfo.InvariantCulture))}");
-        }
-
-        if (request.Offset.HasValue)
-        {
-            queryParams.Add($"offset={Uri.EscapeDataString(request.Offset.Value.ToString(CultureInfo.InvariantCulture))}");
-        }
-
-        string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-        return await GetAsync<AlternativePaymentOperationsResponse>(
-            $"{OperationsEndpoint}{query}",
-            OperationsEndpoint,
-            cancellationToken);
-    }
 
     /// <summary>
     /// Get operations info by external ID
@@ -217,16 +169,6 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
         return await GetAsync<AlternativePaymentOperationsResult>(endpoint, InfoEndpoint, cancellationToken);
     }
 
-    /// <summary>
-    /// Get available payment methods
-    /// GET /api/alternative-payments/v1/methods
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Available payment methods</returns>
-    public async Task<AlternativePaymentMethodsResponse> GetAvailableMethodsAsync(CancellationToken cancellationToken = default)
-    {
-        return await GetAsync<AlternativePaymentMethodsResponse>(MethodsEndpoint, MethodsEndpoint, cancellationToken);
-    }
 
     /// <summary>
     /// Get payment status

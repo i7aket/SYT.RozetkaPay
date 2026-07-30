@@ -43,11 +43,6 @@ public class PayPartsService : BaseService, IPayPartsService
     /// </summary>
     private const string InfoEndpoint = "/api/payparts/v1/info";
 
-    /// <summary>
-    /// Route of the operations list, and its log label. The real target carries the caller's filter and
-    /// pagination values.
-    /// </summary>
-    private const string OperationsEndpoint = "/api/payparts/v1/operations";
 
     private const string BanksInfoEndpoint = "/api/payparts/v1/banks/info";
 
@@ -208,50 +203,6 @@ public class PayPartsService : BaseService, IPayPartsService
         return await GetAsync<PayPartsOperationsResult>(endpoint, InfoEndpoint, cancellationToken);
     }
 
-    /// <summary>
-    /// Get operations info
-    /// GET /api/payparts/v1/operations
-    /// </summary>
-    /// <param name="request">Operations list request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>PayParts operations list</returns>
-    public async Task<PayPartsOperationsListResponse> GetOperationsAsync(PayPartsOperationsListRequest request, CancellationToken cancellationToken = default)
-    {
-        List<string> queryParams = new List<string>();
-
-        if (request.DateFrom.HasValue)
-        {
-            string dateFrom = request.DateFrom.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            queryParams.Add($"date_from={Uri.EscapeDataString(dateFrom)}");
-        }
-
-        if (request.DateTo.HasValue)
-        {
-            string dateTo = request.DateTo.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            queryParams.Add($"date_to={Uri.EscapeDataString(dateTo)}");
-        }
-
-        if (!string.IsNullOrEmpty(request.Status))
-        {
-            queryParams.Add($"status={Uri.EscapeDataString(request.Status)}");
-        }
-
-        if (request.Limit.HasValue)
-        {
-            queryParams.Add($"limit={Uri.EscapeDataString(request.Limit.Value.ToString(CultureInfo.InvariantCulture))}");
-        }
-
-        if (request.Offset.HasValue)
-        {
-            queryParams.Add($"offset={Uri.EscapeDataString(request.Offset.Value.ToString(CultureInfo.InvariantCulture))}");
-        }
-
-        string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-        return await GetAsync<PayPartsOperationsListResponse>(
-            $"{OperationsEndpoint}{query}",
-            OperationsEndpoint,
-            cancellationToken);
-    }
 
     /// <summary>
     /// Get banks info for PayParts

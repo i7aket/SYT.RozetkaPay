@@ -6,18 +6,24 @@ using SYT.RozetkaPay.Tests.TestInfrastructure;
 namespace SYT.RozetkaPay.Tests;
 
 /// <summary>
-/// Exactly which routes the SDK calls that the published document does not declare.
+/// The SDK calls no route the published document does not declare.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Ten remain. They may well work — several look like earlier spellings of operations the document
-/// now publishes elsewhere — but the document is the contract, and a public method implies a
-/// supported endpoint. Until RozetkaPay confirms each one, they are neither endorsed nor quietly
-/// dropped: they are listed here, by name, so the set cannot grow without someone editing this file.
+/// Sixteen once did. Six were fallback targets for the hidden <c>404</c> retry EXP-385 deleted and
+/// had gone uncalled since. The other ten were listed here awaiting confirmation, on the reading
+/// that they might be earlier spellings of operations the document now publishes elsewhere.
 /// </para>
 /// <para>
-/// Six more were removed outright rather than listed. They existed only as fallback targets for the
-/// hidden <c>404</c> retry EXP-385 deleted, so nothing had called them since.
+/// They were not. Called against the live gateway with credentials that return <c>200</c> on a
+/// declared control route, all ten answered <c>404</c> — and the POST-only ones answered <c>404</c>
+/// rather than <c>405</c>, so it is the path that is absent, not the verb. A public method that
+/// cannot succeed is worse than a missing one: it reads as a supported operation. All ten are gone,
+/// along with the request and response types that existed only to feed them.
+/// </para>
+/// <para>
+/// The list below is now empty and should stay so. Adding an entry means shipping a method the
+/// document does not back, which is the decision this file exists to make visible.
 /// </para>
 /// <para>
 /// The drift job checks the snapshot against the live document. This checks the SDK against the
@@ -34,19 +40,7 @@ public class OffSpecRouteTests
     /// to do, which is the failure mode that let five contract-test fixtures pin the defects they were
     /// meant to catch.
     /// </remarks>
-    private static readonly HashSet<string> AwaitingConfirmation =
-    [
-        "/api/alternative-payments/v1/methods",
-        "/api/alternative-payments/v1/operations",
-        "/api/merchant/v1/settings",
-        "/api/merchant/v1/commission-rates",
-        "/api/payparts/v1/operations",
-        "/api/payments/v1/p2p/confirm",
-        "/api/payments/v1/list",
-        "/api/payouts/v1/new",
-        "/api/payouts/v1/list",
-        "/api/payouts/v1/balance",
-    ];
+    private static readonly HashSet<string> AwaitingConfirmation = [];
 
     [Fact]
     public void TheSdk_ShouldCallNoUndeclaredRouteBeyondTheOnesAwaitingConfirmation()

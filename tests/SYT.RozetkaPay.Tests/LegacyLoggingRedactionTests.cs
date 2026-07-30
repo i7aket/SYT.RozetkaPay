@@ -192,26 +192,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], Label);
     }
 
-    [Fact]
-    public async Task PaymentList_ShouldNotLogTheFilterValuesInTheQuery()
-    {
-        const string Row = "payment-list";
-        const string Label = "/api/payments/v1/list";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, PaymentService service) =
-            Arrange(static (c, h, l) => new PaymentService(c, h, l));
-
-        await service.GetListAsync(new PaymentListRequest
-        {
-            Status = LoggingRedactionContext.RawMarker(Row),
-            Limit = 25
-        });
-
-        Assert.Equal(
-            $"{Label}?status={LoggingRedactionContext.EncodedMarker(Row)}&limit=25",
-            handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     [Fact]
     public async Task PaymentReceipt_ShouldNotLogTheExternalIdInTheQuery()
@@ -228,37 +208,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], Label);
     }
 
-    /// <summary>
-    /// The one operation that logged a request-body value directly, rather than through the transport
-    /// helper. Both the external ID and the amount are still sent; neither is logged, and no substitute
-    /// message was introduced - the route label is the whole log.
-    /// </summary>
-    [Fact]
-    public async Task ConfirmP2P_ShouldNotLogTheExternalIdOrTheAmount()
-    {
-        const string Row = "p2p-confirm";
-        const string Label = "/api/payments/v1/p2p/confirm";
-        const decimal Amount = 4242.4242m;
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, PaymentService service) =
-            Arrange(static (c, h, l) => new PaymentService(c, h, l));
-
-        await service.ConfirmP2PAsync(LoggingRedactionContext.BodyMarker(Row), Amount);
-
-        RedactionRequest request = handler.Single;
-        Assert.Equal(HttpMethod.Post, request.Method);
-        Assert.Equal(Label, request.Target);
-        Assert.Contains(LoggingRedactionContext.BodyMarker(Row), request.Body!, StringComparison.Ordinal);
-        Assert.Contains(Amount.ToString(CultureInfo.InvariantCulture), request.Body!, StringComparison.Ordinal);
-
-        LoggingRedactionAssert.NotLogged(logs, LoggingRedactionContext.BodyMarker(Row));
-        LoggingRedactionAssert.NotLogged(logs, Amount.ToString(CultureInfo.InvariantCulture));
-        LoggingRedactionAssert.Logged(logs, Label);
-        LoggingRedactionAssert.NoScopes(logs);
-
-        // Exactly the two transport statements: the route label, and the response status.
-        Assert.Equal(2, logs.Entries.Count);
-    }
 
     // ---------- PayoutService ----------
 
@@ -277,20 +226,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], Label);
     }
 
-    [Fact]
-    public async Task PayoutList_ShouldNotLogTheFilterValuesInTheQuery()
-    {
-        const string Row = "payout-list";
-        const string Label = "/api/payouts/v1/list";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, PayoutService service) =
-            Arrange(static (c, h, l) => new PayoutService(c, h, l));
-
-        await service.GetListAsync(new PayoutListRequest { Status = LoggingRedactionContext.RawMarker(Row) });
-
-        Assert.Equal($"{Label}?status={LoggingRedactionContext.EncodedMarker(Row)}", handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     [Fact]
     public async Task PayoutAccountBalance_ShouldNotLogTheMerchantEntityIdInTheQuery()
@@ -374,23 +309,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [ExternalRow, OperationRow], PrimaryLabel);
     }
 
-    [Fact]
-    public async Task AlternativePaymentOperations_ShouldNotLogTheFilterValuesInTheQuery()
-    {
-        const string Row = "alternative-operations";
-        const string Label = "/api/alternative-payments/v1/operations";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, AlternativePaymentService service) =
-            Arrange(static (c, h, l) => new AlternativePaymentService(c, h, l));
-
-        await service.GetOperationsAsync(new GetAlternativePaymentOperationsRequest
-        {
-            Status = LoggingRedactionContext.RawMarker(Row)
-        });
-
-        Assert.Equal($"{Label}?status={LoggingRedactionContext.EncodedMarker(Row)}", handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     [Fact]
     public async Task AlternativePaymentInfo_ShouldNotLogTheExternalIdInTheQuery()
@@ -483,23 +401,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], Label);
     }
 
-    [Fact]
-    public async Task PayPartsOperations_ShouldNotLogTheFilterValuesInTheQuery()
-    {
-        const string Row = "payparts-operations";
-        const string Label = "/api/payparts/v1/operations";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, PayPartsService service) =
-            Arrange(static (c, h, l) => new PayPartsService(c, h, l));
-
-        await service.GetOperationsAsync(new PayPartsOperationsListRequest
-        {
-            Status = LoggingRedactionContext.RawMarker(Row)
-        });
-
-        Assert.Equal($"{Label}?status={LoggingRedactionContext.EncodedMarker(Row)}", handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     /// <summary>
     /// The banks route is its own log label: it carries no caller value, so redacting it would cost

@@ -58,13 +58,6 @@ public interface IAlternativePaymentService
     /// <returns>Alternative payment operation result</returns>
     Task<AlternativePaymentOperationResult> GetOperationInfoAsync(string externalId, string operationId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get operations info
-    /// </summary>
-    /// <param name="request">Operations list request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Operations list response</returns>
-    Task<AlternativePaymentOperationsResponse> GetOperationsAsync(GetAlternativePaymentOperationsRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get operations info by external ID
@@ -74,12 +67,6 @@ public interface IAlternativePaymentService
     /// <returns>Alternative payment operations result</returns>
     Task<AlternativePaymentOperationsResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get available payment methods
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Available payment methods</returns>
-    Task<AlternativePaymentMethodsResponse> GetAvailableMethodsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get payment status

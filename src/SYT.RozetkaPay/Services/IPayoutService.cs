@@ -8,13 +8,6 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public interface IPayoutService
 {
-    /// <summary>
-    /// Create a new payout
-    /// </summary>
-    /// <param name="request">Payout creation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payout response</returns>
-    Task<PayoutResponse> CreateAsync(CreatePayoutRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Create payout request using OpenAPI contract endpoint
@@ -32,20 +25,7 @@ public interface IPayoutService
     /// <returns>Payout response</returns>
     Task<PayoutResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get payouts list
-    /// </summary>
-    /// <param name="request">Payouts list request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payouts list response</returns>
-    Task<PayoutListResponse> GetListAsync(PayoutListRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get balance information
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Balance information</returns>
-    Task<BalanceResponse> GetBalanceAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get merchant account balance using OpenAPI contract endpoint

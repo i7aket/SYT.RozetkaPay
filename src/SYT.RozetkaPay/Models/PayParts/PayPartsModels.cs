@@ -665,71 +665,7 @@ public class PayPartsOperationResponse
 
 // ===================== PAYPARTS OPERATIONS LIST MODELS =====================
 
-/// <summary>
-/// Request for PayParts operations list
-/// </summary>
-public class PayPartsOperationsListRequest
-{
-    /// <summary>
-    /// Start date filter
-    /// </summary>
-    [JsonPropertyName("date_from")]
-    public DateTime? DateFrom { get; set; }
 
-    /// <summary>
-    /// End date filter
-    /// </summary>
-    [JsonPropertyName("date_to")]
-    public DateTime? DateTo { get; set; }
-
-    /// <summary>
-    /// Operation status filter
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Number of operations to return
-    /// </summary>
-    [JsonPropertyName("limit")]
-    public int? Limit { get; set; }
-
-    /// <summary>
-    /// Number of operations to skip
-    /// </summary>
-    [JsonPropertyName("offset")]
-    public int? Offset { get; set; }
-}
-
-/// <summary>
-/// PayParts operations list response
-/// </summary>
-public class PayPartsOperationsListResponse
-{
-    /// <summary>
-    /// List of operations
-    /// </summary>
-    [JsonPropertyName("operations")]
-    public List<PayPartsOperationResponse>? Operations { get; set; }
-
-    /// <summary>
-    /// Total number of operations
-    /// </summary>
-    [JsonPropertyName("total")]
-    public int? Total { get; set; }
-
-    /// <summary>
-    /// Number of operations returned
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int? Count { get; set; }
-
-    /// <summary>
-    /// Pagination offset
-    /// </summary>
-    [JsonPropertyName("offset")]
-    public int? Offset { get; set; }
-}
 
 // ===================== PAYPARTS CALLBACK MODELS =====================
 

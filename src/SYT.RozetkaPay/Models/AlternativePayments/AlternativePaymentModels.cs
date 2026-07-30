@@ -574,41 +574,6 @@ public class AlternativePaymentOperationsResult
     public string? UnifiedExternalId { get; set; }
 }
 
-/// <summary>
-/// Request for getting alternative payment operations
-/// </summary>
-public class GetAlternativePaymentOperationsRequest
-{
-    /// <summary>
-    /// Date from filter (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("date_from")]
-    public string? DateFrom { get; set; }
-
-    /// <summary>
-    /// Date to filter (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("date_to")]
-    public string? DateTo { get; set; }
-
-    /// <summary>
-    /// Status filter (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Results limit (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("limit")]
-    public int? Limit { get; set; }
-
-    /// <summary>
-    /// Results offset (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("offset")]
-    public int? Offset { get; set; }
-}
 
 /// <summary>
 /// Alternative payment response
@@ -688,17 +653,6 @@ public class AlternativePaymentMethodInfo
     public bool IsActive { get; set; }
 }
 
-/// <summary>
-/// Alternative payment methods response
-/// </summary>
-public class AlternativePaymentMethodsResponse
-{
-    /// <summary>
-    /// Available payment methods (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("methods")]
-    public List<AlternativePaymentMethodInfo>? Methods { get; set; }
-}
 
 /// <summary>
 /// Alternative payment status response
@@ -890,27 +844,4 @@ public class AlternativePaymentOperationResponse
     [JsonPropertyName("details")]
     public AlternativePaymentOperationDetails? Details { get; set; }
 }
-
-/// <summary>
-/// Alternative payment operations response
-/// </summary>
-public class AlternativePaymentOperationsResponse
-{
-    /// <summary>
-    /// List of operations (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("operations")]
-    public List<AlternativePaymentOperationResult>? Operations { get; set; }
-
-    /// <summary>
-    /// Total count of operations (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("total")]
-    public int? Total { get; set; }
-
-    /// <summary>
-    /// Current count in response (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int? Count { get; set; }
-} 
+ 

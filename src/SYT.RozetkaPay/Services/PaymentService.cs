@@ -29,7 +29,6 @@ public class PaymentService : BaseService, IPaymentService
 
     private const string ResendCallbackEndpoint = "/api/payments/v1/callback/resend";
 
-    private const string ConfirmP2PEndpoint = "/api/payments/v1/p2p/confirm";
 
     /// <summary>
     /// Route of the payment-info operation. Also the log label: the real request target carries the
@@ -37,11 +36,6 @@ public class PaymentService : BaseService, IPaymentService
     /// </summary>
     private const string InfoEndpoint = "/api/payments/v1/info";
 
-    /// <summary>
-    /// Route of the payment-list operation, and its log label. The real target carries the caller's
-    /// filter and pagination values.
-    /// </summary>
-    private const string ListEndpoint = "/api/payments/v1/list";
 
     /// <summary>
     /// Route of the receipt operation, and its log label. The real target carries the caller's external ID.
@@ -166,47 +160,6 @@ public class PaymentService : BaseService, IPaymentService
             cancellationToken);
     }
 
-    /// <summary>
-    /// Get payment list
-    /// GET /api/payments/v1/list
-    /// </summary>
-    /// <param name="request">Payment list request parameters</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payment list response</returns>
-    public async Task<PaymentListResponse> GetListAsync(PaymentListRequest request, CancellationToken cancellationToken = default)
-    {
-        List<string> queryParams = new List<string>();
-
-        if (request.DateFrom.HasValue)
-        {
-            string dateFrom = request.DateFrom.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            queryParams.Add($"date_from={Uri.EscapeDataString(dateFrom)}");
-        }
-
-        if (request.DateTo.HasValue)
-        {
-            string dateTo = request.DateTo.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            queryParams.Add($"date_to={Uri.EscapeDataString(dateTo)}");
-        }
-
-        if (!string.IsNullOrEmpty(request.Status))
-        {
-            queryParams.Add($"status={Uri.EscapeDataString(request.Status)}");
-        }
-
-        if (request.Limit.HasValue)
-        {
-            queryParams.Add($"limit={Uri.EscapeDataString(request.Limit.Value.ToString(CultureInfo.InvariantCulture))}");
-        }
-
-        if (request.Offset.HasValue)
-        {
-            queryParams.Add($"offset={Uri.EscapeDataString(request.Offset.Value.ToString(CultureInfo.InvariantCulture))}");
-        }
-
-        string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-        return await GetAsync<PaymentListResponse>($"{ListEndpoint}{query}", ListEndpoint, cancellationToken);
-    }
 
     /// <summary>
     /// Get payment receipt
@@ -265,27 +218,6 @@ public class PaymentService : BaseService, IPaymentService
         return await CreateAsync(request, cancellationToken);
     }
 
-    /// <summary>
-    /// Confirm P2P payment
-    /// </summary>
-    /// <param name="externalId">External payment ID</param>
-    /// <param name="amount">Amount to confirm in UAH</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payment response</returns>
-    public async Task<PaymentResponse> ConfirmP2PAsync(string externalId, decimal? amount = null, CancellationToken cancellationToken = default)
-    {
-        P2PConfirmationRequest request = new P2PConfirmationRequest
-        {
-            ExternalId = externalId,
-            Amount = amount ?? 0 // Default to 0 if not specified, API will handle validation
-        };
-
-        return await PostAsync<P2PConfirmationRequest, PaymentResponse>(
-            ConfirmP2PEndpoint,
-            ConfirmP2PEndpoint,
-            request,
-            cancellationToken);
-    }
 
     /// <summary>
     /// Build P2P payment request helper
