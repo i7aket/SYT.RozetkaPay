@@ -39,7 +39,7 @@ readonly EXPECTED_ICON_WIDTH=128
 readonly EXPECTED_ICON_HEIGHT=128
 readonly MAX_ICON_BYTES=$((1024 * 1024))
 readonly EXPECTED_REPOSITORY_URL='https://github.com/i7aket/SYT.RozetkaPay'
-readonly EXPECTED_TFMS='net10.0,net9.0'
+readonly EXPECTED_TFMS='net10.0'
 readonly EXPECTED_RAW_HOST='https://raw.githubusercontent.com/i7aket/SYT.RozetkaPay'
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -321,7 +321,7 @@ note "dependency groups: ${actual_tfms}"
 
 printf '[3/6] Primary package payload\n'
 
-for tfm in net9.0 net10.0; do
+for tfm in net10.0; do
     for ext in dll xml; do
         entry="lib/${tfm}/${EXPECTED_PACKAGE_ID}.${ext}"
         count="$(zip_entry_count "${nupkg}" "${entry}")"
@@ -338,7 +338,7 @@ icon_count="$(zip_entry_count "${nupkg}" "${EXPECTED_ICON_ENTRY}")"
 [ "${icon_count}" -eq 1 ] ||
     fail "Primary package must contain exactly one root '${EXPECTED_ICON_ENTRY}' entry, found ${icon_count}."
 
-note "lib/net9.0 + lib/net10.0 dll and xml present"
+note "lib/net10.0 dll and xml present"
 note "no .pdb in primary package"
 
 # ---------------------------------------------------------------------------
@@ -403,12 +403,11 @@ note "PNG ${icon_width}x${icon_height}, ${icon_bytes} bytes"
 
 printf '[5/6] Symbol package contract\n'
 
-expected_pdbs="lib/net10.0/${EXPECTED_PACKAGE_ID}.pdb
-lib/net9.0/${EXPECTED_PACKAGE_ID}.pdb"
+expected_pdbs="lib/net10.0/${EXPECTED_PACKAGE_ID}.pdb"
 
 actual_lib_entries="$(unzip -Z1 "${snupkg}" | awk '/^lib\// { print }' | sort)"
 if [ "${actual_lib_entries}" != "${expected_pdbs}" ]; then
-    fail "Symbol package lib/ entries are not exactly the two expected PDBs.
+    fail "Symbol package lib/ entries are not exactly the expected PDB.
 Expected:
 ${expected_pdbs}
 Actual:
@@ -423,12 +422,12 @@ for forbidden in '\.dll$' '\.png$' '\.xml$'; do
         fail "Symbol package contains ${count} lib/ entr(y|ies) matching '${forbidden}'; it must ship PDBs only."
 done
 
-# Nothing may ride along outside the two PDBs and the standard OPC metadata:
+# Nothing may ride along outside the PDB and the standard OPC metadata:
 # no assembly, no icon, no README, no extra directory.
 unexpected="$(
     unzip -Z1 "${snupkg}" |
         awk '
-            $0 ~ /^lib\/(net9\.0|net10\.0)\/SYT\.RozetkaPay\.pdb$/ { next }
+            $0 ~ /^lib\/net10\.0\/SYT\.RozetkaPay\.pdb$/ { next }
             $0 == "[Content_Types].xml" { next }
             $0 == "_rels/.rels" { next }
             $0 ~ /^SYT\.RozetkaPay\.nuspec$/ { next }
@@ -437,11 +436,11 @@ unexpected="$(
         '
 )"
 if [ -n "${unexpected}" ]; then
-    fail "Symbol package contains unexpected entries beyond the two PDBs and OPC metadata:
+    fail "Symbol package contains unexpected entries beyond the PDB and OPC metadata:
 ${unexpected}"
 fi
 
-note "exactly lib/net9.0 + lib/net10.0 PDBs, no dll/icon/extra payload"
+note "exactly lib/net10.0 PDB, no dll/icon/extra payload"
 
 # ---------------------------------------------------------------------------
 # 6. Source Link metadata in both PDBs
@@ -457,7 +456,7 @@ else
     remote_status='PASSED (every source document downloaded and checksum-matched)'
 fi
 
-for tfm in net9.0 net10.0; do
+for tfm in net10.0; do
     pdb_entry="lib/${tfm}/${EXPECTED_PACKAGE_ID}.pdb"
     pdb_file="${tmp_dir}/${tfm}.pdb"
     unzip -p "${snupkg}" "${pdb_entry}" > "${pdb_file}"
@@ -521,6 +520,6 @@ Package artifact verification PASSED
   package version  : ${nuspec_version}
   package icon     : ${EXPECTED_ICON_ENTRY} (PNG ${icon_width}x${icon_height}, ${icon_bytes} bytes, limit ${MAX_ICON_BYTES})
   repository commit: ${expected_sha}
-  target frameworks: net9.0, net10.0
+  target frameworks: net10.0
   source link remote verification: ${remote_status}
 SUMMARY

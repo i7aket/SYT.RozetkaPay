@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <TargetFramework>net10.0</TargetFramework>
         <RootNamespace>SYT.RozetkaPay</RootNamespace>
         <AssemblyName>SYT.RozetkaPay</AssemblyName>
         <PackageId>SYT.RozetkaPay</PackageId>
@@ -51,24 +51,16 @@
     </PropertyGroup>
 
     <!--
-        Microsoft.Extensions.* is versioned per target framework rather than pinned to one line for
-        both. Each release line tracks the runtime it shipped with, so a net9.0 consumer gets 9.0.x
-        and a net10.0 consumer gets 10.0.x - which is what each of them already has loaded. Pinning
-        both to 9.0.x, as this file did, quietly asked every net10.0 consumer to carry a second,
-        older copy of assemblies their shared framework already provides.
-    -->
-    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.18" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.18" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.18" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.18" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.18" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.18" />
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.18" />
-        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.18" />
-    </ItemGroup>
+        Microsoft.Extensions.* tracks the runtime's own release line, so a net10.0 consumer gets
+        10.0.x - which is what their shared framework already has loaded. Pinning an older line, as
+        this file once did, quietly asks every consumer to carry a second copy of assemblies they
+        already have.
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        The condition is gone with the second target framework. EXP-425 dropped net9.0: it leaves
+        support on 2026-11-10, and a package with no consumers yet is the only time removing a target
+        is not a breaking change.
+    -->
+    <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />

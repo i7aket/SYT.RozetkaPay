@@ -5,7 +5,7 @@
 ## Package
 
 - Package ID: `SYT.RozetkaPay`
-- Target frameworks: `net9.0`, `net10.0`
+- Target framework: `net10.0`
 - License: `MIT`
 - Versioning: derived from Git release tags via [MinVer](https://github.com/adamralph/minver)
 
@@ -19,11 +19,10 @@ exact repository source the package was built from:
 - Icon: `assets/package-icon.png`, packed into the package root as `package-icon.png`. It is
   an original SDK mark generated from the committed `assets/package-icon.svg` — not the
   RozetkaPay logo and not derived from any third-party asset.
-- Symbols: `lib/net9.0/SYT.RozetkaPay.pdb` and `lib/net10.0/SYT.RozetkaPay.pdb`, published in
-  the `.snupkg` only. The primary `.nupkg` carries no PDB.
+- Symbols: `lib/net10.0/SYT.RozetkaPay.pdb`, published in the `.snupkg` only. The primary `.nupkg` carries no PDB.
 - Source Link comes from the tooling built into the .NET SDK. There is deliberately **no**
-  `Microsoft.SourceLink.*` `PackageReference`, so the published dependency groups stay exactly
-  `net9.0` and `net10.0` with no build-only package leaking into them.
+  `Microsoft.SourceLink.*` `PackageReference`, so the published dependency group stays exactly
+  `net10.0` with no build-only package leaking into it.
 - Official CI and release builds run with `ContinuousIntegrationBuild=true`, so every source
   path embedded in the symbols is normalized to `/_/*`. No runner, machine or worktree
   filesystem root is ever published.
@@ -183,7 +182,7 @@ Every pull request targeting `main`, and every push to `main`, runs the
 3. Builds in `Release` with warnings treated as errors and
    `-p:ContinuousIntegrationBuild=true`, so the produced symbols contain no
    machine-specific source root.
-4. Runs the full test suite on `net9.0` and `net10.0`.
+4. Runs the full test suite on `net10.0`.
 5. Rebuilds the same commit in a second, throwaway `git worktree` under a
    different filesystem root and requires the `SYT.RozetkaPay.dll`, `.pdb` and
    `.xml` of both frameworks to be identical by SHA-256
@@ -194,7 +193,7 @@ Every pull request targeting `main`, and every push to `main`, runs the
 The artifact verifier inspects archive contents rather than file names. It proves the
 packed icon really is a `128x128` PNG under `1 MiB` and byte-identical to the committed
 asset, that the nuspec keeps its `id`, `icon`, `readme` and `license` metadata and its
-`net9.0`/`net10.0` dependency groups, that the `<repository>` element records the exact
+the `net10.0` dependency group, that the `<repository>` element records the exact
 commit that was checked out, that the primary package carries no PDB while the `.snupkg`
 carries exactly the two, and that each PDB has a single Source Link mapping to that commit
 with every source document normalized under `/_/`. It then runs `dotnet sourcelink test`,
