@@ -40,7 +40,12 @@ public class FlexibleDateTimeConverter : JsonConverter<DateTime>
                     return DateTime.MinValue;
 
                 // Try to parse as ISO format first (with timezone info)
-                if (DateTime.TryParse(stringValue, null, DateTimeStyles.RoundtripKind, out DateTime parsedDate))
+                if (// Invariant, not the ambient culture. ISO-8601 - what this API emits - parses the same
+            // everywhere, so the practical risk was low, but a non-ISO string would have parsed
+            // differently per machine locale, and the exact-format fallbacks below are already
+            // invariant. A converter that is culture-sensitive in one branch and not the others is a
+            // trap waiting for the first server configured differently from the developer's laptop.
+            DateTime.TryParse(stringValue, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime parsedDate))
                 {
                     return parsedDate.Kind == DateTimeKind.Local ? parsedDate.ToUniversalTime() : parsedDate;
                 }
@@ -48,8 +53,21 @@ public class FlexibleDateTimeConverter : JsonConverter<DateTime>
                 // Try custom formats
                 foreach (string format in DateFormats)
                 {
-                    if (DateTime.TryParseExact(stringValue, format, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out DateTime customParsedDate))
+                    // AdjustToUniversal alongside AssumeUniversal, and the pair matters. AssumeUniversal
+                    // alone reads the text as UTC and then hands back the LOCAL equivalent, so
+                    // SpecifyKind(Utc) relabelled a converted value instead of converting it - the same
+                    // relabel-versus-convert bug EXP-390 fixed elsewhere, still living here. It stayed
+                    // hidden because a day-first machine culture parsed "28.02.2026" in the branch
+                    // above and never reached this one.
+                    if (DateTime.TryParseExact(
+                            stringValue,
+                            format,
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                            out DateTime customParsedDate))
+                    {
                         return DateTime.SpecifyKind(customParsedDate, DateTimeKind.Utc);
+                    }
                 }
 
                 throw new JsonException($"Unable to parse date: {stringValue}");

@@ -82,35 +82,6 @@ public class PayPartsPeriodInfo
     public int? Period { get; set; }
 }
 
-/// <summary>
-/// PayParts limits information (legacy compatibility)
-/// </summary>
-public class PayPartsLimits
-{
-    /// <summary>
-    /// Minimum amount in kopecks (100 = 1 UAH)
-    /// </summary>
-    [JsonPropertyName("min_amount")]
-    public int? MinAmount { get; set; }
-
-    /// <summary>
-    /// Maximum amount in kopecks (100 = 1 UAH)
-    /// </summary>
-    [JsonPropertyName("max_amount")]
-    public int? MaxAmount { get; set; }
-
-    /// <summary>
-    /// Minimum number of installments
-    /// </summary>
-    [JsonPropertyName("min_parts")]
-    public int? MinParts { get; set; }
-
-    /// <summary>
-    /// Maximum number of installments
-    /// </summary>
-    [JsonPropertyName("max_parts")]
-    public int? MaxParts { get; set; }
-}
 
 /// <summary>
 /// PayParts banks info response (JSON array as per CDN documentation)

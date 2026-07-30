@@ -345,59 +345,6 @@ public class CancelBatchPaymentRequest
     public string BatchExternalId { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Batch payment response
-/// </summary>
-public class BatchPaymentResponse
-{
-    /// <summary>
-    /// Batch ID
-    /// </summary>
-    [JsonPropertyName("id")]
-    public string? Id { get; set; }
-
-    /// <summary>
-    /// Whether action is required from user
-    /// </summary>
-    [JsonPropertyName("action_required")]
-    public bool? ActionRequired { get; set; }
-
-    /// <summary>
-    /// User action details
-    /// </summary>
-    [JsonPropertyName("action")]
-    public UserAction? Action { get; set; }
-
-    /// <summary>
-    /// Batch details
-    /// </summary>
-    [JsonPropertyName("batch_details")]
-    public BatchDetails? BatchDetails { get; set; }
-
-    /// <summary>
-    /// Payment method response
-    /// </summary>
-    [JsonPropertyName("payment_method")]
-    public PaymentMethodResponse? PaymentMethod { get; set; }
-
-    /// <summary>
-    /// Order details
-    /// </summary>
-    [JsonPropertyName("order_details")]
-    public List<BatchOrderDetails>? OrderDetails { get; set; }
-
-    /// <summary>
-    /// Batch external ID
-    /// </summary>
-    [JsonPropertyName("batch_external_id")]
-    public string? BatchExternalId { get; set; }
-
-    /// <summary>
-    /// Receipt URL
-    /// </summary>
-    [JsonPropertyName("receipt_url")]
-    public string? ReceiptUrl { get; set; }
-}
 
 /// <summary>
 /// Batch details information

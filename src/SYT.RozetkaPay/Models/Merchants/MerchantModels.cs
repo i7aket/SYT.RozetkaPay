@@ -128,47 +128,6 @@ public class MerchantValidationResponse
     public string? Status { get; set; }
 }
 
-/// <summary>
-/// Merchant information response
-/// </summary>
-public class MerchantInfoResponse
-{
-    /// <summary>
-    /// Merchant ID
-    /// </summary>
-    [JsonPropertyName("merchant_id")]
-    public string? MerchantId { get; set; }
-
-    /// <summary>
-    /// Merchant name
-    /// </summary>
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
-
-    /// <summary>
-    /// Merchant status
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Merchant type
-    /// </summary>
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
-
-    /// <summary>
-    /// Contact information
-    /// </summary>
-    [JsonPropertyName("contact")]
-    public MerchantContact? Contact { get; set; }
-
-    /// <summary>
-    /// Registration date
-    /// </summary>
-    [JsonPropertyName("registered_at")]
-    public DateTime? RegisteredAt { get; set; }
-}
 
 /// <summary>
 /// Merchant contact information
@@ -195,71 +154,8 @@ public class MerchantContact
 }
 
 
-/// <summary>
-/// Payment method configuration
-/// </summary>
-public class PaymentMethodConfig
-{
-    /// <summary>
-    /// Payment method type
-    /// </summary>
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
 
-    /// <summary>
-    /// Whether payment method is enabled
-    /// </summary>
-    [JsonPropertyName("enabled")]
-    public bool? Enabled { get; set; }
 
-    /// <summary>
-    /// Commission rate
-    /// </summary>
-    [JsonPropertyName("commission_rate")]
-    public decimal? CommissionRate { get; set; }
-}
-
-/// <summary>
-/// Notification settings
-/// </summary>
-public class NotificationSettings
-{
-    /// <summary>
-    /// Webhook URL
-    /// </summary>
-    [JsonPropertyName("webhook_url")]
-    public string? WebhookUrl { get; set; }
-
-    /// <summary>
-    /// Email notifications enabled
-    /// </summary>
-    [JsonPropertyName("email_notifications")]
-    public bool? EmailNotifications { get; set; }
-
-    /// <summary>
-    /// SMS notifications enabled
-    /// </summary>
-    [JsonPropertyName("sms_notifications")]
-    public bool? SmsNotifications { get; set; }
-}
-
-/// <summary>
-/// Security settings
-/// </summary>
-public class SecuritySettings
-{
-    /// <summary>
-    /// IP whitelist
-    /// </summary>
-    [JsonPropertyName("ip_whitelist")]
-    public List<string>? IpWhitelist { get; set; }
-
-    /// <summary>
-    /// Required 3DS for payments
-    /// </summary>
-    [JsonPropertyName("require_3ds")]
-    public bool? Require3DS { get; set; }
-}
 
 
 
@@ -293,29 +189,6 @@ public class CommissionRate
     public string? Currency { get; set; }
 }
 
-/// <summary>
-/// Fee information
-/// </summary>
-public class FeeInfo
-{
-    /// <summary>
-    /// Fee amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
-
-    /// <summary>
-    /// Fee percentage (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("percentage")]
-    public decimal? Percentage { get; set; }
-
-    /// <summary>
-    /// Fee type (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
-}
 
 /// <summary>
 /// Keys validation result response (JSON object as per CDN documentation)

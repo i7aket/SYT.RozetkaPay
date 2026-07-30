@@ -414,23 +414,6 @@ public class SubscriptionCustomer
     public string? Phone { get; set; }
 }
 
-/// <summary>
-/// Initial payment information for subscription
-/// </summary>
-public class SubscriptionInitialPayment
-{
-    /// <summary>
-    /// Initial payment amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
-
-    /// <summary>
-    /// Payment method information (JSON object as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("payment_method")]
-    public SubscriptionPaymentMethod? PaymentMethod { get; set; }
-}
 
 /// <summary>
 /// Payment method for subscription
@@ -474,45 +457,6 @@ public class SubscriptionPaymentMethod
     public string? RecurrentId { get; set; }
 }
 
-/// <summary>
-/// Card information for subscription
-/// </summary>
-public class SubscriptionCard
-{
-    /// <summary>
-    /// Card number (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("number")]
-    [Required]
-    public string Number { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Card expiration month (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("exp_month")]
-    [Required]
-    public int ExpirationMonth { get; set; }
-
-    /// <summary>
-    /// Card expiration year (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("exp_year")]
-    [Required]
-    public int ExpirationYear { get; set; }
-
-    /// <summary>
-    /// Card CVV (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("cvv")]
-    [Required]
-    public string CVV { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Card holder name (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("holder_name")]
-    public string? HolderName { get; set; }
-}
 
 /// <summary>
 /// Subscription information
@@ -812,30 +756,6 @@ public class SubscriptionError
     public string? Message { get; set; }
 }
 
-/// <summary>
-/// Request to cancel subscription
-/// </summary>
-public class CancelSubscriptionRequest
-{
-    /// <summary>
-    /// External subscription ID (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("external_id")]
-    [Required]
-    public string ExternalId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Cancellation reason (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("reason")]
-    public string? Reason { get; set; }
-
-    /// <summary>
-    /// Whether to cancel immediately (JSON boolean as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("immediate")]
-    public bool Immediate { get; set; } = false;
-}
 
 /// <summary>
 /// Optional query parameters of the official <c>CancelCustomerSubscription</c> operation
@@ -870,165 +790,9 @@ public class CancelCustomerSubscriptionOptions
     public bool? Refund { get; set; }
 }
 
-/// <summary>
-/// Request to list subscriptions
-/// </summary>
-public class SubscriptionListRequest
-{
-    /// <summary>
-    /// Customer ID filter (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("customer_id")]
-    public string? CustomerId { get; set; }
 
-    /// <summary>
-    /// Date from filter (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("date_from")]
-    public string? DateFrom { get; set; }
 
-    /// <summary>
-    /// Date to filter (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("date_to")]
-    public string? DateTo { get; set; }
 
-    /// <summary>
-    /// Status filter (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Email filter (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("email")]
-    public string? Email { get; set; }
-
-    /// <summary>
-    /// Results limit (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("limit")]
-    public int? Limit { get; set; }
-
-    /// <summary>
-    /// Results offset (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("offset")]
-    public int? Offset { get; set; }
-}
-
-/// <summary>
-/// Subscription list response
-/// </summary>
-public class SubscriptionListResponse
-{
-    /// <summary>
-    /// List of subscriptions (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("subscriptions")]
-    public List<SubscriptionResponse>? Subscriptions { get; set; }
-
-    /// <summary>
-    /// Total count of subscriptions (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("total")]
-    public int? Total { get; set; }
-
-    /// <summary>
-    /// Current count in response (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int? Count { get; set; }
-}
-
-/// <summary>
-/// Request to create subscription plan
-/// </summary>
-public class CreateSubscriptionPlanRequest
-{
-    /// <summary>
-    /// Plan name (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("name")]
-    [Required]
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Plan description (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Plan price (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    [Required]
-    public decimal Amount { get; set; }
-
-    /// <summary>
-    /// Plan currency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("currency")]
-    [Required]
-    public string Currency { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Payment frequency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("frequency")]
-    [Required]
-    public string Frequency { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Trial days (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("trial_days")]
-    public int? TrialDays { get; set; }
-}
-
-/// <summary>
-/// Request to update subscription plan
-/// </summary>
-public class UpdateSubscriptionPlanRequest
-{
-    /// <summary>
-    /// Plan name (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
-
-    /// <summary>
-    /// Plan description (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Plan price (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
-
-    /// <summary>
-    /// Plan currency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
-
-    /// <summary>
-    /// Payment frequency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("frequency")]
-    public string? Frequency { get; set; }
-
-    /// <summary>
-    /// Trial days (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("trial_days")]
-    public int? TrialDays { get; set; }
-}
 
 /// <summary>
 /// Request to update subscription
@@ -1044,122 +808,9 @@ public class UpdateSubscriptionRequest
     public string? GiftedUntil { get; set; }
 }
 
-/// <summary>
-/// Subscription plan response
-/// </summary>
-public class SubscriptionPlanResponse
-{
-    /// <summary>
-    /// Plan ID (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("id")]
-    public string? Id { get; set; }
-
-    /// <summary>
-    /// Plan name (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
-
-    /// <summary>
-    /// Plan description (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Plan price (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
-
-    /// <summary>
-    /// Plan currency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
-
-    /// <summary>
-    /// Payment frequency (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("frequency")]
-    public string? Frequency { get; set; }
-
-    /// <summary>
-    /// Trial days (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("trial_days")]
-    public int? TrialDays { get; set; }
-
-    /// <summary>
-    /// Plan status (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Plan creation date (ISO 8601 format)
-    /// </summary>
-    [JsonPropertyName("created_at")]
-    [JsonConverter(typeof(FlexibleDateTimeConverter))]
-    public DateTime? CreatedAt { get; set; }
-
-    /// <summary>
-    /// Plan update date (ISO 8601 format)
-    /// </summary>
-    [JsonPropertyName("updated_at")]
-    [JsonConverter(typeof(FlexibleDateTimeConverter))]
-    public DateTime? UpdatedAt { get; set; }
-}
 
 
-/// <summary>
-/// Customer subscriptions response
-/// </summary>
-public class CustomerSubscriptionsResponse
-{
-    /// <summary>
-    /// List of subscriptions (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("subscriptions")]
-    public List<SubscriptionResponse>? Subscriptions { get; set; }
 
-    /// <summary>
-    /// Total count of subscriptions (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("total")]
-    public int? Total { get; set; }
-
-    /// <summary>
-    /// Current count in response (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int? Count { get; set; }
-}
-
-/// <summary>
-/// Subscription payments response
-/// </summary>
-public class SubscriptionPaymentsResponse
-{
-    /// <summary>
-    /// List of payments (JSON array as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("payments")]
-    public List<SubscriptionPaymentInfo>? Payments { get; set; }
-
-    /// <summary>
-    /// Total count of payments (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("total")]
-    public int? Total { get; set; }
-
-    /// <summary>
-    /// Current count in response (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int? Count { get; set; }
-}
 
 /// <summary>
 /// Subscription payment information
