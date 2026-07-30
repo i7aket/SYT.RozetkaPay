@@ -10,7 +10,6 @@ namespace SYT.RozetkaPay.Services;
 /// </summary>
 public class PayoutService : BaseService, IPayoutService
 {
-    private const string NewEndpoint = "/api/payouts/v1/new";
 
     private const string RequestPayoutEndpoint = "/api/payouts/v1/request-payout";
 
@@ -20,13 +19,7 @@ public class PayoutService : BaseService, IPayoutService
     /// </summary>
     private const string InfoEndpoint = "/api/payouts/v1/info";
 
-    /// <summary>
-    /// Route of the payout-list operation, and its log label. The real target carries the caller's filter
-    /// and pagination values.
-    /// </summary>
-    private const string ListEndpoint = "/api/payouts/v1/list";
 
-    private const string BalanceEndpoint = "/api/payouts/v1/balance";
 
     /// <summary>
     /// Route of the account-balance operation, and its log label. The real target carries the merchant
@@ -49,17 +42,6 @@ public class PayoutService : BaseService, IPayoutService
     {
     }
 
-    /// <summary>
-    /// Create a new payout
-    /// POST /api/payouts/v1/new
-    /// </summary>
-    /// <param name="request">Payout creation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payout response</returns>
-    public async Task<PayoutResponse> CreateAsync(CreatePayoutRequest request, CancellationToken cancellationToken = default)
-    {
-        return await PostAsync<CreatePayoutRequest, PayoutResponse>(NewEndpoint, NewEndpoint, request, cancellationToken);
-    }
 
     /// <summary>
     /// Create payout request using OpenAPI contract endpoint
@@ -92,56 +74,7 @@ public class PayoutService : BaseService, IPayoutService
             cancellationToken);
     }
 
-    /// <summary>
-    /// Get payouts list
-    /// GET /api/payouts/v1/list
-    /// </summary>
-    /// <param name="request">Payouts list request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payouts list response</returns>
-    public async Task<PayoutListResponse> GetListAsync(PayoutListRequest request, CancellationToken cancellationToken = default)
-    {
-        List<string> queryParams = new List<string>();
 
-        if (!string.IsNullOrEmpty(request.DateFrom))
-        {
-            queryParams.Add($"date_from={Uri.EscapeDataString(request.DateFrom)}");
-        }
-
-        if (!string.IsNullOrEmpty(request.DateTo))
-        {
-            queryParams.Add($"date_to={Uri.EscapeDataString(request.DateTo)}");
-        }
-
-        if (!string.IsNullOrEmpty(request.Status))
-        {
-            queryParams.Add($"status={Uri.EscapeDataString(request.Status)}");
-        }
-
-        if (request.Limit.HasValue)
-        {
-            queryParams.Add($"limit={Uri.EscapeDataString(request.Limit.Value.ToString(CultureInfo.InvariantCulture))}");
-        }
-
-        if (request.Offset.HasValue)
-        {
-            queryParams.Add($"offset={Uri.EscapeDataString(request.Offset.Value.ToString(CultureInfo.InvariantCulture))}");
-        }
-
-        string query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-        return await GetAsync<PayoutListResponse>($"{ListEndpoint}{query}", ListEndpoint, cancellationToken);
-    }
-
-    /// <summary>
-    /// Get balance information
-    /// GET /api/payouts/v1/balance
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Balance information</returns>
-    public async Task<BalanceResponse> GetBalanceAsync(CancellationToken cancellationToken = default)
-    {
-        return await GetAsync<BalanceResponse>(BalanceEndpoint, BalanceEndpoint, cancellationToken);
-    }
 
     /// <summary>
     /// Get merchant account balance using OpenAPI contract endpoint

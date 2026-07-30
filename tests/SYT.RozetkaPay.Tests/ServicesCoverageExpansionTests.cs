@@ -40,21 +40,9 @@ public class ServicesCoverageExpansionTests
         await service.RefundAsync(null!);
         await service.GetInfoAsync("pay-1");
 
-        await service.GetListAsync(new PaymentListRequest
-        {
-            DateFrom = new DateTime(2026, 2, 28),
-            DateTo = new DateTime(2026, 3, 1),
-            Status = "success",
-            Limit = 10,
-            Offset = 5
-        });
-
-        await service.GetListAsync(new PaymentListRequest());
         await service.GetReceiptAsync("pay-1");
         await service.CardLookupAsync(null!);
         await service.ResendCallbackAsync(null!);
-        await service.ConfirmP2PAsync("p2p-1");
-        await service.ConfirmP2PAsync("p2p-2", 100m);
 
         Assert.Contains("POST /api/payments/v1/new", calls);
         Assert.Contains("POST /api/payments/v1/recurrent", calls);
@@ -62,12 +50,9 @@ public class ServicesCoverageExpansionTests
         Assert.Contains("POST /api/payments/v1/cancel", calls);
         Assert.Contains("POST /api/payments/v1/refund", calls);
         Assert.Contains("GET /api/payments/v1/info?external_id=pay-1", calls);
-        Assert.Contains("GET /api/payments/v1/list?date_from=2026-02-28&date_to=2026-03-01&status=success&limit=10&offset=5", calls);
-        Assert.Contains("GET /api/payments/v1/list", calls);
         Assert.Contains("GET /api/payments/v1/receipt?external_id=pay-1", calls);
         Assert.Contains("POST /api/payments/v1/lookup", calls);
         Assert.Contains("POST /api/payments/v1/callback/resend", calls);
-        Assert.Contains("POST /api/payments/v1/p2p/confirm", calls);
     }
 
     [Fact]
@@ -164,18 +149,7 @@ public class ServicesCoverageExpansionTests
         await service.GetOperationInfoAsync("ext-1");
         await service.GetOperationInfoAsync("ext-2", "op-2");
 
-        await service.GetOperationsAsync(new GetAlternativePaymentOperationsRequest
-        {
-            DateFrom = "2026-02-28",
-            DateTo = "2026-03-01",
-            Status = "success",
-            Limit = 20,
-            Offset = 3
-        });
-        await service.GetOperationsAsync(new GetAlternativePaymentOperationsRequest());
-
         await service.GetInfoAsync("ext-3");
-        await service.GetAvailableMethodsAsync();
         await service.GetStatusAsync("payment-1");
 
         Assert.Contains("POST /api/alternative-payments/v1/create", calls);
@@ -183,10 +157,7 @@ public class ServicesCoverageExpansionTests
         Assert.Contains("POST /api/alternative-payments/v1/callback/resend", calls);
         Assert.Contains("GET /api/alternative-payments/v1/operation/ext-1", calls);
         Assert.Contains("GET /api/alternative-payments/v1/info/operation?external_id=ext-2&operation_id=op-2", calls);
-        Assert.Contains("GET /api/alternative-payments/v1/operations?date_from=2026-02-28&date_to=2026-03-01&status=success&limit=20&offset=3", calls);
-        Assert.Contains("GET /api/alternative-payments/v1/operations", calls);
         Assert.Contains("GET /api/alternative-payments/v1/info?external_id=ext-3", calls);
-        Assert.Contains("GET /api/alternative-payments/v1/methods", calls);
         Assert.Contains("GET /api/alternative-payments/v1/payment-1/status", calls);
     }
 
@@ -270,16 +241,6 @@ public class ServicesCoverageExpansionTests
         await service.GetOperationInfoAsync("ext-1", "op-1");
         await service.GetInfoAsync("ext-2");
 
-        await service.GetOperationsAsync(new PayPartsOperationsListRequest
-        {
-            DateFrom = new DateTime(2026, 2, 28),
-            DateTo = new DateTime(2026, 3, 1),
-            Status = "pending",
-            Limit = 50,
-            Offset = 2
-        });
-        await service.GetOperationsAsync(new PayPartsOperationsListRequest());
-
         await service.GetBanksAsync();
         await service.ResendCallbackAsync(null!);
 
@@ -292,8 +253,6 @@ public class ServicesCoverageExpansionTests
         Assert.Contains("GET /api/payparts/v1/operation/op-1", calls);
         Assert.Contains("GET /api/payparts/v1/info/operation?external_id=ext-1&operation_id=op-1", calls);
         Assert.Contains("GET /api/payparts/v1/info?external_id=ext-2", calls);
-        Assert.Contains("GET /api/payparts/v1/operations?date_from=2026-02-28&date_to=2026-03-01&status=pending&limit=50&offset=2", calls);
-        Assert.Contains("GET /api/payparts/v1/operations", calls);
         Assert.Contains("GET /api/payparts/v1/banks/info", calls);
         Assert.Contains("POST /api/payparts/v1/callback/resend", calls);
     }
@@ -431,31 +390,15 @@ public class ServicesCoverageExpansionTests
         });
 
         PayoutService service = new(CreateConfiguration(), CreateHttpClient(handler));
-        await service.CreateAsync(null!);
         await service.RequestPayoutAsync(null!);
         await service.GetInfoAsync("payout-1");
 
-        await service.GetListAsync(new PayoutListRequest
-        {
-            DateFrom = "2026-02-01",
-            DateTo = "2026-02-28",
-            Status = "success",
-            Limit = 10,
-            Offset = 1
-        });
-        await service.GetListAsync(new PayoutListRequest());
-
-        await service.GetBalanceAsync();
         await service.GetAccountBalanceAsync("merchant 1");
         await service.ResendCallbackAsync(null!);
         await service.CancelCashPayoutAsync(null!);
 
-        Assert.Contains("POST /api/payouts/v1/new", calls);
         Assert.Contains("POST /api/payouts/v1/request-payout", calls);
         Assert.Contains("GET /api/payouts/v1/info?external_id=payout-1", calls);
-        Assert.Contains("GET /api/payouts/v1/list?date_from=2026-02-01&date_to=2026-02-28&status=success&limit=10&offset=1", calls);
-        Assert.Contains("GET /api/payouts/v1/list", calls);
-        Assert.Contains("GET /api/payouts/v1/balance", calls);
         Assert.Contains("GET /api/payouts/v1/account-balance?merchant_entity_id=merchant%201", calls);
         Assert.Contains("POST /api/payouts/v1/resend-callback", calls);
         Assert.Contains("POST /api/payouts/v1/cancel-payout", calls);
@@ -529,9 +472,6 @@ public class ServicesCoverageExpansionTests
 
         MerchantService merchant = new(configuration, CreateHttpClient(handler));
         await merchant.GetInfoAsync();
-        await merchant.GetSettingsAsync();
-        await merchant.UpdateSettingsAsync(null!);
-        await merchant.GetCommissionRatesAsync();
 
         BatchPaymentService batch = new(configuration, CreateHttpClient(handler));
         await batch.CreateBatchPaymentAsync(null!);
@@ -546,9 +486,6 @@ public class ServicesCoverageExpansionTests
         await finMon.GetRulesAsync(1234567890);
 
         Assert.Contains("GET /api/merchants/v1/me", calls);
-        Assert.Contains("GET /api/merchant/v1/settings", calls);
-        Assert.Contains("POST /api/merchant/v1/settings", calls);
-        Assert.Contains("GET /api/merchant/v1/commission-rates", calls);
 
         Assert.Contains("POST /api/payments/batch/v1/new", calls);
         Assert.Contains("POST /api/payments/batch/v1/confirm", calls);

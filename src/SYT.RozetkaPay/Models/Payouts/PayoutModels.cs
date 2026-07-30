@@ -173,53 +173,6 @@ public enum PayoutType
 
 // ===================== CREATE PAYOUT MODELS =====================
 
-/// <summary>
-/// Request to create a payout
-/// Based on official RozetkaPay CDN documentation: https://cdn.rozetkapay.com/public-docs/index.html#tag/payouts/operation/createPayout
-/// </summary>
-public class CreatePayoutRequest
-{
-    /// <summary>
-    /// Payout amount in UAH. Standard JSON number format as per CDN documentation.
-    /// Use decimal values like 123.45 for 123.45 UAH.
-    /// </summary>
-    [Required]
-    [JsonPropertyName("amount")]
-    public required decimal Amount { get; set; }
-
-    /// <summary>
-    /// Payout currency
-    /// </summary>
-    [Required]
-    [JsonPropertyName("currency")]
-    public required string Currency { get; set; } = "UAH";
-
-    /// <summary>
-    /// External payout ID
-    /// </summary>
-    [Required]
-    [JsonPropertyName("external_id")]
-    public required string ExternalId { get; set; }
-
-    /// <summary>
-    /// Payout description
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Recipient information
-    /// </summary>
-    [Required]
-    [JsonPropertyName("recipient")]
-    public required PayoutRecipient Recipient { get; set; }
-
-    /// <summary>
-    /// Callback URL for payout notifications
-    /// </summary>
-    [JsonPropertyName("callback_url")]
-    public string? CallbackUrl { get; set; }
-}
 
 // ===================== PAYOUT RESPONSE MODELS =====================
 
@@ -310,65 +263,7 @@ public class PayoutError
 
 // ===================== PAYOUT LIST MODELS =====================
 
-/// <summary>
-/// Request to get list of payouts
-/// </summary>
-public class PayoutListRequest
-{
-    /// <summary>
-    /// Start date filter
-    /// </summary>
-    [JsonPropertyName("date_from")]
-    public string? DateFrom { get; set; }
 
-    /// <summary>
-    /// End date filter
-    /// </summary>
-    [JsonPropertyName("date_to")]
-    public string? DateTo { get; set; }
-
-    /// <summary>
-    /// Status filter
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Limit number of results
-    /// </summary>
-    [JsonPropertyName("limit")]
-    public int? Limit { get; set; }
-
-    /// <summary>
-    /// Offset for pagination
-    /// </summary>
-    [JsonPropertyName("offset")]
-    public int? Offset { get; set; }
-}
-
-/// <summary>
-/// Response with list of payouts
-/// </summary>
-public class PayoutListResponse
-{
-    /// <summary>
-    /// List of payouts
-    /// </summary>
-    [JsonPropertyName("payouts")]
-    public List<PayoutResponse>? Payouts { get; set; }
-
-    /// <summary>
-    /// Total number of payouts
-    /// </summary>
-    [JsonPropertyName("total")]
-    public int? Total { get; set; }
-
-    /// <summary>
-    /// Number of payouts in current response
-    /// </summary>
-    [JsonPropertyName("count")]
-    public int? Count { get; set; }
-}
 
 // ===================== BALANCE MODELS =====================
 

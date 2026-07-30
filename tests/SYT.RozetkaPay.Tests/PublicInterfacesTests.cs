@@ -136,18 +136,21 @@ public class PublicInterfacesTests
     {
         Dictionary<string, int> expected = new(StringComparer.Ordinal)
         {
-            [nameof(IPaymentService)] = 14,
+            // EXP-403 removed ten operations whose routes the document does not declare and the
+            // live gateway answers 404: two here, one on IPayPartsService, three on IPayoutService,
+            // two on IAlternativePaymentService, three on IMerchantService.
+            [nameof(IPaymentService)] = 12,
             [nameof(IBatchPaymentService)] = 3,
-            [nameof(IPayPartsService)] = 12,
-            [nameof(IPayoutService)] = 8,
+            [nameof(IPayPartsService)] = 11,
+            [nameof(IPayoutService)] = 5,
             // EXP-355 added two canonical wallet members and four canonical subscription members
             // alongside the preserved legacy ones.
             [nameof(ICustomerService)] = 9,
             // EXP-354 added the canonical UpdateSubscriptionPaymentMethod operation.
             [nameof(ISubscriptionService)] = 18,
             [nameof(IReportService)] = 2,
-            [nameof(IAlternativePaymentService)] = 10,
-            [nameof(IMerchantService)] = 4,
+            [nameof(IAlternativePaymentService)] = 8,
+            [nameof(IMerchantService)] = 1,
             [nameof(IFinMonService)] = 1,
             // EXP-354 service contracts. Disposal is not an API operation: PaymentInstructionService
             // implements IDisposable explicitly, so the contract stays at its two official operations.

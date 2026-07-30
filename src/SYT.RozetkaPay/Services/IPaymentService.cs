@@ -72,13 +72,6 @@ public interface IPaymentService
     /// <returns>Payment response</returns>
     Task<PaymentResponse> GetInfoAsync(string externalId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get payment list
-    /// </summary>
-    /// <param name="request">Payment list request parameters</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payment list response</returns>
-    Task<PaymentListResponse> GetListAsync(PaymentListRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get payment receipt
@@ -112,12 +105,4 @@ public interface IPaymentService
     /// <returns>Payment response</returns>
     Task<PaymentResponse> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Confirm P2P payment
-    /// </summary>
-    /// <param name="externalId">External payment ID</param>
-    /// <param name="amount">Amount to confirm in UAH</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payment response</returns>
-    Task<PaymentResponse> ConfirmP2PAsync(string externalId, decimal? amount = null, CancellationToken cancellationToken = default);
 }

@@ -115,19 +115,6 @@ public class CompatibilityAndSerializationTests
         Assert.Equal("/api/customers/v1/wallet?external_id=customer-1", calls[0]);
     }
 
-    [Fact]
-    public async Task PaymentService_GetList_ShouldDeserializeIntegerFieldsFromNumericStrings()
-    {
-        StubHttpMessageHandler handler = new(async (_, _) => Json("""
-            {"payments":[],"count":"2","offset":"1"}
-            """));
-        PaymentService service = new(CreateConfiguration(), CreateHttpClient(handler));
-
-        PaymentListResponse response = await service.GetListAsync(new PaymentListRequest());
-
-        Assert.Equal(2, response.Count);
-        Assert.Equal(1, response.Offset);
-    }
 
     [Fact]
     public async Task PayoutService_RequestPayout_ShouldDeserializeIntegerFieldsFromNumericStrings()

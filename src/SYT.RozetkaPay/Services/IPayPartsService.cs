@@ -81,13 +81,6 @@ public interface IPayPartsService
     /// <returns>PayParts operations result</returns>
     Task<PayPartsOperationsResult> GetInfoAsync(string externalId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get operations info
-    /// </summary>
-    /// <param name="request">Operations list request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>PayParts operations list</returns>
-    Task<PayPartsOperationsListResponse> GetOperationsAsync(PayPartsOperationsListRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get banks info for PayParts

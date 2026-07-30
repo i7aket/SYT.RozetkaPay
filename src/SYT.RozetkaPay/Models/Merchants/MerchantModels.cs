@@ -194,29 +194,6 @@ public class MerchantContact
     public string? ContactPerson { get; set; }
 }
 
-/// <summary>
-/// Merchant settings response
-/// </summary>
-public class MerchantSettingsResponse
-{
-    /// <summary>
-    /// Payment methods configuration
-    /// </summary>
-    [JsonPropertyName("payment_methods")]
-    public List<PaymentMethodConfig>? PaymentMethods { get; set; }
-
-    /// <summary>
-    /// Notification settings
-    /// </summary>
-    [JsonPropertyName("notifications")]
-    public NotificationSettings? Notifications { get; set; }
-
-    /// <summary>
-    /// Security settings
-    /// </summary>
-    [JsonPropertyName("security")]
-    public SecuritySettings? Security { get; set; }
-}
 
 /// <summary>
 /// Payment method configuration
@@ -284,41 +261,7 @@ public class SecuritySettings
     public bool? Require3DS { get; set; }
 }
 
-/// <summary>
-/// Request to update merchant settings
-/// </summary>
-public class UpdateMerchantSettingsRequest
-{
-    /// <summary>
-    /// Payment methods configuration
-    /// </summary>
-    [JsonPropertyName("payment_methods")]
-    public List<PaymentMethodConfig>? PaymentMethods { get; set; }
 
-    /// <summary>
-    /// Notification settings
-    /// </summary>
-    [JsonPropertyName("notifications")]
-    public NotificationSettings? Notifications { get; set; }
-
-    /// <summary>
-    /// Security settings
-    /// </summary>
-    [JsonPropertyName("security")]
-    public SecuritySettings? Security { get; set; }
-}
-
-/// <summary>
-/// Commission rates response
-/// </summary>
-public class CommissionRatesResponse
-{
-    /// <summary>
-    /// Commission rates by payment method
-    /// </summary>
-    [JsonPropertyName("rates")]
-    public List<CommissionRate>? Rates { get; set; }
-}
 
 /// <summary>
 /// Commission rate for payment method

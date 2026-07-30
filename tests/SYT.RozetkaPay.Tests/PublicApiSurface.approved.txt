@@ -172,9 +172,6 @@ SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethodType
     AlternativePaymentMethodType BlikPaylater
     AlternativePaymentMethodType Leasing
     Int32 value__
-SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethodsResponse
-    .ctor()
-    List<AlternativePaymentMethodInfo> Methods { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationDetails
     .ctor()
     AlternativePaymentOperationType? Method { get; set; }
@@ -225,11 +222,6 @@ SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationResult
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationType
     AlternativePaymentOperationType Create
     Int32 value__
-SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationsResponse
-    .ctor()
-    Int32? Count { get; set; }
-    Int32? Total { get; set; }
-    List<AlternativePaymentOperationResult> Operations { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentOperationsResult
     .ctor()
     Boolean? Purchased { get; set; }
@@ -287,13 +279,6 @@ SYT.RozetkaPay.Models.AlternativePayments.CreateAlternativePayment
     String Payload { get; set; }
     String ResultUrl { get; set; }
     String UnifiedExternalId { get; set; }
-SYT.RozetkaPay.Models.AlternativePayments.GetAlternativePaymentOperationsRequest
-    .ctor()
-    Int32? Limit { get; set; }
-    Int32? Offset { get; set; }
-    String DateFrom { get; set; }
-    String DateTo { get; set; }
-    String Status { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.RefundAlternativePaymentRequest
     .ctor()
     Decimal? Amount { get; set; }
@@ -1195,9 +1180,6 @@ SYT.RozetkaPay.Models.Merchants.CommissionRate
     Decimal? Rate { get; set; }
     String Currency { get; set; }
     String PaymentMethod { get; set; }
-SYT.RozetkaPay.Models.Merchants.CommissionRatesResponse
-    .ctor()
-    List<CommissionRate> Rates { get; set; }
 SYT.RozetkaPay.Models.Merchants.EntityStatusDetails
     .ctor()
     String BankDetailsNumber { get; set; }
@@ -1239,11 +1221,6 @@ SYT.RozetkaPay.Models.Merchants.MerchantInfoResponse
     String Name { get; set; }
     String Status { get; set; }
     String Type { get; set; }
-SYT.RozetkaPay.Models.Merchants.MerchantSettingsResponse
-    .ctor()
-    List<PaymentMethodConfig> PaymentMethods { get; set; }
-    NotificationSettings Notifications { get; set; }
-    SecuritySettings Security { get; set; }
 SYT.RozetkaPay.Models.Merchants.MerchantStatus
     Int32 value__
     MerchantStatus Activated
@@ -1290,11 +1267,6 @@ SYT.RozetkaPay.Models.Merchants.SecuritySettings
 SYT.RozetkaPay.Models.Merchants.TransactionDetailsListResponse
     .ctor()
     List<PartnersTransactionDetails> Transactions { get; set; }
-SYT.RozetkaPay.Models.Merchants.UpdateMerchantSettingsRequest
-    .ctor()
-    List<PaymentMethodConfig> PaymentMethods { get; set; }
-    NotificationSettings Notifications { get; set; }
-    SecuritySettings Security { get; set; }
 SYT.RozetkaPay.Models.Partners.PartnerFeeDetails
     .ctor()
     FeeItem InnerFee { get; set; }
@@ -1488,19 +1460,6 @@ SYT.RozetkaPay.Models.PayParts.PayPartsOperationType
     PayPartsOperationType Confirm
     PayPartsOperationType Create
     PayPartsOperationType Refund
-SYT.RozetkaPay.Models.PayParts.PayPartsOperationsListRequest
-    .ctor()
-    DateTime? DateFrom { get; set; }
-    DateTime? DateTo { get; set; }
-    Int32? Limit { get; set; }
-    Int32? Offset { get; set; }
-    String Status { get; set; }
-SYT.RozetkaPay.Models.PayParts.PayPartsOperationsListResponse
-    .ctor()
-    Int32? Count { get; set; }
-    Int32? Offset { get; set; }
-    Int32? Total { get; set; }
-    List<PayPartsOperationResponse> Operations { get; set; }
 SYT.RozetkaPay.Models.PayParts.PayPartsOperationsResult
     .ctor()
     Boolean ActionRequired { get; set; }
@@ -1878,12 +1837,6 @@ SYT.RozetkaPay.Models.Payments.GooglePayResponsePaymentMethod
 SYT.RozetkaPay.Models.Payments.GooglePayToken
     .ctor()
     String Data { get; set; }
-SYT.RozetkaPay.Models.Payments.P2PConfirmationRequest
-    .ctor()
-    Decimal Amount { get; set; }
-    String CallbackUrl { get; set; }
-    String Description { get; set; }
-    String ExternalId { get; set; }
 SYT.RozetkaPay.Models.Payments.PartnerDetails
     .ctor()
     String TransactionId { get; set; }
@@ -1911,18 +1864,6 @@ SYT.RozetkaPay.Models.Payments.PaymentError
     String Description { get; set; }
     String Message { get; set; }
     String Source { get; set; }
-SYT.RozetkaPay.Models.Payments.PaymentListRequest
-    .ctor()
-    DateTime? DateFrom { get; set; }
-    DateTime? DateTo { get; set; }
-    Int32? Limit { get; set; }
-    Int32? Offset { get; set; }
-    String Status { get; set; }
-SYT.RozetkaPay.Models.Payments.PaymentListResponse
-    .ctor()
-    Int32? Count { get; set; }
-    Int32? Offset { get; set; }
-    List<PaymentResponse> Payments { get; set; }
 SYT.RozetkaPay.Models.Payments.PaymentMethod
     .ctor()
     CardDetails Card { get; set; }
@@ -2262,14 +2203,6 @@ SYT.RozetkaPay.Models.Payouts.CashRecipient
     .ctor()
     CardData CardData { get; set; }
     String Phone { get; set; }
-SYT.RozetkaPay.Models.Payouts.CreatePayoutRequest
-    .ctor()
-    Decimal Amount { get; set; }
-    PayoutRecipient Recipient { get; set; }
-    String CallbackUrl { get; set; }
-    String Currency { get; set; }
-    String Description { get; set; }
-    String ExternalId { get; set; }
 SYT.RozetkaPay.Models.Payouts.CurrencyBalance
     .ctor()
     Decimal? Available { get; set; }
@@ -2291,18 +2224,6 @@ SYT.RozetkaPay.Models.Payouts.PayoutError
     .ctor()
     String Code { get; set; }
     String Message { get; set; }
-SYT.RozetkaPay.Models.Payouts.PayoutListRequest
-    .ctor()
-    Int32? Limit { get; set; }
-    Int32? Offset { get; set; }
-    String DateFrom { get; set; }
-    String DateTo { get; set; }
-    String Status { get; set; }
-SYT.RozetkaPay.Models.Payouts.PayoutListResponse
-    .ctor()
-    Int32? Count { get; set; }
-    Int32? Total { get; set; }
-    List<PayoutResponse> Payouts { get; set; }
 SYT.RozetkaPay.Models.Payouts.PayoutOrderDetails
     .ctor()
     String CallbackUrl { get; set; }
@@ -2866,11 +2787,9 @@ SYT.RozetkaPay.Serialization.SdkSerializerOptions
 SYT.RozetkaPay.Services.AlternativePaymentService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
     Task<AlternativePaymentCallbackResendResponse> ResendCallbackAsync(ResendAlternativePaymentCallbackRequest request, CancellationToken cancellationToken)
-    Task<AlternativePaymentMethodsResponse> GetAvailableMethodsAsync(CancellationToken cancellationToken)
     Task<AlternativePaymentOperationResponse> GetOperationInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
     Task<AlternativePaymentOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
-    Task<AlternativePaymentOperationsResponse> GetOperationsAsync(GetAlternativePaymentOperationsRequest request, CancellationToken cancellationToken)
     Task<AlternativePaymentOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
     Task<AlternativePaymentResponse> RefundAsync(RefundAlternativePaymentRequest request, CancellationToken cancellationToken)
@@ -2897,11 +2816,9 @@ SYT.RozetkaPay.Services.FinMonService
     Task<FinMonP2PPaymentPreLimitsResponse> GetRulesAsync(Int32 recipientIpn, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IAlternativePaymentService
     Task<AlternativePaymentCallbackResendResponse> ResendCallbackAsync(ResendAlternativePaymentCallbackRequest request, CancellationToken cancellationToken)
-    Task<AlternativePaymentMethodsResponse> GetAvailableMethodsAsync(CancellationToken cancellationToken)
     Task<AlternativePaymentOperationResponse> GetOperationInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<AlternativePaymentOperationResult> CreateOperationAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
     Task<AlternativePaymentOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
-    Task<AlternativePaymentOperationsResponse> GetOperationsAsync(GetAlternativePaymentOperationsRequest request, CancellationToken cancellationToken)
     Task<AlternativePaymentOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<AlternativePaymentResponse> CreateAsync(CreateAlternativePayment request, CancellationToken cancellationToken)
     Task<AlternativePaymentResponse> RefundAsync(RefundAlternativePaymentRequest request, CancellationToken cancellationToken)
@@ -2928,9 +2845,6 @@ SYT.RozetkaPay.Services.IInStorePaymentService
     Task<InStorePaymentInfoResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<InStorePaymentRefundResponse> RefundAsync(InStorePaymentRefundRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IMerchantService
-    Task<CommissionRatesResponse> GetCommissionRatesAsync(CancellationToken cancellationToken)
-    Task<MerchantSettingsResponse> GetSettingsAsync(CancellationToken cancellationToken)
-    Task<MerchantSettingsResponse> UpdateSettingsAsync(UpdateMerchantSettingsRequest request, CancellationToken cancellationToken)
     Task<MerchantValidationResponse> GetInfoAsync(CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IPartnerService
     Task<MerchantStatusResponse> GetMerchantStatusAsync(CancellationToken cancellationToken)
@@ -2945,7 +2859,6 @@ SYT.RozetkaPay.Services.IPayPartsService
     Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> RetryRefundAsync(RetryRefundPPayRequest request, CancellationToken cancellationToken)
-    Task<PayPartsOperationsListResponse> GetOperationsAsync(PayPartsOperationsListRequest request, CancellationToken cancellationToken)
     Task<PayPartsOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken)
     Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken)
@@ -2958,13 +2871,11 @@ SYT.RozetkaPay.Services.IPaymentInstructionService
 SYT.RozetkaPay.Services.IPaymentService
     Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
     Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken)
-    Task<PaymentListResponse> GetListAsync(PaymentListRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> RetryRefundAsync(RetryRefundRequest request, CancellationToken cancellationToken)
     Task<PaymentReceiptResponse> GetReceiptAsync(String externalId, CancellationToken cancellationToken)
     Task<PaymentResponse> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentResponse> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken)
-    Task<PaymentResponse> ConfirmP2PAsync(String externalId, Decimal? amount, CancellationToken cancellationToken)
     Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentResponse> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken)
@@ -2972,10 +2883,7 @@ SYT.RozetkaPay.Services.IPaymentService
     Task<PaymentResponse> RefundAsync(RefundPaymentRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IPayoutService
     Task<BalanceResponse> GetAccountBalanceAsync(String merchantEntityId, CancellationToken cancellationToken)
-    Task<BalanceResponse> GetBalanceAsync(CancellationToken cancellationToken)
     Task<PayoutCallbackResendResponse> ResendCallbackAsync(ResendPayoutCallbackRequest request, CancellationToken cancellationToken)
-    Task<PayoutListResponse> GetListAsync(PayoutListRequest request, CancellationToken cancellationToken)
-    Task<PayoutResponse> CreateAsync(CreatePayoutRequest request, CancellationToken cancellationToken)
     Task<PayoutResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayoutTransactionResult> CancelCashPayoutAsync(CancelCashPayoutRequest request, CancellationToken cancellationToken)
     Task<PayoutTransactionResult> RequestPayoutAsync(RequestPayoutRequest request, CancellationToken cancellationToken)
@@ -3009,9 +2917,6 @@ SYT.RozetkaPay.Services.InStorePaymentService
     Task<InStorePaymentRefundResponse> RefundAsync(InStorePaymentRefundRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.MerchantService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
-    Task<CommissionRatesResponse> GetCommissionRatesAsync(CancellationToken cancellationToken)
-    Task<MerchantSettingsResponse> GetSettingsAsync(CancellationToken cancellationToken)
-    Task<MerchantSettingsResponse> UpdateSettingsAsync(UpdateMerchantSettingsRequest request, CancellationToken cancellationToken)
     Task<MerchantValidationResponse> GetInfoAsync(CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.PartnerService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
@@ -3028,7 +2933,6 @@ SYT.RozetkaPay.Services.PayPartsService
     Task<PayPartsOperationResult> CancelRefundAsync(CancelRefundPPayRequest request, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> GetOperationInfoAsync(String externalId, String operationId, CancellationToken cancellationToken)
     Task<PayPartsOperationResult> RetryRefundAsync(RetryRefundPPayRequest request, CancellationToken cancellationToken)
-    Task<PayPartsOperationsListResponse> GetOperationsAsync(PayPartsOperationsListRequest request, CancellationToken cancellationToken)
     Task<PayPartsOperationsResult> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayPartsOrderResponse> CancelOrderAsync(CancelPayPartsRequest request, CancellationToken cancellationToken)
     Task<PayPartsOrderResponse> ConfirmOrderAsync(ConfirmPayPartsRequest request, CancellationToken cancellationToken)
@@ -3045,13 +2949,11 @@ SYT.RozetkaPay.Services.PaymentService
     CreatePaymentRequest BuildP2PRequest(Decimal amount, String currency, String externalId, String recipientCardNumber, String recipientExpMonth, String recipientExpYear, String description)
     Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
     Task<CardLookupResponse> CardLookupAsync(CardLookupRequest request, CancellationToken cancellationToken)
-    Task<PaymentListResponse> GetListAsync(PaymentListRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> RetryRefundAsync(RetryRefundRequest request, CancellationToken cancellationToken)
     Task<PaymentReceiptResponse> GetReceiptAsync(String externalId, CancellationToken cancellationToken)
     Task<PaymentResponse> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentResponse> ConfirmAsync(ConfirmPaymentRequest request, CancellationToken cancellationToken)
-    Task<PaymentResponse> ConfirmP2PAsync(String externalId, Decimal? amount, CancellationToken cancellationToken)
     Task<PaymentResponse> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentResponse> CreateP2PAsync(CreatePaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentResponse> CreateRecurrentAsync(CreateRecurrentPaymentRequest request, CancellationToken cancellationToken)
@@ -3060,10 +2962,7 @@ SYT.RozetkaPay.Services.PaymentService
 SYT.RozetkaPay.Services.PayoutService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
     Task<BalanceResponse> GetAccountBalanceAsync(String merchantEntityId, CancellationToken cancellationToken)
-    Task<BalanceResponse> GetBalanceAsync(CancellationToken cancellationToken)
     Task<PayoutCallbackResendResponse> ResendCallbackAsync(ResendPayoutCallbackRequest request, CancellationToken cancellationToken)
-    Task<PayoutListResponse> GetListAsync(PayoutListRequest request, CancellationToken cancellationToken)
-    Task<PayoutResponse> CreateAsync(CreatePayoutRequest request, CancellationToken cancellationToken)
     Task<PayoutResponse> GetInfoAsync(String externalId, CancellationToken cancellationToken)
     Task<PayoutTransactionResult> CancelCashPayoutAsync(CancelCashPayoutRequest request, CancellationToken cancellationToken)
     Task<PayoutTransactionResult> RequestPayoutAsync(RequestPayoutRequest request, CancellationToken cancellationToken)
