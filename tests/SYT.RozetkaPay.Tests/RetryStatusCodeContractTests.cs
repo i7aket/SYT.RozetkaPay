@@ -484,7 +484,7 @@ public class RetryStatusCodeContractTests
     /// stays retriable — only caller cancellation does not.
     /// </summary>
     [Fact]
-    public async Task TimeoutLikeCancellation_WithALiveCallerToken_ShouldStillBeRetried()
+    public async Task TimeoutLikeCancellation_WithALiveCallerToken_ShouldNotBeRetried()
     {
         using CancellationTokenSource callerTokenSource = new();
         ScriptedRetryHandler handler = new(
@@ -492,12 +492,16 @@ public class RetryStatusCodeContractTests
             RetryOutcomes.Success());
         RetryProbeService service = RetryContractContext.Service(handler, RetryContractContext.Immediate());
 
-        RetryProbeResult result = await service.GetJsonAsync<RetryProbeResult>(
-            RetryContractContext.Endpoint,
-            callerTokenSource.Token);
+        // EXP-432: a timeout with a live caller token is no longer retried. The request was
+        // dispatched, so repeating it risks doing the work twice for a guarantee the SDK does not own.
+        RozetkaPayTransportException failure =
+            await Assert.ThrowsAsync<RozetkaPayTransportException>(
+                () => service.GetJsonAsync<RetryProbeResult>(
+                    RetryContractContext.Endpoint,
+                    callerTokenSource.Token));
 
-        Assert.Equal("succeeded", result.Outcome);
-        Assert.Equal(2, handler.AttemptCount);
+        Assert.True(failure.IsTimeout);
+        Assert.Equal(1, handler.AttemptCount);
         Assert.False(callerTokenSource.IsCancellationRequested);
     }
 
@@ -559,11 +563,17 @@ public class RetryStatusCodeContractTests
             handler,
             RetryContractContext.Immediate(maxRetryAttempts: 2));
 
-        HttpRequestException exception = await Assert.ThrowsAsync<HttpRequestException>(
-            () => service.GetJsonAsync<RetryProbeResult>(RetryContractContext.Endpoint));
+        // EXP-432 wraps an exhausted transport failure so the documented catch clause sees it and so
+        // the caller learns how many times the request really went out. The original is preserved as
+        // the inner exception rather than discarded - the evidence still reaches anyone who wants it.
+        RozetkaPayTransportException exception =
+            await Assert.ThrowsAsync<RozetkaPayTransportException>(
+                () => service.GetJsonAsync<RetryProbeResult>(RetryContractContext.Endpoint));
 
         Assert.Equal(3, handler.AttemptCount);
-        Assert.Equal("transport attempt 3", exception.Message);
+        Assert.Equal(3, exception.AttemptsDispatched);
+        Assert.False(exception.IsTimeout);
+        Assert.Equal("transport attempt 3", exception.InnerException?.Message);
     }
 
     /// <summary>

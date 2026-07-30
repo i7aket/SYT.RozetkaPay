@@ -178,7 +178,7 @@ public class PreDispatchCancellationContractTests
     /// failure.
     /// </summary>
     [Fact]
-    public async Task ATimeoutWithALiveCallerToken_ShouldStillBeRetried()
+    public async Task ATimeoutWithALiveCallerToken_ShouldNotBeRetried()
     {
         using CancellationTokenSource callerTokenSource = new();
         ScriptedRetryHandler handler = new(
@@ -188,12 +188,18 @@ public class PreDispatchCancellationContractTests
             handler,
             PreDispatchCancellationContext.Immediate(maxRetryAttempts: 1));
 
-        TripwireResult result = await service.GetJsonAsync(
-            PreDispatchCancellationContext.Endpoint,
-            callerTokenSource.Token);
+        // EXP-432 inverted this. A TaskCanceledException with a live caller token is the SDK's own
+        // timeout, and a timeout means the request was dispatched and may already have been carried
+        // out. Repeating it turned one ambiguous call into several, protected by nothing the SDK
+        // controls. It now surfaces as a transport failure that names how many times it went out.
+        RozetkaPayTransportException failure =
+            await Assert.ThrowsAsync<RozetkaPayTransportException>(() => service.GetJsonAsync(
+                PreDispatchCancellationContext.Endpoint,
+                callerTokenSource.Token));
 
-        Assert.Equal("succeeded", result.Outcome);
-        Assert.Equal(2, handler.AttemptCount);
+        Assert.True(failure.IsTimeout);
+        Assert.Equal(1, handler.AttemptCount);
+        Assert.Equal(1, failure.AttemptsDispatched);
         Assert.False(callerTokenSource.IsCancellationRequested);
     }
 

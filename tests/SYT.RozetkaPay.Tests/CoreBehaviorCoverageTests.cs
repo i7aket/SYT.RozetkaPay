@@ -453,9 +453,13 @@ public class RetryPolicyBehaviorTests
 
         policy.Enabled = true;
         Assert.True(policy.ShouldRetry(new HttpRequestException("net")));
-        Assert.True(policy.ShouldRetry(new TaskCanceledException("timeout")));
         Assert.True(policy.ShouldRetry(new SocketException()));
         Assert.False(policy.ShouldRetry(new InvalidOperationException("no-retry")));
+
+        // EXP-432 removed TaskCanceledException. It is what the SDK's own timeout raises, so treating
+        // it as retriable repeated a request that had already been dispatched - a connect failure and
+        // a timeout after dispatch carry entirely different risk.
+        Assert.False(policy.ShouldRetry(new TaskCanceledException("timeout")));
     }
 }
 
