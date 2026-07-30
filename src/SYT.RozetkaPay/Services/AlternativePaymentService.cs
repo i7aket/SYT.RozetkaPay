@@ -119,22 +119,6 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     }
 
     /// <summary>
-    /// Get operation info
-    /// GET /api/alternative-payments/v1/operation/{externalId}
-    /// </summary>
-    /// <param name="externalId">External ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Operation info response</returns>
-    public async Task<AlternativePaymentOperationResponse> GetOperationInfoAsync(string externalId, CancellationToken cancellationToken = default)
-    {
-        string encodedExternalId = RequestTargetEncoding.EscapePathSegment(externalId, nameof(externalId));
-        return await GetAsync<AlternativePaymentOperationResponse>(
-            $"/api/alternative-payments/v1/operation/{encodedExternalId}",
-            OperationByExternalIdLogLabel,
-            cancellationToken);
-    }
-
-    /// <summary>
     /// Get operation info by external ID and operation ID
     /// GET /api/alternative-payments/v1/info/operation
     /// </summary>
@@ -170,19 +154,4 @@ public class AlternativePaymentService : BaseService, IAlternativePaymentService
     }
 
 
-    /// <summary>
-    /// Get payment status
-    /// GET /api/alternative-payments/v1/{paymentId}/status
-    /// </summary>
-    /// <param name="paymentId">Payment ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Payment status response</returns>
-    public async Task<AlternativePaymentStatusResponse> GetStatusAsync(string paymentId, CancellationToken cancellationToken = default)
-    {
-        string encodedPaymentId = RequestTargetEncoding.EscapePathSegment(paymentId, nameof(paymentId));
-        return await GetAsync<AlternativePaymentStatusResponse>(
-            $"/api/alternative-payments/v1/{encodedPaymentId}/status",
-            StatusLogLabel,
-            cancellationToken);
-    }
 }

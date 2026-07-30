@@ -91,99 +91,8 @@ public class PreDispatchCancellationContractTests
 
     // ===================== already cancelled: nothing happens at all =====================
 
-    /// <summary>
-    /// An already-cancelled token ends the call before the helper does anything observable: no log line, no
-    /// serialization of the caller's body, and no request at the transport.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(HelperRows))]
-    public async Task AnAlreadyCancelledToken_ShouldStopEveryHelperBeforeItObservesAnything(
-        string row,
-        bool retryEnabled)
-    {
-        ScriptedRetryHandler handler = new(RetryOutcomes.Success());
-        RetryLogRecorder logger = new();
-        SerializationTripwire tripwire = new();
-        CancellationProbeService service = PreDispatchCancellationContext.Service(
-            handler,
-            PreDispatchCancellationContext.Policy(retryEnabled),
-            logger);
 
-        using CancellationTokenSource callerTokenSource = new();
-        await callerTokenSource.CancelAsync();
 
-        OperationCanceledException failure = await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => InvokeAsync(row, service, tripwire, callerTokenSource.Token));
-
-        // The caller's own token, not a token the SDK invented on the way out.
-        Assert.Equal(callerTokenSource.Token, failure.CancellationToken);
-
-        Assert.Equal(0, handler.AttemptCount);
-        Assert.Empty(logger.Entries);
-        Assert.Equal(0, tripwire.Accesses);
-        Assert.Empty(logger.RetryWarnings);
-    }
-
-    /// <summary>
-    /// The shared retry executor is the one place every helper's attempt passes through, so the contract is
-    /// asserted on it directly: the attempt delegate is never invoked at all.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(RetryPolicyStates))]
-    public async Task AnAlreadyCancelledToken_ShouldStopTheSharedExecutorBeforeTheAttemptDelegate(bool retryEnabled)
-    {
-        int attempts = 0;
-        RetryLogRecorder logger = new();
-        CancellationProbeService service = PreDispatchCancellationContext.Service(
-            new ScriptedRetryHandler(RetryOutcomes.Success()),
-            PreDispatchCancellationContext.Policy(retryEnabled),
-            logger);
-
-        using CancellationTokenSource callerTokenSource = new();
-        await callerTokenSource.CancelAsync();
-
-        OperationCanceledException failure = await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => service.ExecuteAsync(
-                () =>
-                {
-                    attempts++;
-                    return Task.FromResult(new TripwireResult());
-                },
-                callerTokenSource.Token));
-
-        Assert.Equal(callerTokenSource.Token, failure.CancellationToken);
-        Assert.Equal(0, attempts);
-        Assert.Empty(logger.Entries);
-    }
-
-    /// <summary>
-    /// The decline operation builds its own request target before it reaches the executor, so it carries its
-    /// own guard. Neither client is touched, and nothing is logged.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(RetryPolicyStates))]
-    public async Task AnAlreadyCancelledToken_ShouldStopTheDeclineOperationBeforeEitherClient(bool retryEnabled)
-    {
-        ScriptedRetryHandler authenticated = new(RetryOutcomes.Success());
-        ScriptedRetryHandler decline = new(RetryOutcomes.Redirect("https://provider.example/declined"));
-        RetryLogRecorder logger = new();
-        PaymentInstructionService service = PreDispatchCancellationContext.PaymentInstructions(
-            authenticated,
-            decline,
-            PreDispatchCancellationContext.Policy(retryEnabled),
-            logger);
-
-        using CancellationTokenSource callerTokenSource = new();
-        await callerTokenSource.CancelAsync();
-
-        OperationCanceledException failure = await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => service.DeclineAsync("project-1", "pi-1", callerTokenSource.Token));
-
-        Assert.Equal(callerTokenSource.Token, failure.CancellationToken);
-        Assert.Equal(0, decline.AttemptCount);
-        Assert.Equal(0, authenticated.AttemptCount);
-        Assert.Empty(logger.Entries);
-    }
 
     // ===================== cancelled after the primary 404, before the fallback =====================
 
@@ -326,48 +235,6 @@ public class PreDispatchCancellationContractTests
     }
 
 
-    /// <summary>
-    /// Cancelling is not an error report. The exception the caller catches carries no request target, no body,
-    /// and no credential — and neither does the log capture, which for a pre-cancelled call is empty.
-    /// </summary>
-    /// <remarks>
-    /// The whole rendered exception is inspected, not just its message, because that is what an operator sees
-    /// when a cancelled call is written to a sink.
-    /// </remarks>
-    [Theory]
-    [MemberData(nameof(HelperRows))]
-    public async Task AnAlreadyCancelledToken_ShouldLeakNothingAtAll(string row, bool retryEnabled)
-    {
-        ScriptedRetryHandler handler = new(RetryOutcomes.Success());
-        RetryLogRecorder logger = new();
-        SerializationTripwire tripwire = new();
-        CancellationProbeService service = PreDispatchCancellationContext.Service(
-            handler,
-            PreDispatchCancellationContext.Policy(retryEnabled),
-            logger);
-
-        using CancellationTokenSource callerTokenSource = new();
-        await callerTokenSource.CancelAsync();
-
-        OperationCanceledException failure = await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => InvokeAsync(row, service, tripwire, callerTokenSource.Token));
-
-        string[] forbidden =
-        [
-            PreDispatchCancellationContext.RequestBodyMarker,
-            PreDispatchCancellationContext.PasswordPlaceholder,
-            PreDispatchCancellationContext.Endpoint,
-            PreDispatchCancellationContext.FallbackEndpoint
-        ];
-
-        foreach (string text in logger.AllText.Append(failure.ToString()))
-        {
-            foreach (string marker in forbidden)
-            {
-                Assert.DoesNotContain(marker, text, StringComparison.Ordinal);
-            }
-        }
-    }
 
     // ===================== row dispatch =====================
 

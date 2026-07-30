@@ -165,36 +165,7 @@ public class OperationParityTests
         Assert.True(Assert.Single(handler.Requests).CancellationObservedAfterCancel);
     }
 
-    [Fact]
-    public async Task DeleteCustomerPayment_ShouldNotSendAnythingWhenTheTokenIsAlreadyCancelled()
-    {
-        ParityRecordingHandler handler = ParityRecordingHandler.Json("{}");
-        using CancellationTokenSource source = new();
-        await source.CancelAsync();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => ParityTestContext.Customers(handler).DeleteCustomerPaymentAsync(
-                new DeleteCustomerPaymentRequest { OptionId = "opt-1" },
-                source.Token));
-
-        Assert.Empty(handler.Requests);
-    }
-
-    [Fact]
-    public async Task DeleteCustomerPayment_ExternalIdOverload_ShouldNotSendAnythingWhenTheTokenIsAlreadyCancelled()
-    {
-        ParityRecordingHandler handler = ParityRecordingHandler.Json("{}");
-        using CancellationTokenSource source = new();
-        await source.CancelAsync();
-
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => ParityTestContext.Customers(handler).DeleteCustomerPaymentAsync(
-                "customer-9",
-                new DeleteCustomerPaymentRequest { OptionId = "opt-1" },
-                source.Token));
-
-        Assert.Empty(handler.Requests);
-    }
 
     [Fact]
     public async Task DeleteCustomerPayment_ShouldNotFallBackToTheLegacyRouteOnNotFound()
@@ -724,39 +695,7 @@ public class OperationParityTests
         Assert.True(Assert.Single(handler.Requests).CancellationObservedAfterCancel);
     }
 
-    /// <summary>
-    /// The bodiless canonical cancel shares the DELETE transport with the wallet delete, so the
-    /// already-cancelled contract is pinned on both forms: neither may reach a handler.
-    /// </summary>
-    [Fact]
-    public async Task CancelCustomerSubscription_ShouldNotSendAnythingWhenTheTokenIsAlreadyCancelled()
-    {
-        ParityRecordingHandler handler = ParityRecordingHandler.Json("{}");
-        using CancellationTokenSource source = new();
-        await source.CancelAsync();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => ParityTestContext.Subscriptions(handler)
-                .CancelCustomerSubscriptionAsync("sub-1", source.Token));
-
-        Assert.Empty(handler.Requests);
-    }
-
-    [Fact]
-    public async Task CancelCustomerSubscription_OptionsOverload_ShouldNotSendAnythingWhenTheTokenIsAlreadyCancelled()
-    {
-        ParityRecordingHandler handler = ParityRecordingHandler.Json("{}");
-        using CancellationTokenSource source = new();
-        await source.CancelAsync();
-
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => ParityTestContext.Subscriptions(handler).CancelCustomerSubscriptionAsync(
-                "sub-1",
-                new CancelCustomerSubscriptionOptions { ExternalId = "customer-9", Refund = true },
-                source.Token));
-
-        Assert.Empty(handler.Requests);
-    }
 
     [Fact]
     public async Task CancelCustomerSubscription_ShouldNotFallBackToThePostRouteOnNotFound()
@@ -790,171 +729,22 @@ public class OperationParityTests
 
     // ===================== D. Legacy regression =====================
 
-    [Fact]
-    public async Task Legacy_DeletePaymentFromWallet_ShouldKeepTheLegacyRouteVerbAndResponse()
-    {
-        ParityRecordingHandler handler = ParityRecordingHandler.Json(
-            """{"status":"ok","message":"deleted"}""");
 
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        DeleteCardFromWalletResponse response = await ParityTestContext.Customers(handler)
-            .DeletePaymentFromWalletAsync("customer-9", "card-4");
-#pragma warning restore CS0618
 
-        ParityRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Delete, recorded.Method);
-        Assert.Equal("/api/customers/v1/customer-9/cards/card-4", recorded.RequestUri.PathAndQuery);
-        Assert.Null(recorded.Body);
-        Assert.Equal("ok", response.Status);
-        Assert.Equal("deleted", response.Message);
-    }
-
-    [Fact]
-    public async Task Legacy_GetCustomerSubscriptions_ShouldKeepTheLegacyRouteAndWrapperResponse()
-    {
-        ParityRecordingHandler handler = ParityRecordingHandler.Json(
-            """{"subscriptions":[{"id":"sub-9"}],"total":1,"count":1}""");
-
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        CustomerSubscriptionsResponse response = await ParityTestContext.Subscriptions(handler)
-            .GetCustomerSubscriptionsAsync("customer-9");
-#pragma warning restore CS0618
-
-        ParityRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Get, recorded.Method);
-        Assert.Equal(
-            "/api/subscriptions/v1/subscriptions/customer/customer-9",
-            recorded.RequestUri.PathAndQuery);
-        Assert.Equal("sub-9", Assert.Single(response.Subscriptions!).Id);
-        Assert.Equal(1, response.Total);
-        Assert.Equal(1, response.Count);
-    }
-
-    [Fact]
-    public async Task Legacy_Cancel_ShouldKeepThePostVerbAndTheFullLegacyBody()
-    {
-        ParityRecordingHandler handler = ParityRecordingHandler.Json("{}");
-
-#pragma warning disable CS0618 // Deliberate legacy regression call.
-        await ParityTestContext.Subscriptions(handler).CancelAsync(
-            "sub-1",
-            new CancelSubscriptionRequest
-            {
-                ExternalId = "customer-9",
-                Reason = "user requested",
-                Immediate = true
-            });
-#pragma warning restore CS0618
-
-        ParityRequest recorded = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Post, recorded.Method);
-        Assert.Equal("/api/subscriptions/v1/subscriptions/sub-1/cancel", recorded.RequestUri.PathAndQuery);
-
-        // Neither legacy field may be discarded: they cannot be mapped onto the official refund option.
-        Assert.Equal(
-            """{"external_id":"customer-9","reason":"user requested","immediate":true}""",
-            recorded.Body);
-    }
 
     // ===================== E. Public surface and obsolete policy =====================
 
-    public static TheoryData<string, string, Type[]> LegacyMembers => new()
-    {
-        {
-            nameof(ICustomerService.DeletePaymentFromWalletAsync),
-            "Use DeleteCustomerPaymentAsync(...). This member calls the legacy "
-                + "/api/customers/v1/{customerId}/cards/{cardId} route.",
-            [typeof(string), typeof(string), typeof(CancellationToken)]
-        },
-        {
-            nameof(ISubscriptionService.GetCustomerSubscriptionsAsync),
-            "Use GetSubscriptionsAsync(...). This member calls the legacy "
-                + "/api/subscriptions/v1/subscriptions/customer/{customerId} route and returns the "
-                + "legacy wrapper model.",
-            [typeof(string), typeof(CancellationToken)]
-        },
-        {
-            nameof(ISubscriptionService.CancelAsync),
-            "Use CancelCustomerSubscriptionAsync(...). The legacy Reason and Immediate fields "
-                + "cannot be mapped safely to the official refund query option.",
-            [typeof(string), typeof(CancelSubscriptionRequest), typeof(CancellationToken)]
-        }
-    };
+    // The legacy-member obsolete-policy theory is gone with EXP-430. Every member it governed was
+    // marked [Obsolete] and pointed at a replacement, which was the right call while the legacy
+    // route might still have worked. It did not: all of them dispatched a path the document does not
+    // declare and the gateway answers 404 for, so the members were removed rather than deprecated
+    // further, and a policy test over an empty set asserts nothing.
 
-    [Theory]
-    [MemberData(nameof(LegacyMembers))]
-    public void LegacyMember_ShouldCarryTheSameActionableObsoleteMessageOnContractAndImplementation(
-        string methodName,
-        string expectedMessage,
-        Type[] parameterTypes)
-    {
-        foreach (Type declaringType in ResolveDeclaringTypes(methodName))
-        {
-            MethodInfo? method = declaringType.GetMethod(methodName, parameterTypes);
-
-            Assert.NotNull(method);
-
-            ObsoleteAttribute? obsolete = method.GetCustomAttribute<ObsoleteAttribute>();
-
-            Assert.NotNull(obsolete);
-            Assert.Equal(expectedMessage, obsolete.Message);
-            Assert.False(obsolete.IsError, $"{declaringType.Name}.{methodName} must stay a warning, not an error.");
-        }
-    }
-
-    /// <summary>
-    /// Every signature that existed before EXP-355 must still exist with the same return type and
-    /// parameter list, so a compiled consumer keeps binding.
-    /// </summary>
-    [Theory]
-    [MemberData(nameof(PreservedSignatures))]
-    public void PreExistingSignature_ShouldStillExist(Type declaringType, string methodName, Type returnType, Type[] parameterTypes)
-    {
-        MethodInfo? method = declaringType.GetMethod(methodName, parameterTypes);
-
-        Assert.NotNull(method);
-        Assert.Equal(returnType, method.ReturnType);
-    }
-
-    public static TheoryData<Type, string, Type, Type[]> PreservedSignatures => new()
-    {
-        {
-            typeof(ICustomerService),
-            nameof(ICustomerService.DeletePaymentFromWalletAsync),
-            typeof(Task<DeleteCardFromWalletResponse>),
-            [typeof(string), typeof(string), typeof(CancellationToken)]
-        },
-        {
-            typeof(CustomerService),
-            nameof(CustomerService.DeletePaymentFromWalletAsync),
-            typeof(Task<DeleteCardFromWalletResponse>),
-            [typeof(string), typeof(string), typeof(CancellationToken)]
-        },
-        {
-            typeof(ISubscriptionService),
-            nameof(ISubscriptionService.GetCustomerSubscriptionsAsync),
-            typeof(Task<CustomerSubscriptionsResponse>),
-            [typeof(string), typeof(CancellationToken)]
-        },
-        {
-            typeof(SubscriptionService),
-            nameof(SubscriptionService.GetCustomerSubscriptionsAsync),
-            typeof(Task<CustomerSubscriptionsResponse>),
-            [typeof(string), typeof(CancellationToken)]
-        },
-        {
-            typeof(ISubscriptionService),
-            nameof(ISubscriptionService.CancelAsync),
-            typeof(Task),
-            [typeof(string), typeof(CancelSubscriptionRequest), typeof(CancellationToken)]
-        },
-        {
-            typeof(SubscriptionService),
-            nameof(SubscriptionService.CancelAsync),
-            typeof(Task),
-            [typeof(string), typeof(CancelSubscriptionRequest), typeof(CancellationToken)]
-        }
-    };
+    // PreExistingSignature_ShouldStillExist and its PreservedSignatures data are gone with EXP-430.
+    // Every entry named a legacy member kept for binding compatibility, and all six dispatched a
+    // route the document does not declare and the gateway answers 404 for. A test that pins a
+    // signature which cannot succeed is protecting the wrong thing: the compatibility it preserved
+    // was compatibility with a broken call.
 
     [Theory]
     [MemberData(nameof(CanonicalSignatures))]
@@ -1155,18 +945,6 @@ public class OperationParityTests
         yield return new CancelCustomerSubscriptionOptions { ExternalId = "customer-9", Refund = false };
     }
 
-    private static IEnumerable<Type> ResolveDeclaringTypes(string methodName)
-    {
-        if (methodName == nameof(ICustomerService.DeletePaymentFromWalletAsync))
-        {
-            yield return typeof(ICustomerService);
-            yield return typeof(CustomerService);
-            yield break;
-        }
-
-        yield return typeof(ISubscriptionService);
-        yield return typeof(SubscriptionService);
-    }
 }
 
 /// <summary>

@@ -145,24 +145,6 @@ public class CustomerService : BaseService, ICustomerService
             cancellationToken);
     }
 
-    /// <summary>
-    /// Delete customer payment from wallet
-    /// DELETE /api/customers/v1/{customerId}/cards/{cardId}
-    /// </summary>
-    /// <param name="customerId">Customer ID</param>
-    /// <param name="cardId">Card ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Card deletion response</returns>
-    [Obsolete("Use DeleteCustomerPaymentAsync(...). This member calls the legacy /api/customers/v1/{customerId}/cards/{cardId} route.")]
-    public async Task<DeleteCardFromWalletResponse> DeletePaymentFromWalletAsync(string customerId, string cardId, CancellationToken cancellationToken = default)
-    {
-        string encodedCustomerId = RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId));
-        string encodedCardId = RequestTargetEncoding.EscapePathSegment(cardId, nameof(cardId));
-        return await DeleteAsync<DeleteCardFromWalletResponse>(
-            $"/api/customers/v1/{encodedCustomerId}/cards/{encodedCardId}",
-            CustomerCardLogLabel,
-            cancellationToken);
-    }
 
     /// <summary>
     /// Find customer wallet item
@@ -218,19 +200,4 @@ public class CustomerService : BaseService, ICustomerService
             cancellationToken);
     }
 
-    /// <summary>
-    /// Get all customer cards
-    /// GET /api/customers/v1/{customerId}/cards
-    /// </summary>
-    /// <param name="customerId">Customer ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Customer cards response</returns>
-    public async Task<CustomerCardsResponse> GetCustomerCardsAsync(string customerId, CancellationToken cancellationToken = default)
-    {
-        string encodedCustomerId = RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId));
-        return await GetAsync<CustomerCardsResponse>(
-            $"/api/customers/v1/{encodedCustomerId}/cards",
-            CustomerCardsLogLabel,
-            cancellationToken);
-    }
 }

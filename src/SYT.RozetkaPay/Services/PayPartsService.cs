@@ -157,22 +157,6 @@ public class PayPartsService : BaseService, IPayPartsService
     }
 
     /// <summary>
-    /// Get operation info
-    /// GET /api/payparts/v1/operation/{id}
-    /// </summary>
-    /// <param name="operationId">Operation ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>PayParts operation info</returns>
-    public async Task<PayPartsOperationResponse> GetOperationInfoAsync(string operationId, CancellationToken cancellationToken = default)
-    {
-        string encodedOperationId = RequestTargetEncoding.EscapePathSegment(operationId, nameof(operationId));
-        return await GetAsync<PayPartsOperationResponse>(
-            $"/api/payparts/v1/operation/{encodedOperationId}",
-            OperationByIdLogLabel,
-            cancellationToken);
-    }
-
-    /// <summary>
     /// Get operation info by external ID and operation ID
     /// GET /api/payparts/v1/info/operation
     /// </summary>

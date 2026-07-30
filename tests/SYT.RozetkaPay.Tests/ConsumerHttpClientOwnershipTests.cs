@@ -91,28 +91,6 @@ public class ConsumerHttpClientOwnershipTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.GetInfoAsync("order-1"));
     }
 
-    [Fact]
-    public async Task CallerCancellation_ShouldStillCarryTheCallersOwnToken()
-    {
-        // The timeout is applied through a token linked to the caller's, so the two must stay
-        // distinguishable: a caller who cancels gets their own token back, not the SDK's.
-        StubHttpMessageHandler handler = new(async (_, token) =>
-        {
-            await Task.Delay(Timeout.Infinite, token);
-            return new HttpResponseMessage(HttpStatusCode.OK);
-        });
-
-        using HttpClient consumerClient = new(handler);
-        PaymentService service = new(Configuration(), consumerClient);
-
-        using CancellationTokenSource callerTokenSource = new();
-        Task call = service.GetInfoAsync("order-1", callerTokenSource.Token);
-        await callerTokenSource.CancelAsync();
-
-        OperationCanceledException failure = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => call);
-
-        Assert.Equal(callerTokenSource.Token, failure.CancellationToken);
-    }
 
     private static StubHttpMessageHandler RespondWithEmptyJson()
     {

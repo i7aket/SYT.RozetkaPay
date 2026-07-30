@@ -269,22 +269,6 @@ public class LegacyLoggingRedactionTests
 
     // ---------- AlternativePaymentService ----------
 
-    [Fact]
-    public async Task AlternativePaymentOperationLookup_ShouldNotLogTheExternalIdInThePath()
-    {
-        const string Row = "alternative-operation";
-        const string Label = "/api/alternative-payments/v1/operation/{external_id}";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, AlternativePaymentService service) =
-            Arrange(static (c, h, l) => new AlternativePaymentService(c, h, l));
-
-        await service.GetOperationInfoAsync(LoggingRedactionContext.RawMarker(Row));
-
-        Assert.Equal(
-            $"/api/alternative-payments/v1/operation/{LoggingRedactionContext.EncodedMarker(Row)}",
-            handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     [Fact]
     public async Task AlternativePaymentOperationFallback_ShouldNotLogEitherRealRequestTarget()
@@ -325,41 +309,9 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], Label);
     }
 
-    [Fact]
-    public async Task AlternativePaymentStatus_ShouldNotLogThePaymentIdInThePath()
-    {
-        const string Row = "alternative-status";
-        const string Label = "/api/alternative-payments/v1/{payment_id}/status";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, AlternativePaymentService service) =
-            Arrange(static (c, h, l) => new AlternativePaymentService(c, h, l));
-
-        await service.GetStatusAsync(LoggingRedactionContext.RawMarker(Row));
-
-        Assert.Equal(
-            $"/api/alternative-payments/v1/{LoggingRedactionContext.EncodedMarker(Row)}/status",
-            handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     // ---------- PayPartsService ----------
 
-    [Fact]
-    public async Task PayPartsOperationLookup_ShouldNotLogTheOperationIdInThePath()
-    {
-        const string Row = "payparts-operation";
-        const string Label = "/api/payparts/v1/operation/{operation_id}";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, PayPartsService service) =
-            Arrange(static (c, h, l) => new PayPartsService(c, h, l));
-
-        await service.GetOperationInfoAsync(LoggingRedactionContext.RawMarker(Row));
-
-        Assert.Equal(
-            $"/api/payparts/v1/operation/{LoggingRedactionContext.EncodedMarker(Row)}",
-            handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     [Fact]
     public async Task PayPartsOperationFallback_ShouldNotLogEitherRealRequestTarget()
@@ -472,34 +424,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], PrimaryLabel);
     }
 
-    /// <summary>
-    /// The obsolete legacy DELETE. Its route, verb and response type are unchanged; only its log label is.
-    /// </summary>
-    [Fact]
-    public async Task LegacyDeletePaymentFromWallet_ShouldNotLogEitherIdentifier()
-    {
-        const string CustomerRow = "legacy-delete-customer";
-        const string CardRow = "legacy-delete-card";
-        const string Label = "/api/customers/v1/{customer_id}/cards/{card_id}";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, CustomerService service) =
-            Arrange(static (c, h, l) => new CustomerService(c, h, l));
-
-#pragma warning disable CS0618 // Deliberate regression coverage for the obsolete legacy route.
-        await service.DeletePaymentFromWalletAsync(
-            LoggingRedactionContext.RawMarker(CustomerRow),
-            LoggingRedactionContext.RawMarker(CardRow));
-#pragma warning restore CS0618
-
-        RedactionRequest request = handler.Single;
-        Assert.Equal(HttpMethod.Delete, request.Method);
-        Assert.Equal(
-            $"/api/customers/v1/{LoggingRedactionContext.EncodedMarker(CustomerRow)}" +
-            $"/cards/{LoggingRedactionContext.EncodedMarker(CardRow)}",
-            request.Target);
-
-        AssertRedacted(logs, [CustomerRow, CardRow], Label);
-    }
 
     [Fact]
     public async Task WalletItemLookup_ShouldNotLogEitherRealRequestTarget()
@@ -572,22 +496,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], PrimaryLabel);
     }
 
-    [Fact]
-    public async Task CustomerCards_ShouldNotLogTheCustomerIdInThePath()
-    {
-        const string Row = "customer-cards";
-        const string Label = "/api/customers/v1/{customer_id}/cards";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, CustomerService service) =
-            Arrange(static (c, h, l) => new CustomerService(c, h, l));
-
-        await service.GetCustomerCardsAsync(LoggingRedactionContext.RawMarker(Row));
-
-        Assert.Equal(
-            $"/api/customers/v1/{LoggingRedactionContext.EncodedMarker(Row)}/cards",
-            handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     // ---------- SubscriptionService ----------
 
@@ -648,24 +556,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], Label);
     }
 
-    [Fact]
-    public async Task LegacyCustomerSubscriptions_ShouldNotLogTheCustomerIdInThePath()
-    {
-        const string Row = "legacy-customer-subscriptions";
-        const string Label = "/api/subscriptions/v1/subscriptions/customer/{customer_id}";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, SubscriptionService service) =
-            Arrange(static (c, h, l) => new SubscriptionService(c, h, l));
-
-#pragma warning disable CS0618 // Deliberate regression coverage for the obsolete legacy route.
-        await service.GetCustomerSubscriptionsAsync(LoggingRedactionContext.RawMarker(Row));
-#pragma warning restore CS0618
-
-        Assert.Equal(
-            $"/api/subscriptions/v1/subscriptions/customer/{LoggingRedactionContext.EncodedMarker(Row)}",
-            handler.Single.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     [Fact]
     public async Task GetSubscription_ShouldNotLogTheSubscriptionIdInThePath()
@@ -741,28 +631,6 @@ public class LegacyLoggingRedactionTests
         AssertRedacted(logs, [Row], Label);
     }
 
-    [Fact]
-    public async Task LegacyCancelSubscription_ShouldNotLogTheSubscriptionIdInThePath()
-    {
-        const string Row = "legacy-cancel-subscription";
-        const string Label = "/api/subscriptions/v1/subscriptions/{subscription_id}/cancel";
-
-        (RedactionHandler handler, CapturingLoggerProvider logs, SubscriptionService service) =
-            Arrange(static (c, h, l) => new SubscriptionService(c, h, l));
-
-#pragma warning disable CS0618 // Deliberate regression coverage for the obsolete legacy route.
-        await service.CancelAsync(
-            LoggingRedactionContext.RawMarker(Row),
-            new CancelSubscriptionRequest { ExternalId = "subscription-id-placeholder" });
-#pragma warning restore CS0618
-
-        RedactionRequest request = handler.Single;
-        Assert.Equal(HttpMethod.Post, request.Method);
-        Assert.Equal(
-            $"/api/subscriptions/v1/subscriptions/{LoggingRedactionContext.EncodedMarker(Row)}/cancel",
-            request.Target);
-        AssertRedacted(logs, [Row], Label);
-    }
 
     // =========================================================================================
     // 4. Sensitive payloads that are not log fields

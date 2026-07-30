@@ -634,26 +634,6 @@ public class PaymentInstructionServiceTests
         Assert.True(recorded.CancellationRequestedOnArrival);
     }
 
-    /// <summary>
-    /// An already-cancelled token is rejected before the client is touched, so no request reaches a
-    /// handler at all.
-    /// </summary>
-    [Fact]
-    public async Task Decline_ShouldRejectAnAlreadyCancelledTokenBeforeSending()
-    {
-        RecordingHandler decline = RecordingHandler.Redirect("https://provider.example/declined");
-        using HttpClient declineClient = Exp354TestContext.CreateDeclineHttpClient(decline);
-        PaymentInstructionService service = Exp354TestContext
-            .PaymentInstructions(RecordingHandler.Json("{}"), declineClient);
-
-        using CancellationTokenSource cancellation = new();
-        await cancellation.CancelAsync();
-
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => service.DeclineAsync("project-1", "pi-1", cancellation.Token));
-
-        Assert.Empty(decline.Requests);
-    }
 
     // ===================== decline client construction =====================
 

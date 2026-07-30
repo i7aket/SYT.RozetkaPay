@@ -216,23 +216,6 @@ public class SubscriptionService : BaseService, ISubscriptionService
     }
 
     /// <summary>
-    /// Get customer subscriptions
-    /// GET /api/subscriptions/v1/subscriptions/customer/{customerId}
-    /// </summary>
-    /// <param name="customerId">Customer ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Customer subscriptions response</returns>
-    [Obsolete("Use GetSubscriptionsAsync(...). This member calls the legacy /api/subscriptions/v1/subscriptions/customer/{customerId} route and returns the legacy wrapper model.")]
-    public async Task<CustomerSubscriptionsResponse> GetCustomerSubscriptionsAsync(string customerId, CancellationToken cancellationToken = default)
-    {
-        string encodedCustomerId = RequestTargetEncoding.EscapePathSegment(customerId, nameof(customerId));
-        return await GetAsync<CustomerSubscriptionsResponse>(
-            $"{SubscriptionsEndpoint}/customer/{encodedCustomerId}",
-            CustomerSubscriptionsLogLabel,
-            cancellationToken);
-    }
-
-    /// <summary>
     /// Deactivate subscription
     /// DELETE /api/subscriptions/v1/subscriptions/{subscriptionId}
     /// </summary>
@@ -383,21 +366,4 @@ public class SubscriptionService : BaseService, ISubscriptionService
             cancellationToken);
     }
 
-    /// <summary>
-    /// Cancel subscription
-    /// DELETE /api/subscriptions/v1/subscriptions/{subscriptionId}/cancel
-    /// </summary>
-    /// <param name="subscriptionId">Subscription ID</param>
-    /// <param name="request">Cancel subscription request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    [Obsolete("Use CancelCustomerSubscriptionAsync(...). The legacy Reason and Immediate fields cannot be mapped safely to the official refund query option.")]
-    public async Task CancelAsync(string subscriptionId, CancelSubscriptionRequest request, CancellationToken cancellationToken = default)
-    {
-        string encodedSubscriptionId = RequestTargetEncoding.EscapePathSegment(subscriptionId, nameof(subscriptionId));
-        await PostAsync<CancelSubscriptionRequest, object>(
-            $"{SubscriptionsEndpoint}/{encodedSubscriptionId}/cancel",
-            CancelSubscriptionLogLabel,
-            request,
-            cancellationToken);
-    }
 }
