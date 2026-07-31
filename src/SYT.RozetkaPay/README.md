@@ -87,6 +87,57 @@ As of `2026-02-28`, the behavior is still present on some endpoints.
 To avoid runtime failures and to remain forward-compatible when API behavior is normalized, the SDK deserializes numeric fields from both formats.
 In addition to dedicated converters for `decimal`/`int`/`long` types, global JSON number handling is configured to allow reading numeric values from strings.
 
+## When a payment's state is unknown
+
+A call that never came back is the one failure that can leave money in an unknown state. Two things about
+it are easy to get wrong, and both cost real money.
+
+### A timeout is a `RozetkaPayException`, and it tells you how many times you hit the provider
+
+`RozetkaPayTransportException` derives from `RozetkaPayException`, so the documented catch clause sees it:
+
+```csharp
+try
+{
+    PaymentOperationResult result = await payments.CreateAsync(request, ct);
+}
+catch (RozetkaPayTransportException transport)
+{
+    // MayHaveReachedProvider is always true: by the time this is thrown the request was dispatched.
+    // A payment may exist. Do not decide anything from the absence of a response.
+    logger.LogError(
+        "Payment {ExternalId} is ambiguous: timeout={IsTimeout}, dispatched {Attempts} time(s).",
+        request.ExternalId, transport.IsTimeout, transport.AttemptsDispatched);
+}
+catch (OperationCanceledException) when (ct.IsCancellationRequested)
+{
+    // Your own cancellation stays yours and needs no reconciliation.
+}
+```
+
+A timeout is **not retried**, even with `RetryPolicy.Enabled = true`. A connect failure costs nothing to
+repeat; a timeout after dispatch may already have taken the money, so repeating it silently would turn one
+ambiguous creation into several real ones.
+
+### `data_not_found` from `/info` is **not** proof the payment does not exist
+
+Verified against the live API: `GetInfoAsync` answers `data_not_found` for a payment that demonstrably
+exists, for as long as the hosted checkout is unpaid — four attempts over twelve seconds, all
+`data_not_found`, while the checkout page was open and working.
+
+Reading that as "it was never created" and retrying with a fresh `external_id` **charges the customer
+twice**. The absence of a record is not evidence of the absence of a payment.
+
+### The safe protocol
+
+1. Derive `external_id` **deterministically** from your own order — never a fresh GUID per attempt. The
+   provider deduplicates by `external_id`, so a repeat of the same logical payment lands on the same
+   payment instead of creating a second one.
+2. Retry the *same* `external_id` on an ambiguous failure. That is safe precisely because of (1).
+3. Treat the **callback** as the source of truth for the final state, not a poll of `/info`. Deduplicate
+   inbound callbacks on `PaymentWebhook.EventKey`.
+4. Never treat a missing record, a timeout, or a cancellation as "no payment happened".
+
 ## Status and trademarks
 
 `SYT.RozetkaPay` is an **independent, community-maintained** SDK. It is not published, endorsed or
