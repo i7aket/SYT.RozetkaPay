@@ -1831,48 +1831,6 @@ public class BaseRequestUserDetails
 // ===================== MISSING OPENAPI SCHEMAS =====================
 
 /// <summary>
-/// Customer information (OpenAPI schema)
-/// </summary>
-public class Customer
-{
-    /// <summary>
-    /// Customer first name
-    /// </summary>
-    [JsonPropertyName("first_name")]
-    public string? FirstName { get; set; }
-
-    /// <summary>
-    /// Customer last name
-    /// </summary>
-    [JsonPropertyName("last_name")]
-    public string? LastName { get; set; }
-
-    /// <summary>
-    /// Customer email address
-    /// </summary>
-    [JsonPropertyName("email")]
-    public string? Email { get; set; }
-
-    /// <summary>
-    /// Customer phone number
-    /// </summary>
-    [JsonPropertyName("phone")]
-    public string? Phone { get; set; }
-
-    /// <summary>
-    /// Customer IP address
-    /// </summary>
-    [JsonPropertyName("ip_address")]
-    public string? IpAddress { get; set; }
-
-    /// <summary>
-    /// Browser user agent
-    /// </summary>
-    [JsonPropertyName("browser_user_agent")]
-    public string? BrowserUserAgent { get; set; }
-}
-
-/// <summary>
 /// Partners fee details (OpenAPI schema)
 /// </summary>
 public class PartnersFeeDetails

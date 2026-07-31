@@ -318,11 +318,6 @@ SYT.RozetkaPay.Models.Batch.BatchDetails
     String Rrn { get; set; }
     String TerminalName { get; set; }
     String Tid { get; set; }
-SYT.RozetkaPay.Models.Batch.BatchFee
-    .ctor()
-    Decimal? Amount { get; set; }
-    Decimal? Rate { get; set; }
-    String Currency { get; set; }
 SYT.RozetkaPay.Models.Batch.BatchOrder
     .ctor()
     Boolean? InitRecurrent { get; set; }
@@ -347,19 +342,6 @@ SYT.RozetkaPay.Models.Batch.BatchOrderDetail
     String Payload { get; set; }
     String RecipientIban { get; set; }
     String RecurrentId { get; set; }
-    String StatusDescription { get; set; }
-    String TransactionId { get; set; }
-    String UnifiedExternalId { get; set; }
-SYT.RozetkaPay.Models.Batch.BatchOrderDetails
-    .ctor()
-    BatchFee Fee { get; set; }
-    Decimal? Amount { get; set; }
-    Int32? StatusCode { get; set; }
-    String Description { get; set; }
-    String ExternalId { get; set; }
-    String Method { get; set; }
-    String OperationId { get; set; }
-    String Status { get; set; }
     String StatusDescription { get; set; }
     String TransactionId { get; set; }
     String UnifiedExternalId { get; set; }
@@ -406,11 +388,6 @@ SYT.RozetkaPay.Models.Batch.CreateBatchPaymentRequest
     String ResultUrl { get; set; }
     String ResultUrlFail { get; set; }
     String ResultUrlSuccess { get; set; }
-SYT.RozetkaPay.Models.Batch.PaymentMethodResponse
-    .ctor()
-    String Brand { get; set; }
-    String MaskedCard { get; set; }
-    String Type { get; set; }
 SYT.RozetkaPay.Models.Common.ActionType
     ActionType Url
     Int32 value__
@@ -452,14 +429,6 @@ SYT.RozetkaPay.Models.Common.CheckoutColorMode
     CheckoutColorMode Dark
     CheckoutColorMode White
     Int32 value__
-SYT.RozetkaPay.Models.Common.Customer
-    .ctor()
-    String BrowserUserAgent { get; set; }
-    String Email { get; set; }
-    String FirstName { get; set; }
-    String IpAddress { get; set; }
-    String LastName { get; set; }
-    String Phone { get; set; }
 SYT.RozetkaPay.Models.Common.CustomerCheckoutLocale
     CustomerCheckoutLocale EN
     CustomerCheckoutLocale PL
@@ -867,11 +836,6 @@ SYT.RozetkaPay.Models.Customers.CustomerWallet
     String Phone { get; set; }
     String PostalCode { get; set; }
     String Rid { get; set; }
-SYT.RozetkaPay.Models.Customers.CustomerWalletResponse
-    .ctor()
-    List<WalletCard> Cards { get; set; }
-    String CustomerId { get; set; }
-    String DefaultCardId { get; set; }
 SYT.RozetkaPay.Models.Customers.DeleteCustomerPaymentRequest
     .ctor()
     String OptionId { get; set; }
@@ -893,72 +857,15 @@ SYT.RozetkaPay.Models.Customers.SetDefaultCardResponse
     String Message { get; set; }
     String Status { get; set; }
     String Type { get; set; }
-SYT.RozetkaPay.Models.Customers.WalletCard
-    .ctor()
-    Boolean? IsDefault { get; set; }
-    DateTime? CreatedAt { get; set; }
-    String BankName { get; set; }
-    String Id { get; set; }
-    String Mask { get; set; }
-    String PaymentSystem { get; set; }
-    String Status { get; set; }
-    String Type { get; set; }
 SYT.RozetkaPay.Models.Customers.WalletOptionType
     Int32 value__
     WalletOptionType Card
-SYT.RozetkaPay.Models.Customers.WalletTransaction
-    .ctor()
-    DateTime? CreatedAt { get; set; }
-    Decimal? Amount { get; set; }
-    String Currency { get; set; }
-    String Id { get; set; }
-    String Status { get; set; }
-    String Type { get; set; }
-SYT.RozetkaPay.Models.FinMon.FinMonCard
-    .ctor()
-    String Bin { get; set; }
-    String Brand { get; set; }
-    String CardType { get; set; }
-    String IssuingCountry { get; set; }
-    String LastFour { get; set; }
-SYT.RozetkaPay.Models.FinMon.FinMonCustomer
-    .ctor()
-    DateTime? RegistrationDate { get; set; }
-    String CustomerId { get; set; }
-    String Email { get; set; }
-    String IpAddress { get; set; }
-    String Phone { get; set; }
 SYT.RozetkaPay.Models.FinMon.FinMonP2PPaymentPreLimitsResponse
     .ctor()
     Decimal? AmountLeft { get; set; }
     Int32? CardOnlyCountLeft { get; set; }
     Int32? TotalCountLeft { get; set; }
     Int64? RecipientIpn { get; set; }
-SYT.RozetkaPay.Models.FinMon.FinMonRule
-    .ctor()
-    Boolean IsActive { get; set; }
-    List<RuleCondition> Conditions { get; set; }
-    String Category { get; set; }
-    String Description { get; set; }
-    String Id { get; set; }
-    String Name { get; set; }
-    String Severity { get; set; }
-SYT.RozetkaPay.Models.FinMon.RuleCondition
-    .ctor()
-    String Field { get; set; }
-    String Operator { get; set; }
-    String Value { get; set; }
-SYT.RozetkaPay.Models.FinMon.StatusHistoryItem
-    .ctor()
-    DateTime? Timestamp { get; set; }
-    String Comment { get; set; }
-    String Status { get; set; }
-SYT.RozetkaPay.Models.FinMon.TriggeredRule
-    .ctor()
-    String Description { get; set; }
-    String RuleId { get; set; }
-    String RuleName { get; set; }
-    String Severity { get; set; }
 SYT.RozetkaPay.Models.InStorePayments.InStorePaymentConfirmReceiptData
     .ctor()
     String AddressSalePoint { get; set; }
@@ -1093,12 +1000,6 @@ SYT.RozetkaPay.Models.InStorePayments.InStorePaymentRefundResponse
     String OrderId { get; set; }
     String TransactionStatus { get; set; }
     String TransactionStatusCode { get; set; }
-SYT.RozetkaPay.Models.Merchants.CommissionRate
-    .ctor()
-    Decimal? FixedFee { get; set; }
-    Decimal? Rate { get; set; }
-    String Currency { get; set; }
-    String PaymentMethod { get; set; }
 SYT.RozetkaPay.Models.Merchants.EntityStatusDetails
     .ctor()
     String BankDetailsNumber { get; set; }
@@ -1122,11 +1023,6 @@ SYT.RozetkaPay.Models.Merchants.GetMerchantBalanceResponse
 SYT.RozetkaPay.Models.Merchants.KeysValidationResult
     .ctor()
     String Status { get; set; }
-SYT.RozetkaPay.Models.Merchants.MerchantContact
-    .ctor()
-    String ContactPerson { get; set; }
-    String Email { get; set; }
-    String Phone { get; set; }
 SYT.RozetkaPay.Models.Merchants.MerchantStatus
     Int32 value__
     MerchantStatus Activated
@@ -1226,21 +1122,6 @@ SYT.RozetkaPay.Models.PayParts.CreatePayPartsOrder
     String Payload { get; set; }
     String ResultUrl { get; set; }
     String UnifiedExternalId { get; set; }
-SYT.RozetkaPay.Models.PayParts.CreatePayPartsOrderRequest
-    .ctor()
-    Decimal Amount { get; set; }
-    Dictionary<String, Object> Metadata { get; set; }
-    Int32 PartsCount { get; set; }
-    List<PayPartsProduct> Products { get; set; }
-    PayPartsCustomer Customer { get; set; }
-    String Bank { get; set; }
-    String CallbackUrl { get; set; }
-    String Currency { get; set; }
-    String Description { get; set; }
-    String ExternalId { get; set; }
-    String FailureUrl { get; set; }
-    String MerchantId { get; set; }
-    String SuccessUrl { get; set; }
 SYT.RozetkaPay.Models.PayParts.PayPartsBankInfo
     .ctor()
     List<Int32> AvailablePeriods { get; set; }
@@ -1288,11 +1169,6 @@ SYT.RozetkaPay.Models.PayParts.PayPartsDeliveryOtherPerson
     String LastName { get; set; }
     String MiddleName { get; set; }
     String Phone { get; set; }
-SYT.RozetkaPay.Models.PayParts.PayPartsError
-    .ctor()
-    String Code { get; set; }
-    String Description { get; set; }
-    String Message { get; set; }
 SYT.RozetkaPay.Models.PayParts.PayPartsOperationDetails
     .ctor()
     DateTime? CreatedAt { get; set; }
@@ -1459,9 +1335,6 @@ SYT.RozetkaPay.Models.Payments.ApplePayResponsePaymentMethod
     String Mask { get; set; }
     String PaymentSystem { get; set; }
     String Token { get; set; }
-SYT.RozetkaPay.Models.Payments.ApplePayToken
-    .ctor()
-    String Data { get; set; }
 SYT.RozetkaPay.Models.Payments.CCTokenResponsePaymentMethod
     .ctor()
     Boolean? SavedCard { get; set; }
@@ -1471,13 +1344,6 @@ SYT.RozetkaPay.Models.Payments.CCTokenResponsePaymentMethod
     String Mask { get; set; }
     String PaymentSystem { get; set; }
     String Token { get; set; }
-SYT.RozetkaPay.Models.Payments.CallbackInfo
-    .ctor()
-    DateTime? LastAttemptAt { get; set; }
-    DateTime? NextAttemptAt { get; set; }
-    Int32? Attempts { get; set; }
-    String Status { get; set; }
-    String Url { get; set; }
 SYT.RozetkaPay.Models.Payments.CallbackResendResponse
     .ctor()
     String Message { get; set; }
@@ -1493,22 +1359,6 @@ SYT.RozetkaPay.Models.Payments.CancelPaymentRequest
 SYT.RozetkaPay.Models.Payments.CancelRefundRequest
     .ctor()
     String ExternalId { get; set; }
-SYT.RozetkaPay.Models.Payments.CardDetails
-    .ctor()
-    Int32? ExpirationMonth { get; set; }
-    Int32? ExpirationYear { get; set; }
-    String CVV { get; set; }
-    String HolderName { get; set; }
-    String Number { get; set; }
-SYT.RozetkaPay.Models.Payments.CardInfo
-    .ctor()
-    String BankName { get; set; }
-    String Bin { get; set; }
-    String Country { get; set; }
-    String Mask { get; set; }
-    String PaymentSystem { get; set; }
-    String Token { get; set; }
-    String Type { get; set; }
 SYT.RozetkaPay.Models.Payments.CardItemDetails
     .ctor()
     DateTime? ExpiresAt { get; set; }
@@ -1651,44 +1501,9 @@ SYT.RozetkaPay.Models.Payments.GooglePayResponsePaymentMethod
     String Mask { get; set; }
     String PaymentSystem { get; set; }
     String Token { get; set; }
-SYT.RozetkaPay.Models.Payments.GooglePayToken
-    .ctor()
-    String Data { get; set; }
 SYT.RozetkaPay.Models.Payments.PartnerDetails
     .ctor()
     String TransactionId { get; set; }
-SYT.RozetkaPay.Models.Payments.PaymentCustomer
-    .ctor()
-    String Email { get; set; }
-    String FirstName { get; set; }
-    String Ip { get; set; }
-    String LastName { get; set; }
-    String Patronym { get; set; }
-    String Phone { get; set; }
-SYT.RozetkaPay.Models.Payments.PaymentDetails
-    .ctor()
-    Decimal? Amount { get; set; }
-    String Currency { get; set; }
-    String PaymentMethod { get; set; }
-SYT.RozetkaPay.Models.Payments.PaymentError
-    .ctor()
-    String Code { get; set; }
-    String Description { get; set; }
-    String Message { get; set; }
-    String Source { get; set; }
-SYT.RozetkaPay.Models.Payments.PaymentMethod
-    .ctor()
-    CardDetails Card { get; set; }
-    PaymentMethodType? Type { get; set; }
-    String ApplePayToken { get; set; }
-    String CCToken { get; set; }
-    String GooglePayToken { get; set; }
-    String WalletToken { get; set; }
-SYT.RozetkaPay.Models.Payments.PaymentMethodInfo
-    .ctor()
-    String PaymentSystem { get; set; }
-    String Title { get; set; }
-    String Type { get; set; }
 SYT.RozetkaPay.Models.Payments.PaymentOperationResult
     .ctor()
     Boolean ActionRequired { get; set; }
@@ -1799,21 +1614,6 @@ SYT.RozetkaPay.Models.Payments.RecipientCCNumberRequestPaymentMethod
 SYT.RozetkaPay.Models.Payments.RecipientCCTokenRequestPaymentMethod
     .ctor()
     String Token { get; set; }
-SYT.RozetkaPay.Models.Payments.RecipientCardNumber
-    .ctor()
-    Int32? ExpirationMonth { get; set; }
-    Int32? ExpirationYear { get; set; }
-    String Number { get; set; }
-SYT.RozetkaPay.Models.Payments.RecipientCardToken
-    .ctor()
-    String CVV { get; set; }
-    String Token { get; set; }
-SYT.RozetkaPay.Models.Payments.RecipientPaymentMethod
-    .ctor()
-    RecipientCardNumber CardNumber { get; set; }
-    RecipientCardToken CardToken { get; set; }
-    RecipientWallet Wallet { get; set; }
-    String Type { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientRequestPaymentMethod
     .ctor()
     RecipientCCNumberRequestPaymentMethod CcNumber { get; set; }
@@ -1826,10 +1626,6 @@ SYT.RozetkaPay.Models.Payments.RecipientRequestUserDetails
     RecipientRequestPaymentMethod PaymentMethod { get; set; }
     String Rid { get; set; }
     String Tin { get; set; }
-SYT.RozetkaPay.Models.Payments.RecipientWallet
-    .ctor()
-    String Id { get; set; }
-    String Provider { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientWalletRequestPaymentMethod
     .ctor()
     String OptionId { get; set; }
@@ -1861,14 +1657,6 @@ SYT.RozetkaPay.Models.Payments.ResultUserDetails
 SYT.RozetkaPay.Models.Payments.RetryRefundRequest
     .ctor()
     String ExternalId { get; set; }
-SYT.RozetkaPay.Models.Payments.ThreeDsInfo
-    .ctor()
-    String AcsUrl { get; set; }
-    String CReq { get; set; }
-    String PaReq { get; set; }
-    String Status { get; set; }
-    String TermUrl { get; set; }
-    String Version { get; set; }
 SYT.RozetkaPay.Models.Payments.TransactionDetails
     .ctor()
     DateTime? CreatedAt { get; set; }
@@ -1948,12 +1736,6 @@ SYT.RozetkaPay.Models.Payouts.CashRecipient
     .ctor()
     CardData CardData { get; set; }
     String Phone { get; set; }
-SYT.RozetkaPay.Models.Payouts.CurrencyBalance
-    .ctor()
-    Decimal? Available { get; set; }
-    Decimal? Pending { get; set; }
-    Decimal? Reserved { get; set; }
-    String Currency { get; set; }
 SYT.RozetkaPay.Models.Payouts.PayerAccount
     .ctor()
     String EntityId { get; set; }
@@ -1961,10 +1743,6 @@ SYT.RozetkaPay.Models.Payouts.PayoutCallbackResendResponse
     .ctor()
     String Message { get; set; }
     String Status { get; set; }
-SYT.RozetkaPay.Models.Payouts.PayoutError
-    .ctor()
-    String Code { get; set; }
-    String Message { get; set; }
 SYT.RozetkaPay.Models.Payouts.PayoutOrderDetails
     .ctor()
     String CallbackUrl { get; set; }
@@ -2236,10 +2014,6 @@ SYT.RozetkaPay.Models.Subscriptions.SubscriptionCustomer
     String FirstName { get; set; }
     String LastName { get; set; }
     String Phone { get; set; }
-SYT.RozetkaPay.Models.Subscriptions.SubscriptionError
-    .ctor()
-    String Code { get; set; }
-    String Message { get; set; }
 SYT.RozetkaPay.Models.Subscriptions.SubscriptionList
     .ctor()
     List<Subscription> Subscriptions { get; set; }
@@ -2278,14 +2052,6 @@ SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentDetails
     String TerminalName { get; set; }
     String Tid { get; set; }
     SubscriptionPaymentMeta Meta { get; set; }
-SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentInfo
-    .ctor()
-    DateTime? CreatedAt { get; set; }
-    DateTime? ProcessedAt { get; set; }
-    Decimal? Amount { get; set; }
-    String Currency { get; set; }
-    String Id { get; set; }
-    String Status { get; set; }
 SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentList
     .ctor()
     List<SubscriptionPayment> Payments { get; set; }
@@ -2321,21 +2087,6 @@ SYT.RozetkaPay.Models.Subscriptions.SubscriptionPaymentState
 SYT.RozetkaPay.Models.Subscriptions.SubscriptionRecurrentIdPaymentMethod
     .ctor()
     String RecurrentId { get; set; }
-SYT.RozetkaPay.Models.Subscriptions.SubscriptionResponse
-    .ctor()
-    CustomerRequestUserDetails Customer { get; set; }
-    DateTime? CreatedAt { get; set; }
-    Decimal? Amount { get; set; }
-    Int32? CompletedPayments { get; set; }
-    Int32? PeriodCount { get; set; }
-    String Currency { get; set; }
-    String Description { get; set; }
-    String ExternalId { get; set; }
-    String Frequency { get; set; }
-    String Id { get; set; }
-    String NextPaymentDate { get; set; }
-    String Status { get; set; }
-    SubscriptionError Error { get; set; }
 SYT.RozetkaPay.Models.Subscriptions.SubscriptionState
     Int32 value__
     SubscriptionState Active

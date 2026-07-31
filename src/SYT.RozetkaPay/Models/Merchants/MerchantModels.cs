@@ -130,67 +130,6 @@ public class MerchantValidationResponse
 
 
 /// <summary>
-/// Merchant contact information
-/// </summary>
-public class MerchantContact
-{
-    /// <summary>
-    /// Contact email
-    /// </summary>
-    [JsonPropertyName("email")]
-    public string? Email { get; set; }
-
-    /// <summary>
-    /// Contact phone
-    /// </summary>
-    [JsonPropertyName("phone")]
-    public string? Phone { get; set; }
-
-    /// <summary>
-    /// Contact person name
-    /// </summary>
-    [JsonPropertyName("contact_person")]
-    public string? ContactPerson { get; set; }
-}
-
-
-
-
-
-
-
-/// <summary>
-/// Commission rate for payment method
-/// </summary>
-public class CommissionRate
-{
-    /// <summary>
-    /// Payment method
-    /// </summary>
-    [JsonPropertyName("payment_method")]
-    public string? PaymentMethod { get; set; }
-
-    /// <summary>
-    /// Commission rate (percentage)
-    /// </summary>
-    [JsonPropertyName("rate")]
-    public decimal? Rate { get; set; }
-
-    /// <summary>
-    /// Fixed fee amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("fixed_fee")]
-    public decimal? FixedFee { get; set; }
-
-    /// <summary>
-    /// Currency for fixed fee
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
-}
-
-
-/// <summary>
 /// Keys validation result response (JSON object as per CDN documentation)
 /// </summary>
 public class KeysValidationResult
