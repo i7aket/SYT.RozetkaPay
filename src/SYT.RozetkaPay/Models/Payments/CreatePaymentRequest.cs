@@ -84,7 +84,7 @@ public class CreatePaymentRequest
     /// For direct mode, payment_method is required
     /// </summary>
     [JsonPropertyName("customer")]
-    public CustomerInfo? Customer { get; set; }
+    public CustomerRequestUserDetails? Customer { get; set; }
 
     /// <summary>
     /// Product list for express checkout (JSON array as per CDN documentation)
@@ -154,55 +154,55 @@ public class CreatePaymentRequest
 }
 
 /// <summary>
-/// Customer information for payment request - OpenAPI compliant
-/// Payment method is optional for hosted mode, required for direct mode
+/// Customer block of a <b>response</b> body (document schema <c>CustomerInfo</c>): a flat six-field shape.
 /// </summary>
-public class CustomerInfo : BaseRequestUserDetails
+/// <remarks>
+/// Not to be confused with <see cref="CustomerRequestUserDetails"/>, the customer block of a <b>request</b>
+/// (EXP-452). Until now one C# type served both, and that is exactly why the contract gates needed an alias
+/// for it: the union of two schemas declares everything, so nothing looked wrong — while a caller setting
+/// <c>Address</c> on an operation whose schema is this one had the field silently dropped, with no signature
+/// to warn them.
+/// <para>
+/// This is a response shape, so there is nothing here for a caller to fill in.
+/// </para>
+/// </remarks>
+public class CustomerInfo
 {
     /// <summary>
-    /// Customer payment method (JSON object as per CDN documentation)
-    /// Required only for direct mode, optional for hosted mode
+    /// Browser user agent (JSON string as per CDN documentation)
     /// </summary>
-    [JsonPropertyName("payment_method")]
-    public CustomerRequestPaymentMethod? PaymentMethod { get; set; }
+    [JsonPropertyName("browser_user_agent")]
+    public string? BrowserUserAgent { get; set; }
 
     /// <summary>
-    /// Checkout color mode (JSON string as per CDN documentation)
+    /// Email address (JSON string as per CDN documentation)
     /// </summary>
-    [JsonPropertyName("color_mode")]
-    public CheckoutColorMode? ColorMode { get; set; }
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
 
     /// <summary>
-    /// Customer locale (JSON string as per CDN documentation)
+    /// First name (JSON string as per CDN documentation)
     /// </summary>
-    [JsonPropertyName("locale")]
-    public CustomerCheckoutLocale? Locale { get; set; }
+    [JsonPropertyName("first_name")]
+    public string? FirstName { get; set; }
 
     /// <summary>
-    /// Customer account number (JSON string as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("account_number")]
-    public string? AccountNumber { get; set; }
-
-    /// <summary>
-    /// Customer IP address (JSON string as per CDN documentation)
+    /// IP address (JSON string as per CDN documentation)
     /// </summary>
     [JsonPropertyName("ip_address")]
     public string? IpAddress { get; set; }
 
     /// <summary>
-    /// Browser fingerprint (JSON object as per CDN documentation)
+    /// Last name (JSON string as per CDN documentation)
     /// </summary>
-    [JsonPropertyName("fingerprint")]
-    public BrowserFingerprint? Fingerprint { get; set; }
-
+    [JsonPropertyName("last_name")]
+    public string? LastName { get; set; }
 
     /// <summary>
-    /// Provider field &lt;c&gt;browser_user_agent&lt;/c&gt;.
+    /// Phone number (JSON string as per CDN documentation)
     /// </summary>
-    [JsonPropertyName("browser_user_agent")]
-    public string? BrowserUserAgent { get; set; }
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
 }
-
 
  

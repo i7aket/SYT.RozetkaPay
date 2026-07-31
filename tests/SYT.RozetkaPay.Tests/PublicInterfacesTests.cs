@@ -384,7 +384,7 @@ public class PublicInterfacesTests
             Currency = "UAH",
             ExternalId = "order-1",
             Mode = PaymentMode.Hosted,
-            Customer = new CustomerInfo { Email = "customer@example.com" }
+            Customer = new CustomerRequestUserDetails { Email = "customer@example.com" }
         };
 
         using CancellationTokenSource cancellationTokenSource = new();

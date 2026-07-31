@@ -1397,7 +1397,7 @@ SYT.RozetkaPay.Models.Payments.CreatePaymentRequest
     Boolean Confirm { get; set; }
     Boolean? InitRecurrentPayment { get; set; }
     Boolean? UseCustomFreeAmount { get; set; }
-    CustomerInfo Customer { get; set; }
+    CustomerRequestUserDetails Customer { get; set; }
     Decimal Amount { get; set; }
     Decimal? CheckoutTtl { get; set; }
     Dictionary<String, String> Metadata { get; set; }
@@ -1444,13 +1444,12 @@ SYT.RozetkaPay.Models.Payments.CustomerCCTokenRequestPaymentMethod
     String Token { get; set; }
 SYT.RozetkaPay.Models.Payments.CustomerInfo
     .ctor()
-    BrowserFingerprint Fingerprint { get; set; }
-    CheckoutColorMode? ColorMode { get; set; }
-    CustomerCheckoutLocale? Locale { get; set; }
-    CustomerRequestPaymentMethod PaymentMethod { get; set; }
-    String AccountNumber { get; set; }
     String BrowserUserAgent { get; set; }
+    String Email { get; set; }
+    String FirstName { get; set; }
     String IpAddress { get; set; }
+    String LastName { get; set; }
+    String Phone { get; set; }
 SYT.RozetkaPay.Models.Payments.CustomerRequestPaymentMethod
     .ctor()
     CustomerAppleGooglePayRequestPaymentMethod ApplePay { get; set; }

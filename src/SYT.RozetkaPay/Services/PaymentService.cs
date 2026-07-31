@@ -265,7 +265,7 @@ public class PaymentService : BaseService, IPaymentService
             ExternalId = externalId,
             Mode = PaymentMode.Direct,
             Description = description ?? "P2P Transfer",
-            Customer = new CustomerInfo
+            Customer = new CustomerRequestUserDetails
             {
                 Email = customerEmail
             },

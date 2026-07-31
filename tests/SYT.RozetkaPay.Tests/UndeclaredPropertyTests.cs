@@ -95,30 +95,6 @@ public class UndeclaredPropertyTests
         ["SubscriptionPaymentDetails.id"] = "response-side; declared on the parent SubscriptionPayment",
     };
 
-    /// <summary>
-    /// SDK types the document spreads across more than one schema.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Matching a type to the schema of the same name is how the SDK and the document were written
-    /// to correspond, and it holds almost everywhere. <c>CustomerInfo</c> is the exception: the
-    /// <c>customer</c> field of <c>CreatePaymentRequestDev</c> refs <c>CustomerRequestUserDetails</c>
-    /// (sixteen properties), while a separate and much smaller <c>CustomerInfo</c> schema also
-    /// exists. One SDK type carries both shapes.
-    /// </para>
-    /// <para>
-    /// Comparing against either alone produces false positives in the dangerous direction. Against
-    /// <c>CustomerInfo</c>, five declared request fields — <c>account_number</c>, <c>color_mode</c>,
-    /// <c>fingerprint</c>, <c>locale</c>, <c>payment_method</c> — look invented; against
-    /// <c>CustomerRequestUserDetails</c>, <c>browser_user_agent</c> does. Deleting any of them would
-    /// have removed a working field. The declared surface is the union.
-    /// </para>
-    /// </remarks>
-    private static readonly Dictionary<string, string[]> SchemaAliases = new(StringComparer.Ordinal)
-    {
-        ["CustomerInfo"] = ["CustomerInfo", "CustomerRequestUserDetails"],
-    };
-
     [Fact]
     public void NoModel_ShouldDeclareAPropertyItsSchemaDoesNotDeclare()
     {
@@ -233,25 +209,19 @@ public class UndeclaredPropertyTests
     /// an exemption (EXP-423).
     /// </summary>
     /// <remarks>
-    /// All six belong to one C# type serving <b>two</b> schemas: the SDK's <c>CustomerInfo</c> is the customer
-    /// block of both <c>components.schemas.CustomerInfo</c> (6 fields) and
-    /// <c>components.schemas.CustomerRequestUserDetails</c> (16 fields, composed with <c>allOf</c> over
-    /// <c>BaseRequestUserDetails</c>). The inherited fields are declared — by the second schema — so they are
-    /// not invented and deleting them would break create-payment.
+    /// <b>The list is empty, and that is the point.</b> It held six entries, all belonging to one C# type
+    /// serving two schemas — the SDK's <c>CustomerInfo</c> was the customer block of both
+    /// <c>components.schemas.CustomerInfo</c> and <c>components.schemas.CustomerRequestUserDetails</c>.
+    /// EXP-452 split that type, so every inherited property in the SDK is now declared by the schema of the
+    /// type that carries it, with nothing to justify.
     /// <para>
-    /// The type conflating two schemas is a real defect, just a different one: it means a caller filling
-    /// <c>Address</c> for the wrong operation gets a field the provider drops, and no signature says so. That
-    /// is EXP-452, not this test's business.
+    /// The field stays rather than being deleted: a future entry is a decision someone must write down and
+    /// defend against <see cref="EveryJustification_ShouldStillHold"/>, which is cheaper to keep than to
+    /// re-invent the next time the document composes something the C# model does not.
     /// </para>
     /// </remarks>
     private static readonly Dictionary<string, string> JustifiedInheritedExtras = new(StringComparer.Ordinal)
     {
-        ["CustomerInfo.address"] = "CustomerRequestUserDetails",
-        ["CustomerInfo.city"] = "CustomerRequestUserDetails",
-        ["CustomerInfo.country"] = "CustomerRequestUserDetails",
-        ["CustomerInfo.external_id"] = "CustomerRequestUserDetails",
-        ["CustomerInfo.patronym"] = "CustomerRequestUserDetails",
-        ["CustomerInfo.postal_code"] = "CustomerRequestUserDetails",
     };
 
     /// <summary>
@@ -335,33 +305,30 @@ public class UndeclaredPropertyTests
     /// <summary>
     /// Everything the document declares for a type, across every schema it is spread over.
     /// </summary>
+    /// <remarks>
+    /// There used to be an alias table here, mapping one C# type onto several schema names, and it existed
+    /// for exactly one entry: <c>CustomerInfo</c> served both a request and a response schema. EXP-452 split
+    /// that type, so the alias became a lie — and the union it computed became a way to hide a real mismatch,
+    /// because a field declared by <i>either</i> schema passed even on the operation whose schema declares
+    /// nothing of the sort. One type, one schema, compared exactly.
+    /// </remarks>
     private static HashSet<string> DeclaredFor(
-        string type, Dictionary<string, HashSet<string>> declared)
-    {
-        HashSet<string> union = new(StringComparer.Ordinal);
-
-        foreach (string schema in SchemaAliases.TryGetValue(type, out string[]? names) ? names : [type])
-        {
-            if (declared.TryGetValue(schema, out HashSet<string>? fields))
-            {
-                union.UnionWith(fields);
-            }
-        }
-
-        return union;
-    }
+        string type, Dictionary<string, HashSet<string>> declared) =>
+        declared.TryGetValue(type, out HashSet<string>? fields)
+            ? fields
+            : new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>
     /// Whether the document models a type at all, under any of its names.
     /// </summary>
     private static bool IsModelled(string type, Dictionary<string, HashSet<string>> declared) =>
-        (SchemaAliases.TryGetValue(type, out string[]? names) ? names : [type]).Any(declared.ContainsKey);
+        declared.ContainsKey(type);
 
     /// <summary>
     /// Every schema name a type is compared against.
     /// </summary>
     private static IEnumerable<string> SchemaNamesOf(string type) =>
-        SchemaAliases.TryGetValue(type, out string[]? names) ? names : [type];
+        [type];
 
     private static IEnumerable<(string Schema, string Field)> OwnProperties() =>
         ModelProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
