@@ -733,9 +733,16 @@ public class ResultPaymentMethod
 }
 
 /// <summary>
-/// Result user details
+/// Result user details.
 /// </summary>
-public class ResultUserDetails : UserInfo
+/// <remarks>
+/// Declares its own fields rather than deriving from <see cref="UserInfo"/> (EXP-423). The document's
+/// <c>ResultUserDetails</c> is a <b>flat</b> schema — no <c>allOf</c> — and it declares neither
+/// <c>browser_user_agent</c> nor <c>ip_address</c>, which C# inheritance was adding. On a response body an
+/// undeclared field is not harmless noise: it is a property that is permanently <c>null</c> and reads as
+/// "the provider did not send this", which is a different claim from "this field does not exist here".
+/// </remarks>
+public class ResultUserDetails
 {
     /// <summary>
     /// Payment method used (JSON object as per CDN documentation)
@@ -748,6 +755,42 @@ public class ResultUserDetails : UserInfo
     /// </summary>
     [JsonPropertyName("account_number")]
     public string? AccountNumber { get; set; }
+
+    /// <summary>
+    /// Email address (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// External user ID (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("external_id")]
+    public string? ExternalId { get; set; }
+
+    /// <summary>
+    /// First name (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("first_name")]
+    public string? FirstName { get; set; }
+
+    /// <summary>
+    /// Last name (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("last_name")]
+    public string? LastName { get; set; }
+
+    /// <summary>
+    /// Patronym (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("patronym")]
+    public string? Patronym { get; set; }
+
+    /// <summary>
+    /// Phone number (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
 }
 
 /// <summary>

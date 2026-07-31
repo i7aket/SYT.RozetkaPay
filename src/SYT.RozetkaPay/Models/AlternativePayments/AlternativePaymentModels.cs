@@ -174,10 +174,53 @@ public class CreateAlternativePayment
 }
 
 /// <summary>
-/// Customer details for alternative payments
+/// Customer details for alternative payments.
 /// </summary>
-public class AlternativePaymentCustomerDetails : UserInfo
+/// <remarks>
+/// Declares its own fields rather than deriving from <see cref="UserInfo"/> (EXP-423). The document's
+/// <c>AlternativePaymentCustomerDetails</c> is a <b>flat</b> schema and declares neither
+/// <c>browser_user_agent</c> nor <c>patronym</c>, which C# inheritance was adding. This is a <b>request</b>
+/// body, so those two were the worse kind of extra: serialized, sent, and silently dropped by the provider —
+/// the caller sets a value and nothing tells them it went nowhere.
+/// </remarks>
+public class AlternativePaymentCustomerDetails
 {
+    /// <summary>
+    /// Email address (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// External user ID (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("external_id")]
+    public string? ExternalId { get; set; }
+
+    /// <summary>
+    /// First name (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("first_name")]
+    public string? FirstName { get; set; }
+
+    /// <summary>
+    /// IP address (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("ip_address")]
+    public string? IpAddress { get; set; }
+
+    /// <summary>
+    /// Last name (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("last_name")]
+    public string? LastName { get; set; }
+
+    /// <summary>
+    /// Phone number (JSON string as per CDN documentation)
+    /// </summary>
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
+
     /// <summary>
     /// Customer country (JSON string as per CDN documentation)
     /// </summary>

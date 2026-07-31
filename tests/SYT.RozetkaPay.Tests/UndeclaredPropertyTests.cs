@@ -193,10 +193,12 @@ public class UndeclaredPropertyTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// These are real — an <c>AlternativePaymentProduct</c> does serialize <c>url</c> and
-    /// <c>image</c>, and its schema declares neither — but the remedy is to make the C# hierarchy
-    /// compose the way the document does, which is a change to the shape of the model layer rather
-    /// than a field to delete. EXP-423 covers it.
+    /// EXP-423 closed the blanket version of this: <c>ResultUserDetails</c> and
+    /// <c>AlternativePaymentCustomerDetails</c> stopped deriving from <c>UserInfo</c> and now declare the
+    /// fields their own flat schemas declare, and <c>AlternativePaymentProduct</c> was detached from
+    /// <c>Product</c> earlier in EXP-445. What survives is enumerated in
+    /// <see cref="JustifiedInheritedExtras"/> with the schema that justifies each — so the rule is now as
+    /// strict as the self-declared one, not a carve-out.
     /// </para>
     /// <para>
     /// The claim is machine-checked rather than asserted: this test proves every remaining extra
@@ -223,6 +225,84 @@ public class UndeclaredPropertyTests
             .Order(StringComparer.Ordinal)];
 
         Assert.Empty(selfDeclared);
+    }
+
+    /// <summary>
+    /// Inherited properties the document does not declare for the derived type's <b>own</b> schema, each with
+    /// the schema that does declare it. Every entry is a claim that can be checked against the document, not
+    /// an exemption (EXP-423).
+    /// </summary>
+    /// <remarks>
+    /// All six belong to one C# type serving <b>two</b> schemas: the SDK's <c>CustomerInfo</c> is the customer
+    /// block of both <c>components.schemas.CustomerInfo</c> (6 fields) and
+    /// <c>components.schemas.CustomerRequestUserDetails</c> (16 fields, composed with <c>allOf</c> over
+    /// <c>BaseRequestUserDetails</c>). The inherited fields are declared — by the second schema — so they are
+    /// not invented and deleting them would break create-payment.
+    /// <para>
+    /// The type conflating two schemas is a real defect, just a different one: it means a caller filling
+    /// <c>Address</c> for the wrong operation gets a field the provider drops, and no signature says so. That
+    /// is EXP-452, not this test's business.
+    /// </para>
+    /// </remarks>
+    private static readonly Dictionary<string, string> JustifiedInheritedExtras = new(StringComparer.Ordinal)
+    {
+        ["CustomerInfo.address"] = "CustomerRequestUserDetails",
+        ["CustomerInfo.city"] = "CustomerRequestUserDetails",
+        ["CustomerInfo.country"] = "CustomerRequestUserDetails",
+        ["CustomerInfo.external_id"] = "CustomerRequestUserDetails",
+        ["CustomerInfo.patronym"] = "CustomerRequestUserDetails",
+        ["CustomerInfo.postal_code"] = "CustomerRequestUserDetails",
+    };
+
+    /// <summary>
+    /// No inherited extra may exist beyond the justified list (EXP-423). Before this, an inherited undeclared
+    /// property was unbounded: the strict rule covered only what a type declared itself, so pushing a field
+    /// onto a base class was a way to smuggle it past the gate.
+    /// </summary>
+    [Fact]
+    public void NoInheritedExtra_ShouldExistBeyondTheJustifiedList()
+    {
+        Dictionary<string, HashSet<string>> declared = DeclaredProperties();
+        HashSet<string> own = [.. OwnProperties().Select(static entry => $"{entry.Schema}.{entry.Field}")];
+
+        List<string> unjustified = [.. AllProperties()
+            .Where(entry => IsModelled(entry.Schema, declared))
+            .Where(entry => !DeclaredFor(entry.Schema, declared).Contains(entry.Field))
+            .Select(static entry => $"{entry.Schema}.{entry.Field}")
+            .Where(static key => !AcceptedExtras.ContainsKey(key))
+            .Where(key => !own.Contains(key))
+            .Where(static key => !JustifiedInheritedExtras.ContainsKey(key))
+            .Order(StringComparer.Ordinal)];
+
+        Assert.True(
+            unjustified.Count == 0,
+            "These properties reach the wire through a base class, and the document declares none of them for "
+            + "the derived type. Either stop deriving (see ResultUserDetails in EXP-423), or add the entry "
+            + "with the schema that declares it:\n  "
+            + string.Join("\n  ", unjustified));
+    }
+
+    /// <summary>
+    /// Each justification must still hold: the named schema must really declare the field, and the entry must
+    /// still describe a live inherited extra. A stale justification is how a gate quietly stops gating.
+    /// </summary>
+    [Fact]
+    public void EveryJustification_ShouldStillHold()
+    {
+        Dictionary<string, HashSet<string>> declared = DeclaredProperties();
+        HashSet<string> own = [.. OwnProperties().Select(static entry => $"{entry.Schema}.{entry.Field}")];
+        HashSet<string> live = [.. AllProperties().Select(static entry => $"{entry.Schema}.{entry.Field}")];
+
+        foreach ((string key, string justifyingSchema) in JustifiedInheritedExtras)
+        {
+            string field = key[(key.IndexOf('.', StringComparison.Ordinal) + 1)..];
+
+            Assert.True(live.Contains(key), $"{key} is no longer serialized — drop the justification.");
+            Assert.False(own.Contains(key), $"{key} is declared by the type itself — it belongs to the strict rule.");
+            Assert.True(
+                declared.TryGetValue(justifyingSchema, out HashSet<string>? fields) && fields.Contains(field),
+                $"{justifyingSchema} does not declare {field}; the justification for {key} is wrong.");
+        }
     }
 
     /// <summary>
