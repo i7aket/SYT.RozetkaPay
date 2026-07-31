@@ -10,6 +10,46 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+## [6.0.0] - 2026-07-31
+
+One type was doing two jobs, and the contract gate had been told to accept it.
+
+**Breaking.** `CreatePaymentRequest.Customer` changes type. Read below before upgrading.
+
+### Changed
+
+- **`CreatePaymentRequest.Customer` is now `CustomerRequestUserDetails`, not `CustomerInfo`.** The document
+  keeps two customer schemas and separates them by *direction*: `CustomerRequestUserDetails` (16 fields,
+  composed with `allOf` over `BaseRequestUserDetails`) is referenced only by request bodies, and
+  `CustomerInfo` (6 flat fields) only by responses. One C# class served both.
+
+  The consequence was quiet: a caller could set `Address` on the customer block of an operation whose schema
+  does not declare it, and the field was serialized, sent and discarded. Nothing in the signature said so,
+  because the type was the same either way.
+
+  **To upgrade:** change `new CustomerInfo { … }` to `new CustomerRequestUserDetails { … }` wherever you
+  build a payment request. Every property keeps its name and type, so nothing else moves. If you were
+  reading a customer block off a *response*, keep `CustomerInfo` — that is now the response shape, and it
+  gained `BrowserUserAgent`, which the old class did not have at all.
+
+### Removed
+
+- **The duplicate customer class.** `CustomerRequestUserDetails` already existed with the same base and the
+  same six own properties; the class named `CustomerInfo` was its twin. This is the third time in this SDK
+  that the correct type turned out to be sitting unused beside the wrong one — the earlier three were fixed
+  in `3.0.0`. All four shared one cause: the contract test matched C# types to schemas *by name*, so an
+  unmatched duplicate could live indefinitely.
+
+### Notes
+
+The gate that made this invisible is gone with it. `SchemaAliases` existed for exactly one entry — this
+conflation — and while it lived, a type was compared against the *union* of two schemas: a field declared by
+either one passed, even on the operation whose schema declares nothing of the sort. The alias did not
+describe the problem, it concealed it. One type is now compared against one schema, exactly.
+
+`JustifiedInheritedExtras` is consequently empty, and `EveryJustification_ShouldStillHold` — added in
+`5.0.0` for precisely this reason — is what caught its own entries going stale when the type split.
+
 ## [5.0.0] - 2026-07-31
 
 `4.0.0` made the SDK safe to operate. This release makes its public surface mean something.
@@ -1126,7 +1166,8 @@ learns at runtime, in production, against money. Read `Removed` and `Changed` be
 ### Added
 - Initial alpha SDK package.
 
-[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v5.0.0...main
+[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v6.0.0...main
+[6.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/6.0.0
 [5.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/5.0.0
 [4.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/4.0.0
 [3.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/3.0.0
