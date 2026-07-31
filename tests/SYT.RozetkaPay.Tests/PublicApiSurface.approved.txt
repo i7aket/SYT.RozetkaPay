@@ -170,6 +170,12 @@ SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentCustomerDetails
     String Address { get; set; }
     String City { get; set; }
     String Country { get; set; }
+    String Email { get; set; }
+    String ExternalId { get; set; }
+    String FirstName { get; set; }
+    String IpAddress { get; set; }
+    String LastName { get; set; }
+    String Phone { get; set; }
     String PostalCode { get; set; }
 SYT.RozetkaPay.Models.AlternativePayments.AlternativePaymentMethod
     .ctor()
@@ -1654,6 +1660,12 @@ SYT.RozetkaPay.Models.Payments.ResultUserDetails
     .ctor()
     ResultPaymentMethod PaymentMethod { get; set; }
     String AccountNumber { get; set; }
+    String Email { get; set; }
+    String ExternalId { get; set; }
+    String FirstName { get; set; }
+    String LastName { get; set; }
+    String Patronym { get; set; }
+    String Phone { get; set; }
 SYT.RozetkaPay.Models.Payments.RetryRefundRequest
     .ctor()
     String ExternalId { get; set; }
