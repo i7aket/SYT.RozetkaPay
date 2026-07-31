@@ -150,84 +150,6 @@ public class DeleteCustomerPaymentRequest
 
 // ===================== CUSTOMER WALLET MODELS =====================
 
-/// <summary>
-/// Customer wallet response
-/// </summary>
-public class CustomerWalletResponse
-{
-    /// <summary>
-    /// Customer ID
-    /// </summary>
-    [JsonPropertyName("customer_id")]
-    public string? CustomerId { get; set; }
-
-    /// <summary>
-    /// Wallet cards
-    /// </summary>
-    [JsonPropertyName("cards")]
-    public List<WalletCard>? Cards { get; set; }
-
-    /// <summary>
-    /// Default card ID
-    /// </summary>
-    [JsonPropertyName("default_card_id")]
-    public string? DefaultCardId { get; set; }
-}
-
-/// <summary>
-/// Wallet card information
-/// </summary>
-public class WalletCard
-{
-    /// <summary>
-    /// Card ID
-    /// </summary>
-    [JsonPropertyName("id")]
-    public string? Id { get; set; }
-
-    /// <summary>
-    /// Masked card number
-    /// </summary>
-    [JsonPropertyName("mask")]
-    public string? Mask { get; set; }
-
-    /// <summary>
-    /// Card payment system
-    /// </summary>
-    [JsonPropertyName("payment_system")]
-    public string? PaymentSystem { get; set; }
-
-    /// <summary>
-    /// Card type
-    /// </summary>
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
-
-    /// <summary>
-    /// Bank name
-    /// </summary>
-    [JsonPropertyName("bank_name")]
-    public string? BankName { get; set; }
-
-    /// <summary>
-    /// Whether this is the default card
-    /// </summary>
-    [JsonPropertyName("is_default")]
-    public bool? IsDefault { get; set; }
-
-    /// <summary>
-    /// Card status
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Card creation timestamp
-    /// </summary>
-    [JsonPropertyName("created_at")]
-    public DateTime? CreatedAt { get; set; }
-}
-
 // ===================== ADD CARD TO WALLET MODELS =====================
 
 
@@ -238,48 +160,6 @@ public class WalletCard
 
 // ===================== WALLET ITEM MODELS =====================
 
-
-/// <summary>
-/// Wallet transaction
-/// </summary>
-public class WalletTransaction
-{
-    /// <summary>
-    /// Transaction ID
-    /// </summary>
-    [JsonPropertyName("id")]
-    public string? Id { get; set; }
-
-    /// <summary>
-    /// Transaction type
-    /// </summary>
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
-
-    /// <summary>
-    /// Transaction amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("amount")]
-    public decimal? Amount { get; set; }
-
-    /// <summary>
-    /// Transaction currency
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
-
-    /// <summary>
-    /// Transaction status
-    /// </summary>
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
-
-    /// <summary>
-    /// Transaction timestamp (ISO 8601 format)
-    /// </summary>
-    [JsonPropertyName("created_at")]
-    public DateTime? CreatedAt { get; set; }
-}
 
 // ===================== CARD CONFIRMATION MODELS =====================
 

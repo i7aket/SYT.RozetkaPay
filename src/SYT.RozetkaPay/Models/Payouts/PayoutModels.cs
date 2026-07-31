@@ -177,60 +177,11 @@ public enum PayoutType
 // ===================== PAYOUT RESPONSE MODELS =====================
 
 
-/// <summary>
-/// Payout error information
-/// </summary>
-public class PayoutError
-{
-    /// <summary>
-    /// Error code
-    /// </summary>
-    [JsonPropertyName("code")]
-    public string? Code { get; set; }
-
-    /// <summary>
-    /// Error message
-    /// </summary>
-    [JsonPropertyName("message")]
-    public string? Message { get; set; }
-}
-
 // ===================== PAYOUT LIST MODELS =====================
 
 
 
 // ===================== BALANCE MODELS =====================
-
-
-/// <summary>
-/// Currency balance information
-/// </summary>
-public class CurrencyBalance
-{
-    /// <summary>
-    /// Currency code
-    /// </summary>
-    [JsonPropertyName("currency")]
-    public string? Currency { get; set; }
-
-    /// <summary>
-    /// Available balance amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("available")]
-    public decimal? Available { get; set; }
-
-    /// <summary>
-    /// Pending balance amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("pending")]
-    public decimal? Pending { get; set; }
-
-    /// <summary>
-    /// Reserved balance amount (JSON number as per CDN documentation)
-    /// </summary>
-    [JsonPropertyName("reserved")]
-    public decimal? Reserved { get; set; }
-}
 
 
 // ===================== ADDITIONAL PAYOUT MODELS =====================

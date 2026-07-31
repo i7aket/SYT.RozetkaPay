@@ -145,94 +145,6 @@ public enum PayPartsPaymentMode
 // ===================== CREATE PAYPARTS ORDER MODELS =====================
 
 /// <summary>
-/// Request to create PayParts order
-/// </summary>
-public class CreatePayPartsOrderRequest
-{
-    /// <summary>
-    /// External order ID (must be unique per merchant)
-    /// </summary>
-    [Required]
-    [JsonPropertyName("external_id")]
-    public required string ExternalId { get; set; }
-
-    /// <summary>
-    /// Order amount (JSON number as per CDN documentation)
-    /// </summary>
-    [Required]
-    [JsonPropertyName("amount")]
-    public required decimal Amount { get; set; }
-
-    /// <summary>
-    /// Order currency
-    /// </summary>
-    [Required]
-    [JsonPropertyName("currency")]
-    public required string Currency { get; set; }
-
-    /// <summary>
-    /// Number of installments
-    /// </summary>
-    [Required]
-    [JsonPropertyName("parts_count")]
-    public required int PartsCount { get; set; }
-
-    /// <summary>
-    /// Order description
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Selected bank for PayParts
-    /// </summary>
-    [JsonPropertyName("bank")]
-    public string? Bank { get; set; }
-
-    /// <summary>
-    /// Merchant ID for PayParts
-    /// </summary>
-    [JsonPropertyName("merchant_id")]
-    public string? MerchantId { get; set; }
-
-    /// <summary>
-    /// Callback URL for order notifications
-    /// </summary>
-    [JsonPropertyName("callback_url")]
-    public string? CallbackUrl { get; set; }
-
-    /// <summary>
-    /// Success URL to redirect customer after successful order
-    /// </summary>
-    [JsonPropertyName("success_url")]
-    public string? SuccessUrl { get; set; }
-
-    /// <summary>
-    /// Failure URL to redirect customer after failed order
-    /// </summary>
-    [JsonPropertyName("failure_url")]
-    public string? FailureUrl { get; set; }
-
-    /// <summary>
-    /// Customer information
-    /// </summary>
-    [JsonPropertyName("customer")]
-    public PayPartsCustomer? Customer { get; set; }
-
-    /// <summary>
-    /// Products in the order
-    /// </summary>
-    [JsonPropertyName("products")]
-    public List<PayPartsProduct>? Products { get; set; }
-
-    /// <summary>
-    /// Additional order metadata
-    /// </summary>
-    [JsonPropertyName("metadata")]
-    public Dictionary<string, object>? Metadata { get; set; }
-}
-
-/// <summary>
 /// Customer information for PayParts
 /// </summary>
 public class PayPartsCustomer
@@ -334,30 +246,6 @@ public class PayPartsProduct
 
 // ===================== PAYPARTS ORDER RESPONSE =====================
 
-
-/// <summary>
-/// PayParts error information
-/// </summary>
-public class PayPartsError
-{
-    /// <summary>
-    /// Error code
-    /// </summary>
-    [JsonPropertyName("code")]
-    public string? Code { get; set; }
-
-    /// <summary>
-    /// Error message
-    /// </summary>
-    [JsonPropertyName("message")]
-    public string? Message { get; set; }
-
-    /// <summary>
-    /// Detailed error description
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-}
 
 // ===================== CONFIRM PAYPARTS ORDER MODELS =====================
 
