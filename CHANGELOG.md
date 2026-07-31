@@ -10,6 +10,76 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-07-31
+
+`4.0.0` made the SDK safe to operate. This release makes its public surface mean something.
+
+Every public type is a promise to a caller. Thirty-seven of them were promises nothing kept: no service
+referenced them, and no component in the document declared them. Two more types were promising fields the
+provider does not accept or send. Both are removals, so both are breaking — but what is removed could not
+have worked in the first place.
+
+**Breaking.** Read `Removed` before upgrading.
+
+### Removed
+
+**37 public model types that nothing could reach.** Each was referenced by no service and declared by no
+component in `docs/openapi.json` — including `requestBodies` and `responses`, not only `schemas`. Most were
+legacy twins of a type the document does declare and the SDK already returns (`SubscriptionResponse` beside
+`Subscription`, `RecipientPaymentMethod` beside `RecipientRequestPaymentMethod`), or children of a parent
+removed in `4.0.0` (`PaymentResponse` is gone, so its six child types had nothing left to belong to).
+
+Find your name here rather than diffing two packages:
+
+| namespace | removed |
+| --- | --- |
+| `Models.Batch` | `BatchFee`, `BatchOrderDetails`, `PaymentMethodResponse` |
+| `Models.Common` | `Customer` |
+| `Models.Customers` | `CustomerWalletResponse`, `WalletCard`, `WalletTransaction` |
+| `Models.FinMon` | `FinMonCard`, `FinMonCustomer`, `FinMonRule`, `RuleCondition`, `StatusHistoryItem`, `TriggeredRule` |
+| `Models.Merchants` | `CommissionRate`, `MerchantContact` |
+| `Models.PayParts` | `CreatePayPartsOrderRequest`, `PayPartsError` |
+| `Models.Payments` | `ApplePayToken`, `CallbackInfo`, `CardDetails`, `CardInfo`, `GooglePayToken`, `PaymentCustomer`, `PaymentDetails`, `PaymentError`, `PaymentMethod`, `PaymentMethodInfo`, `RecipientCardNumber`, `RecipientCardToken`, `RecipientPaymentMethod`, `RecipientWallet`, `ThreeDsInfo` |
+| `Models.Payouts` | `CurrencyBalance`, `PayoutError` |
+| `Models.Subscriptions` | `SubscriptionError`, `SubscriptionPaymentInfo`, `SubscriptionResponse` |
+
+If you referenced one, you were holding a type the SDK never filled and never sent. The replacement is the
+document-declared type the service actually uses — the table above pairs the obvious ones, and the service
+signature names the rest.
+
+**Two inherited properties per type on two models.** `ResultUserDetails` and
+`AlternativePaymentCustomerDetails` no longer derive from `UserInfo`; they declare exactly what their own
+schema declares. What disappeared:
+
+| type | properties | why they could not work |
+| --- | --- | --- |
+| `ResultUserDetails` | `BrowserUserAgent`, `IpAddress` | response-side; the schema declares neither, so both were permanently `null` — indistinguishable from "the provider left it out" |
+| `AlternativePaymentCustomerDetails` | `BrowserUserAgent`, `Patronym` | **request**-side; both were serialized, sent, and silently discarded by the provider |
+
+Both schemas are flat in the document — no `allOf` — so the inheritance was the SDK's own invention, not a
+composition the contract asked for.
+
+### Added
+
+- **`OrphanModelTypeTests`** — a public model must be reachable: used by the SDK, declared by the document,
+  or named in a two-entry allow-list with its reason. Detection reads assembly *metadata*, not source text,
+  because text cannot tell `public string? ApplePayToken` (a `string`) from a use of the type
+  `ApplePayToken`. That distinction is exactly what hid seven of the thirty-seven.
+- **`NoInheritedExtra_ShouldExistBeyondTheJustifiedList`** and **`EveryJustification_ShouldStillHold`** — the
+  undeclared-property gate now covers inherited members too. Until now it checked only what a type declared
+  itself, which made moving a field onto a base class a way past it.
+- **README: "When a payment's state is unknown"** — the failure contract in the place callers read. Chiefly:
+  `data_not_found` from `/info` is **not** proof a payment does not exist (verified live: four attempts over
+  twelve seconds, all `data_not_found`, while the hosted checkout was open and working), so reading it that
+  way and retrying with a fresh `external_id` charges the customer twice.
+
+### Notes
+
+`CustomerInfo` still inherits six properties its own schema does not declare, and that is deliberate: the
+same C# type serves both `CustomerInfo` (6 fields) and `CustomerRequestUserDetails` (16), so the fields are
+declared — by the second schema. The gate records this as a checkable claim rather than an exemption. Splitting
+the type is tracked separately and will be breaking in its own right.
+
 ## [4.0.0] - 2026-07-31
 
 `3.0.0` made the SDK agree with the published contract. This release makes it safe to operate.
@@ -1056,7 +1126,8 @@ learns at runtime, in production, against money. Read `Removed` and `Changed` be
 ### Added
 - Initial alpha SDK package.
 
-[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v4.0.0...main
+[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v5.0.0...main
+[5.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/5.0.0
 [4.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/4.0.0
 [3.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/3.0.0
 [2.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/2.0.0
