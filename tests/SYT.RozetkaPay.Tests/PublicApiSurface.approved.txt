@@ -22,6 +22,7 @@ SYT.RozetkaPay.Configuration.RozetkaPayConfiguration
     .ctor()
     Boolean IsValid()
     RetryPolicy RetryPolicy { get; set; }
+    RozetkaPayConfiguration WithOnBehalfOf(String onBehalfOf)
     RozetkaPayTransportSecurity TransportSecurity { get; set; }
     String BaseUrl { get; set; }
     String CustomerAuth { get; set; }
@@ -2234,6 +2235,7 @@ SYT.RozetkaPay.Services.IPaymentInstructionService
     Task<PaymentInstructionDeclineResult> DeclineAsync(String projectId, String paymentInstructionId, CancellationToken cancellationToken)
     Task<PaymentInstructionsResult> CreateAsync(CreatePaymentInstructionsRequest request, CancellationToken cancellationToken)
 SYT.RozetkaPay.Services.IPaymentService
+    IPaymentService ActingFor(String onBehalfOf)
     Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)
@@ -2309,6 +2311,7 @@ SYT.RozetkaPay.Services.PaymentInstructionService
 SYT.RozetkaPay.Services.PaymentService
     .ctor(RozetkaPayConfiguration configuration, HttpClient httpClient, ILogger logger)
     CreatePaymentRequest BuildP2PRequest(Decimal amount, String currency, String externalId, String customerEmail, String recipientCardNumber, String description)
+    IPaymentService ActingFor(String onBehalfOf)
     Task<CallbackResendResponse> ResendCallbackAsync(ResendCallbackRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelAsync(CancelPaymentRequest request, CancellationToken cancellationToken)
     Task<PaymentOperationResult> CancelRefundAsync(CancelRefundRequest request, CancellationToken cancellationToken)

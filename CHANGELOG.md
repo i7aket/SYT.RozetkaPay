@@ -10,6 +10,39 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+**Breaking for implementers, not for callers.** `IPaymentService` gains a member. Code that *calls* the
+interface is unaffected; a type that *implements* it — a hand-written test double, most likely — must add
+`ActingFor`. Under SemVer that makes the next release a major one.
+
+### Added
+
+- **`IPaymentService.ActingFor(string onBehalfOf)`** — a view of the service bound to one child merchant in
+  partnership mode. RozetkaPay routes a payment to a child with the `X-ON-BEHALF-OF` header ("partnership
+  mode, when one core account operates with several children"); the SDK could only set it once per client,
+  from `RozetkaPayConfiguration.OnBehalfOf`.
+
+  That is enough for a merchant integrating for itself and not enough for a platform, where every payment
+  goes to a *different* child. The workarounds it forced were both bad: a client per merchant, or a mutable
+  property that a concurrent call could read mid-change and pay the wrong party.
+
+  `ActingFor` returns a new service sharing your `HttpClient`; the original keeps whatever scope it had.
+
+  ```csharp
+  await payments.ActingFor("merchant-a").CreateAsync(request, cancellationToken);
+  await payments.ActingFor("merchant-b").CreateAsync(other, cancellationToken);
+  ```
+
+- **`RozetkaPayConfiguration.WithOnBehalfOf(string onBehalfOf)`** — the copy `ActingFor` is built on, public
+  because a caller constructing services directly needs the same operation. It copies every setting, so a
+  property added later cannot be silently dropped from a scoped configuration; a test enforces that by
+  reflection rather than by a hand-written list.
+
+  A blank identifier raises `ArgumentException`, and one that is not a legal header value raises
+  `FormatException` — the same error a badly formed configured value already raises. Both fail while
+  scoping, before anything is sent. The blank case is the one worth spelling out: acting for nobody is not
+  acting for the platform. Had it simply dropped the header, the request would have **succeeded** — booked
+  to the core account, with nothing in the status code or the logs to say the child merchant was never paid.
+
 ## [6.0.0] - 2026-07-31
 
 One type was doing two jobs, and the contract gate had been told to accept it.

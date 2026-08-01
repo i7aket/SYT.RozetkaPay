@@ -967,6 +967,46 @@ Rules that matter:
   matches the official response.
 - **`ProcessedAt` is a string.** The official schema declares no date format, so the value is not parsed.
 
+## Partnership Mode (paying on behalf of a child merchant)
+
+RozetkaPay routes a payment to a child merchant with the `X-ON-BEHALF-OF` header — *"partnership mode,
+when one core account operates with several children"*. Authentication stays the platform's, and the
+child is named by identifier, so a platform never handles a merchant's own credentials.
+
+For a single child, set it once in configuration (`OnBehalfOf`). For a platform, where each payment goes
+to a *different* child, use `ActingFor`:
+
+```csharp
+IPaymentService payments = serviceProvider.GetRequiredService<IPaymentService>();
+
+// One client, one HttpClient, many merchants.
+PaymentOperationResult first = await payments
+    .ActingFor("merchant-a")
+    .CreateAsync(request, cancellationToken);
+
+PaymentOperationResult second = await payments
+    .ActingFor("merchant-b")
+    .CreateAsync(other, cancellationToken);
+```
+
+Rules that matter:
+
+- **`ActingFor` returns a new service; it does not mutate the one you called it on.** The original keeps
+  whatever scope it had, and the copy shares your `HttpClient`. Nothing here is a field a concurrent
+  request could read mid-change, which is the failure a mutable `OnBehalfOf` property would invite.
+- **A per-call scope replaces the configured value**, it does not combine with it. Calling `ActingFor` on
+  an already-scoped service re-scopes the copy rather than nesting.
+- **A blank identifier is refused, with an `ArgumentException`, before anything is sent.** This is the one
+  rule worth stating a reason for: acting for nobody is not the same as acting for the platform. Had the
+  blank simply dropped the header, the request would have *succeeded* — booked to the core account, with
+  nothing in the status code or the logs to say the expert was never paid.
+- **An identifier that is not a legal header value raises `FormatException` while scoping**, the same
+  error the configured value raises, so one `catch` covers both routes to the header.
+- **The identifier never reaches a log.** Not by redaction — the SDK's service logging writes static route
+  templates only, and `AddRozetkaPay` removes the factory's handler logging outright (see
+  [Logging](#logging)). A test asserts it for the scoped value specifically, because that value never
+  passes through the configuration the existing redaction tests cover.
+
 ## Payment Instructions
 
 `IPaymentInstructionService` covers the two official payment-instruction operations. They do **not**

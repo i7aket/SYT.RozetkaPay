@@ -28,6 +28,25 @@ internal sealed class FakePaymentService : IPaymentService
 
     public int CreateCallCount { get; private set; }
 
+    /// <summary>Child merchant this substitute was scoped to, or <c>null</c> for the platform itself.</summary>
+    public string? OnBehalfOf { get; private init; }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Returns a scoped copy that shares the canned response, mirroring the real service: the original keeps
+    /// its own scope. The blank check is duplicated here on purpose — a substitute that quietly accepted an
+    /// empty identifier would let a test pass while the real service throws.
+    /// </remarks>
+    public IPaymentService ActingFor(string onBehalfOf)
+    {
+        if (string.IsNullOrWhiteSpace(onBehalfOf))
+        {
+            throw new ArgumentException("The child merchant identifier must not be blank.", nameof(onBehalfOf));
+        }
+
+        return new FakePaymentService(CannedResponse) { OnBehalfOf = onBehalfOf };
+    }
+
     public Task<PaymentOperationResult> CreateAsync(CreatePaymentRequest request, CancellationToken cancellationToken = default)
     {
         LastCreateRequest = request;
