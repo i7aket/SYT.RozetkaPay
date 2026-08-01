@@ -10,6 +10,10 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+## [7.0.0] - 2026-08-01
+
+One core account, many child merchants — addressable per call instead of once per client.
+
 **Breaking for implementers, not for callers.** `IPaymentService` gains a member. Code that *calls* the
 interface is unaffected; a type that *implements* it — a hand-written test double, most likely — must add
 `ActingFor`. Under SemVer that makes the next release a major one.
@@ -1199,7 +1203,8 @@ learns at runtime, in production, against money. Read `Removed` and `Changed` be
 ### Added
 - Initial alpha SDK package.
 
-[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v6.0.0...main
+[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v7.0.0...main
+[7.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/7.0.0
 [6.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/6.0.0
 [5.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/5.0.0
 [4.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/4.0.0
