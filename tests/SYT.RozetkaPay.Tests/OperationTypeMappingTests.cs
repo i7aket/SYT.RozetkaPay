@@ -38,8 +38,9 @@ public class OperationTypeMappingTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Both are conveniences over an operation the manifest already covers, so a second entry would
-    /// duplicate a mapping rather than add one.
+    /// The first two are conveniences over an operation the manifest already covers, so a second entry
+    /// would duplicate a mapping rather than add one. The third is a different case: it performs no
+    /// request at all, so there is no operation for it to map to.
     /// </para>
     /// <para>
     /// The exemption is safe for a reason worth stating, because "it is only a wrapper" is exactly
@@ -56,6 +57,10 @@ public class OperationTypeMappingTests
             + "which createPayment already maps",
         ["IAlternativePaymentService.CreateAsync"] =
             "the same POST /api/alternative-payments/v1/create that CreateOperationAsync maps",
+        ["IPaymentService.ActingFor"] =
+            "EXP-459 partnership scoping: returns a view of the same contract bound to a child merchant "
+            + "and issues no request, so it has no route and no operation to map to. Every request the "
+            + "returned service makes is one of this interface's mapped operations",
     };
 
     /// <summary>

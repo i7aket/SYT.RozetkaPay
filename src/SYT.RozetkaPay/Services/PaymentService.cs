@@ -53,6 +53,14 @@ public class PaymentService : BaseService, IPaymentService
     {
     }
 
+    /// <inheritdoc />
+    public IPaymentService ActingFor(string onBehalfOf) =>
+        // The HTTP client is shared deliberately: it owns the connection pool, and a platform with many
+        // experts would otherwise create one pool per expert. The configuration is what differs, and
+        // BaseService validates the header while constructing — so a malformed child identifier fails here,
+        // before a request exists, rather than being discovered by the provider.
+        new PaymentService(Configuration.WithOnBehalfOf(onBehalfOf), HttpClient, Logger);
+
     /// <summary>
     /// Create a new payment
     /// POST /api/payments/v1/new

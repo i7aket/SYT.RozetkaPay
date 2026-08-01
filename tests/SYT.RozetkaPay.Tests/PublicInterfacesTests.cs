@@ -144,7 +144,12 @@ public class PublicInterfacesTests
             // built their targets by interpolation: one each on IPayParts and IAlternativePayments
             // (GetOperationInfoAsync), IAlternativePaymentService.GetStatusAsync, two on
             // ICustomerService, and two already-obsolete members on ISubscriptionService.
-            [nameof(IPaymentService)] = 12,
+            //
+            // EXP-459 added ActingFor. It is the one member here that is not an API operation: it
+            // sends nothing and returns a scoped view of the same contract. It is counted anyway,
+            // because this inventory is of the contract's surface — a member that slipped in
+            // uncounted would be exactly what this test exists to catch.
+            [nameof(IPaymentService)] = 13,
             [nameof(IBatchPaymentService)] = 3,
             [nameof(IPayPartsService)] = 10,
             [nameof(IPayoutService)] = 5,
