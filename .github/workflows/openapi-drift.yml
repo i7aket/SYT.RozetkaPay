@@ -1,0 +1,39 @@
+name: OpenAPI drift (daily)
+
+# The same check the "OpenAPI drift" job of Build & Test runs on every pull request, on a clock.
+#
+# Why a schedule: the pull-request job only asks its question when someone opens a pull request. RozetkaPay
+# changes its published document on its own timetable - on 2026-09-30 it dropped seven operations and added
+# fields to twelve schemas, with nothing in this repository changing - so between pull requests the snapshot
+# can be wrong for weeks with every run green. Once a day is often enough to hear about it the same day and
+# rare enough never to matter as load on docs.rozetkapay.com.
+#
+# A failed scheduled run is reported the way GitHub reports any failed scheduled workflow: a notification to
+# the user who last edited the cron line. Nothing here opens issues or writes to the repository, so the
+# workflow needs read access only. GitHub suspends scheduled workflows after 60 days without repository
+# activity; re-enable it from the Actions tab if that happens.
+on:
+  schedule:
+    # 05:17 UTC daily. Off the hour on purpose: GitHub delays and drops scheduled runs at :00 under load.
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openapi-drift-daily
+  cancel-in-progress: true
+
+jobs:
+  openapi-drift:
+    name: OpenAPI drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Compare the snapshot against the published document
+        run: ./scripts/verify-openapi-drift.sh
