@@ -13,7 +13,8 @@ namespace SYT.RozetkaPay.Services;
 /// <para>
 /// The two official operations differ in authentication, so this service holds two HTTP clients.
 /// <see cref="CreateAsync"/> uses the ordinary authenticated transport of <see cref="BaseService"/>, which
-/// attaches the configured credentials to each request it builds. <see cref="DeclineAsync"/> uses a second
+/// attaches the configured credentials to each request it builds. Both overloads of
+/// <see cref="DeclineAsync(string, string, bool, CancellationToken)"/> use a second
 /// client that carries no RozetkaPay credential and whose primary handler has
 /// <c>AllowAutoRedirect = false</c>; its requests never go through the authenticated request factory.
 /// </para>
@@ -171,9 +172,43 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
     /// The provider answered <c>302</c> without a usable <c>Location</c> header, or answered a
     /// successful status other than <c>302</c>.
     /// </exception>
+    public Task<PaymentInstructionDeclineResult> DeclineAsync(
+        string projectId,
+        string paymentInstructionId,
+        CancellationToken cancellationToken = default)
+    {
+        return DeclineAsync(projectId, paymentInstructionId, consolidated: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Decline a payment instruction, optionally together with every child instruction of a consolidated
+    /// batch
+    /// GET /api/payment-instructions/v1/decline?project_id={projectId}&amp;payment_instruction_id={paymentInstructionId}[&amp;consolidated=true]
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="consolidated"/> <see langword="false"/> is the document's default and is not sent, so
+    /// the request is byte-identical to the two-identifier overload.
+    /// </remarks>
+    /// <param name="projectId">Project ID. Passed raw and escaped once as a query value.</param>
+    /// <param name="paymentInstructionId">
+    /// Payment instruction ID. Passed raw and escaped once as a query value.
+    /// </param>
+    /// <param name="consolidated">
+    /// <see langword="true"/> to decline a consolidated instruction together with every child instruction.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The <c>302</c> status and the parsed <c>Location</c> header</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="projectId"/> or <paramref name="paymentInstructionId"/> is null.
+    /// </exception>
+    /// <exception cref="RozetkaPayException">
+    /// The provider answered <c>302</c> without a usable <c>Location</c> header, or answered a
+    /// successful status other than <c>302</c>.
+    /// </exception>
     public async Task<PaymentInstructionDeclineResult> DeclineAsync(
         string projectId,
         string paymentInstructionId,
+        bool consolidated,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(projectId);
@@ -189,7 +224,8 @@ public class PaymentInstructionService : BaseService, IPaymentInstructionService
         Uri requestUri = new(
             new Uri(Configuration.BaseUrl),
             $"{DeclineEndpoint}?project_id={Uri.EscapeDataString(projectId)}" +
-            $"&payment_instruction_id={Uri.EscapeDataString(paymentInstructionId)}");
+            $"&payment_instruction_id={Uri.EscapeDataString(paymentInstructionId)}" +
+            (consolidated ? "&consolidated=true" : string.Empty));
 
         // The decline operation is a GET that only reads the provider's redirect target, so repeating it
         // creates nothing.

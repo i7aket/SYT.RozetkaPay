@@ -5,6 +5,11 @@ using SYT.RozetkaPay.Models.InStorePayments;
 using SYT.RozetkaPay.Services;
 using SYT.RozetkaPay.Tests.TestInfrastructure;
 
+// The in-store operations left the published document on 2026-09-30 and their members are obsolete
+// (RZPAY001). This file exists to pin exactly what those members still send and parse, so it calls them on
+// purpose; the suppression is file-scoped and appears in no file that tests a published operation.
+#pragma warning disable RZPAY001
+
 namespace SYT.RozetkaPay.Tests;
 
 /// <summary>

@@ -63,20 +63,12 @@
       "description": "Different reports based on your activity\n"
     },
     {
-      "name": "In-Store Payments",
-      "description": "Offline payments\n"
-    },
-    {
-      "name": "partners",
-      "description": "Partner endpoins\n"
-    },
-    {
       "name": "Merchants",
       "description": "Merchant endpoints\n"
     },
     {
       "name": "payment-instructions",
-      "description": "Create and manage payment instructions\n"
+      "description": "Create and manage payment instructions for batch processing\n"
     },
     {
       "name": "finmon",
@@ -90,7 +82,7 @@
         "description": "Creates payment and performs desired operation.\nWhen `mode` is set to `direct` - `customer` field becomes required.\n",
         "operationId": "createPayment",
         "requestBody": {
-          "$ref": "#/components/requestBodies/CreatePaymentRequestDev"
+          "$ref": "#/components/requestBodies/CreatePaymentRequest"
         },
         "responses": {
           "200": {
@@ -541,7 +533,7 @@
         ],
         "callbacks": {
           "CardPayProcessingCallback": {
-            "$ref": "#/components/callbacks/CPAYProcessingCallback"
+            "$ref": "#/components/callbacks/CardPayProcessingCallback"
           }
         }
       }
@@ -579,7 +571,7 @@
         ],
         "callbacks": {
           "CardPayProcessingCallback": {
-            "$ref": "#/components/callbacks/CPAYProcessingCallback"
+            "$ref": "#/components/callbacks/CardPayProcessingCallback"
           }
         }
       }
@@ -617,9 +609,240 @@
         ],
         "callbacks": {
           "CardPayProcessingCallback": {
-            "$ref": "#/components/callbacks/CPAYProcessingCallback"
+            "$ref": "#/components/callbacks/CardPayProcessingCallback"
           }
         }
+      }
+    },
+    "/api/customers/v1/wallet": {
+      "delete": {
+        "description": "Deletes customer payment method from wallet.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
+        "operationId": "deleteCustomerPayment",
+        "parameters": [
+          {
+            "description": "customer id in your platform",
+            "in": "query",
+            "name": "external_id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/DeleteCustomerPaymentRequest"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DeleteCustomerPaymentResult"
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "summary": "Delete customer payment from wallet",
+        "tags": [
+          "customers"
+        ]
+      },
+      "get": {
+        "description": "Returns customer details including payment methods, if saved.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
+        "operationId": "getCustomerInfoAndWallet",
+        "parameters": [
+          {
+            "description": "customer id in your platform",
+            "in": "query",
+            "name": "external_id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CustomerWallet"
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "summary": "Get customer information & wallet",
+        "tags": [
+          "customers"
+        ]
+      },
+      "post": {
+        "description": "Adds new payment method to wallet.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
+        "operationId": "addCustomerPayment",
+        "parameters": [
+          {
+            "description": "customer id in your platform",
+            "in": "query",
+            "name": "external_id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AddCustomerPaymentRequest"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AddCustomerPaymentResult"
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "summary": "Add customer payment to wallet",
+        "tags": [
+          "customers"
+        ],
+        "callbacks": {
+          "WalletAddPaymentConfirmation": {
+            "$ref": "#/components/callbacks/WalletAddPaymentConfirmation"
+          }
+        }
+      }
+    },
+    "/api/customers/v1/wallet/find": {
+      "get": {
+        "description": "Returns customer wallet item.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
+        "operationId": "getCustomerWalletItem",
+        "parameters": [
+          {
+            "description": "customer id in your platform",
+            "in": "query",
+            "name": "external_id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "option id of your payment",
+            "in": "query",
+            "name": "option_id",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CustomerWalletItem"
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "summary": "Find customer wallet item",
+        "tags": [
+          "customers"
+        ]
+      }
+    },
+    "/api/customers/v1/wallet/confirmation/status": {
+      "get": {
+        "description": "Returns confirmation status of the payment method is wallet.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
+        "operationId": "getCustomerWalletConfirmationStatus",
+        "parameters": [
+          {
+            "description": "customer id in your platform",
+            "in": "query",
+            "name": "external_id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "id of the payment method in wallet",
+            "in": "query",
+            "name": "option_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetPaymentStatus"
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "summary": "Get confirmation status of the card in wallet",
+        "tags": [
+          "customers"
+        ]
+      }
+    },
+    "/api/customers/v1/wallet/settings/set": {
+      "post": {
+        "description": "Set default payment method in wallet.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
+        "operationId": "setDefaultCard",
+        "parameters": [
+          {
+            "description": "customer id in your platform",
+            "in": "query",
+            "name": "external_id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/SetDefaultCardRequest"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SetDefaultCardResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "summary": "Set default card",
+        "tags": [
+          "customers"
+        ]
       }
     },
     "/api/payouts/v1/request-payout": {
@@ -1357,237 +1580,6 @@
         ]
       }
     },
-    "/api/customers/v1/wallet": {
-      "delete": {
-        "description": "Deletes customer payment method from wallet.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
-        "operationId": "deleteCustomerPayment",
-        "parameters": [
-          {
-            "description": "customer id in your platform",
-            "in": "query",
-            "name": "external_id",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/DeleteCustomerPaymentRequest"
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/DeleteCustomerPaymentResult"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        },
-        "summary": "Delete customer payment from wallet",
-        "tags": [
-          "customers"
-        ]
-      },
-      "get": {
-        "description": "Returns customer details including payment methods, if saved.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
-        "operationId": "getCustomerInfoAndWallet",
-        "parameters": [
-          {
-            "description": "customer id in your platform",
-            "in": "query",
-            "name": "external_id",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/CustomerWallet"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        },
-        "summary": "Get customer information & wallet",
-        "tags": [
-          "customers"
-        ]
-      },
-      "post": {
-        "description": "Adds new payment method to wallet.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
-        "operationId": "addCustomerPayment",
-        "parameters": [
-          {
-            "description": "customer id in your platform",
-            "in": "query",
-            "name": "external_id",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/AddCustomerPaymentRequest"
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/AddCustomerPaymentResult"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        },
-        "summary": "Add customer payment to wallet",
-        "tags": [
-          "customers"
-        ],
-        "callbacks": {
-          "WalletAddPaymentConfirmation": {
-            "$ref": "#/components/callbacks/WalletAddPaymentConfirmation"
-          }
-        }
-      }
-    },
-    "/api/customers/v1/wallet/find": {
-      "get": {
-        "description": "Returns customer wallet item.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
-        "operationId": "getCustomerWalletItem",
-        "parameters": [
-          {
-            "description": "customer id in your platform",
-            "in": "query",
-            "name": "external_id",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "option id of your payment",
-            "in": "query",
-            "name": "option_id",
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/CustomerWalletItem"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        },
-        "summary": "Find customer wallet item",
-        "tags": [
-          "customers"
-        ]
-      }
-    },
-    "/api/customers/v1/wallet/confirmation/status": {
-      "get": {
-        "description": "Returns confirmation status of the payment method is wallet.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
-        "operationId": "getCustomerWalletConfirmationStatus",
-        "parameters": [
-          {
-            "description": "customer id in your platform",
-            "in": "query",
-            "name": "external_id",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "id of the payment method in wallet",
-            "in": "query",
-            "name": "option_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GetPaymentStatus"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        },
-        "summary": "Get confirmation status of the card in wallet",
-        "tags": [
-          "customers"
-        ]
-      }
-    },
-    "/api/customers/v1/wallet/settings/set": {
-      "post": {
-        "description": "Set default payment method in wallet.\nEither X-CUSTOMER-AUTH header or external_id param is required.\nOptional Accept-Language header can be provided to localize Wallet error messages.",
-        "operationId": "setDefaultCard",
-        "parameters": [
-          {
-            "description": "customer id in your platform",
-            "in": "query",
-            "name": "external_id",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/SetDefaultCardRequest"
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/SetDefaultCardResponse"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        },
-        "summary": "Set default card",
-        "tags": [
-          "customers"
-        ]
-      }
-    },
     "/api/subscriptions/v1/plans": {
       "get": {
         "description": "Get plans for the platform.",
@@ -1876,74 +1868,6 @@
         ]
       }
     },
-    "/api/subscriptions/v1/subscriptions/gift": {
-      "post": {
-        "description": "Creates a gift subscription for a customer.\n\nBusiness behavior:\n- The gift flow skips external initial payment confirmation and activates\n  subscription within the same request flow.\n- The endpoint is idempotent for the same customer and plan: if a matching\n  subscription already exists (in any non-inactive state), a new subscription\n  is not created; existing subscription is reused/updated.\n- Gift duration is controlled by `gifted_periods` (legacy `trial_periods`\n  may also affect gifted duration for backward compatibility).\n- Auto-renew is disabled for this flow (`auto_renew=false`).\n- Only the `recurrent_id` payment method is supported; `recurrent_id` is required.\n",
-        "operationId": "giftSubscription",
-        "requestBody": {
-          "$ref": "#/components/requestBodies/GiftSubscriptionRequest"
-        },
-        "parameters": [
-          {
-            "name": "X-CUSTOMER-RID",
-            "in": "header",
-            "description": "User RID identifier. RID header will be used first if both are set.\nThis is a suggested way of authorization for the current endpoint.\n",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "8ba5dd43-496e-4432-9c8a-74fdc74139fe",
-              "deprecated": false
-            }
-          },
-          {
-            "name": "X-CUSTOMER-AUTH",
-            "in": "header",
-            "description": "User access token.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "jwt"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "$ref": "#/components/responses/CreateSubscriptionResponse"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "401": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "403": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "404": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "409": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "412": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        },
-        "summary": "Gift subscription",
-        "tags": [
-          "subscriptions"
-        ],
-        "callbacks": {
-          "SubscriptionCallback": {
-            "$ref": "#/components/callbacks/SubscriptionCallback"
-          }
-        }
-      }
-    },
     "/api/subscriptions/v1/subscriptions/{subscription_id}": {
       "delete": {
         "description": "Deactivate a target subscription.",
@@ -2160,6 +2084,74 @@
         "tags": [
           "subscriptions"
         ]
+      }
+    },
+    "/api/subscriptions/v1/subscriptions/gift": {
+      "post": {
+        "description": "Creates a gift subscription for a customer.\n\nBusiness behavior:\n- The gift flow skips external initial payment confirmation and activates\n  subscription within the same request flow.\n- The endpoint is idempotent for the same customer and plan: if a matching\n  subscription already exists (in any non-inactive state), a new subscription\n  is not created; existing subscription is reused/updated.\n- Gift duration is controlled by `gifted_periods` (legacy `trial_periods`\n  may also affect gifted duration for backward compatibility).\n- Auto-renew is disabled for this flow (`auto_renew=false`).\n- Only the `recurrent_id` payment method is supported; `recurrent_id` is required.\n",
+        "operationId": "giftSubscription",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/GiftSubscriptionRequest"
+        },
+        "parameters": [
+          {
+            "name": "X-CUSTOMER-RID",
+            "in": "header",
+            "description": "User RID identifier. RID header will be used first if both are set.\nThis is a suggested way of authorization for the current endpoint.\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "8ba5dd43-496e-4432-9c8a-74fdc74139fe",
+              "deprecated": false
+            }
+          },
+          {
+            "name": "X-CUSTOMER-AUTH",
+            "in": "header",
+            "description": "User access token.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "jwt"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CreateSubscriptionResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "412": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "summary": "Gift subscription",
+        "tags": [
+          "subscriptions"
+        ],
+        "callbacks": {
+          "SubscriptionCallback": {
+            "$ref": "#/components/callbacks/SubscriptionCallback"
+          }
+        }
       }
     },
     "/api/subscriptions/v1/subscriptions/{subscription_id}/payments": {
@@ -2439,728 +2431,6 @@
         }
       }
     },
-    "/api/in-store-payments/v1/create": {
-      "post": {
-        "tags": [
-          "In-Store Payments"
-        ],
-        "summary": "Create In-Store payment",
-        "description": "Creates in-store payment\n",
-        "operationId": "createInStorePayment",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "external_id": {
-                    "type": "string"
-                  },
-                  "pos_terminal_id": {
-                    "type": "string"
-                  },
-                  "terminal_sn": {
-                    "type": "string"
-                  },
-                  "amount": {
-                    "type": "string",
-                    "format": "number",
-                    "description": "Amount should be passed in smallest monetary unit\n (e.g. if payment is `100.50 UAH`, then `10050` should be passed).\n",
-                    "example": "10050"
-                  },
-                  "currency": {
-                    "type": "string",
-                    "enum": [
-                      "980"
-                    ],
-                    "description": "Currency should be passed as a numeric value defined in ISO4217.\n"
-                  },
-                  "stan": {
-                    "type": "string"
-                  },
-                  "batch_id": {
-                    "type": "string"
-                  },
-                  "merchant_id": {
-                    "type": "string"
-                  },
-                  "order_id": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "pos_terminal_id",
-                  "terminal_sn",
-                  "amount",
-                  "currency",
-                  "external_id"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Payment successfully created.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "fc_id": {
-                      "type": "string"
-                    },
-                    "external_id": {
-                      "type": "string",
-                      "description": "Payment's unique identifier. Should be used in complete & refund operations.\n"
-                    },
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "transaction_status": {
-                      "type": "string"
-                    },
-                    "transaction_status_code": {
-                      "type": "string"
-                    },
-                    "amount": {
-                      "type": "string",
-                      "format": "number",
-                      "example": "10050",
-                      "description": "Amount is returned in smallest monetary unit (e.g. if payment is `10050`, means `100.50`).\n"
-                    },
-                    "order_id": {
-                      "type": "string"
-                    },
-                    "receipt_data": {
-                      "type": "object",
-                      "properties": {
-                        "payment_instruction_date": {
-                          "type": "string"
-                        },
-                        "merchant_name": {
-                          "type": "string"
-                        },
-                        "edrpou_ipn": {
-                          "type": "string"
-                        },
-                        "iban": {
-                          "type": "string"
-                        },
-                        "fc_name": {
-                          "type": "string"
-                        },
-                        "amount": {
-                          "type": "string",
-                          "format": "number",
-                          "example": "10050",
-                          "description": "Amount is returned in smallest monetary unit (e.g. if payment is `10050`, means `100.50`).\n"
-                        },
-                        "fee_amount": {
-                          "type": "string",
-                          "format": "number",
-                          "example": "250",
-                          "description": "Amount is returned in smallest monetary unit (e.g. if payment is `250`, means `2.50`).\n"
-                        },
-                        "description": {
-                          "type": "string"
-                        },
-                        "license": {
-                          "type": "string"
-                        },
-                        "address": {
-                          "type": "string"
-                        },
-                        "id_nbu": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "401": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "403": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/api/in-store-payments/v1/confirm": {
-      "post": {
-        "tags": [
-          "In-Store Payments"
-        ],
-        "summary": "Confirm In-Store payment",
-        "description": "Confirms in-store payment\n",
-        "operationId": "confirmInStorePayment",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "external_id": {
-                    "type": "string"
-                  },
-                  "pos_terminal_id": {
-                    "type": "string"
-                  },
-                  "terminal_sn": {
-                    "type": "string"
-                  },
-                  "fiscal_id": {
-                    "type": "string"
-                  },
-                  "fiscal_receipt": {
-                    "type": "string",
-                    "description": "Link to the fiscal receipt generated for the payment.\n"
-                  },
-                  "amount": {
-                    "type": "string",
-                    "format": "number",
-                    "description": "Amount should be passed in smallest monetary unit\n(e.g. if payment is `100.50 UAH`, then `10050` should be passed).\n",
-                    "example": "10050"
-                  },
-                  "rrn": {
-                    "type": "string"
-                  },
-                  "card_number": {
-                    "type": "string",
-                    "description": "Payer's full card number.\n"
-                  },
-                  "bank_acquirer": {
-                    "type": "string"
-                  },
-                  "authorization_code": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "payment_system": {
-                    "type": "string"
-                  },
-                  "pos_payment_status": {
-                    "type": "string"
-                  },
-                  "pos_status_description": {
-                    "type": "string"
-                  },
-                  "merchant_id": {
-                    "type": "string"
-                  },
-                  "order_id": {
-                    "type": "string"
-                  },
-                  "encrypted_track2": {
-                    "type": "string",
-                    "format": "base64",
-                    "description": "Encrypted track2 from pos terminal\n"
-                  }
-                },
-                "required": [
-                  "external_id",
-                  "pos_terminal_id",
-                  "amount",
-                  "pos_payment_status"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Payment successfully confirmed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "fc_id": {
-                      "type": "string"
-                    },
-                    "finalised_at": {
-                      "type": "string"
-                    },
-                    "external_id": {
-                      "type": "string",
-                      "description": "Payment's unique identifier. Should be used in complete & refund operations.\n"
-                    },
-                    "transaction_status": {
-                      "type": "string"
-                    },
-                    "transaction_status_code": {
-                      "type": "string"
-                    },
-                    "amount": {
-                      "type": "string",
-                      "format": "number",
-                      "description": "Amount should be passed in smallest monetary unit\n(e.g. if payment is `100.50 UAH`, then `10050` should be passed).\n",
-                      "example": "10050"
-                    },
-                    "order_id": {
-                      "type": "string"
-                    },
-                    "fiscal_receipt": {
-                      "type": "string",
-                      "description": "Link to the fiscal receipt generated for the payment.\n"
-                    },
-                    "receipt_data": {
-                      "type": "object",
-                      "properties": {
-                        "payment_instruction_id": {
-                          "type": "string"
-                        },
-                        "payment_system": {
-                          "type": "string"
-                        },
-                        "payment_instruction_date": {
-                          "type": "string"
-                        },
-                        "bank_acquirer": {
-                          "type": "string"
-                        },
-                        "bank_edrpou": {
-                          "type": "string"
-                        },
-                        "pos_terminal_id": {
-                          "type": "string"
-                        },
-                        "merchant_name": {
-                          "type": "string"
-                        },
-                        "edrpou_ipn": {
-                          "type": "string"
-                        },
-                        "iban": {
-                          "type": "string"
-                        },
-                        "address_sale_point": {
-                          "type": "string"
-                        },
-                        "rrn": {
-                          "type": "string"
-                        },
-                        "fc_id": {
-                          "type": "string"
-                        },
-                        "fc_name": {
-                          "type": "string"
-                        },
-                        "description": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "401": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "403": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/api/in-store-payments/v1/refund": {
-      "post": {
-        "tags": [
-          "In-Store Payments"
-        ],
-        "summary": "Refund In-Store payment",
-        "description": "Refunds in-store payment\n",
-        "operationId": "refundInStorePayment",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "payment_external_id": {
-                    "type": "string"
-                  },
-                  "refund_external_id": {
-                    "type": "string"
-                  },
-                  "terminal_sn": {
-                    "type": "string"
-                  },
-                  "merchant_id": {
-                    "type": "string"
-                  },
-                  "order_id": {
-                    "type": "string"
-                  },
-                  "fiscal_id": {
-                    "type": "string"
-                  },
-                  "fiscal_receipt": {
-                    "type": "string",
-                    "description": "Link to the fiscal receipt generated for the payment.\n"
-                  },
-                  "amount": {
-                    "type": "string",
-                    "format": "number",
-                    "description": "Amount should be passed in smallest monetary unit\n (e.g. if payment is `100.50 UAH`, then `10050` should be passed).\n",
-                    "example": "10050"
-                  },
-                  "payment_system": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "pos_terminal_id": {
-                    "type": "string"
-                  },
-                  "card_number": {
-                    "type": "string",
-                    "description": "Payer's full card number.\n"
-                  },
-                  "rrn": {
-                    "type": "string"
-                  },
-                  "bank_acquirer": {
-                    "type": "string"
-                  },
-                  "authorization_code": {
-                    "type": "string"
-                  },
-                  "pos_payment_status": {
-                    "type": "string"
-                  },
-                  "pos_status_description": {
-                    "type": "string"
-                  },
-                  "encrypted_track2": {
-                    "type": "string",
-                    "format": "base64",
-                    "description": "Encrypted track2 from pos terminal\n"
-                  }
-                },
-                "required": [
-                  "payment_external_id",
-                  "refund_external_id",
-                  "terminal_sn",
-                  "amount",
-                  "payment_system",
-                  "pos_terminal_id",
-                  "card_number",
-                  "bank_acquirer",
-                  "authorization_code"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Payment successfully confirmed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "fc_id": {
-                      "type": "string"
-                    },
-                    "finalised_at": {
-                      "type": "string"
-                    },
-                    "external_id": {
-                      "type": "string",
-                      "description": "Payment's unique identifier. Should be used in complete & refund operations.\n"
-                    },
-                    "transaction_status": {
-                      "type": "string"
-                    },
-                    "transaction_status_code": {
-                      "type": "string"
-                    },
-                    "amount": {
-                      "type": "string",
-                      "format": "number",
-                      "description": "For whole numbers use integer value like `100`. If pennies are included, specify them with two digits after the decimal point \n(e.g., `100.35` for an additional `35` pennies).\n",
-                      "example": "100.35"
-                    },
-                    "order_id": {
-                      "type": "string"
-                    },
-                    "receipt_data": {
-                      "type": "object",
-                      "properties": {
-                        "payment_instruction_id": {
-                          "type": "string"
-                        },
-                        "payment_system": {
-                          "type": "string"
-                        },
-                        "payment_instruction_date": {
-                          "type": "string"
-                        },
-                        "bank_acquirer": {
-                          "type": "string"
-                        },
-                        "bank_edrpou": {
-                          "type": "string"
-                        },
-                        "pos_terminal_id": {
-                          "type": "string"
-                        },
-                        "merchant_name": {
-                          "type": "string"
-                        },
-                        "edrpou_ipn": {
-                          "type": "string"
-                        },
-                        "iban": {
-                          "type": "string"
-                        },
-                        "address_sale_point": {
-                          "type": "string"
-                        },
-                        "rrn": {
-                          "type": "string"
-                        },
-                        "fc_id": {
-                          "type": "string"
-                        },
-                        "description": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "401": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "403": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/api/in-store-payments/v1/info": {
-      "post": {
-        "tags": [
-          "In-Store Payments"
-        ],
-        "summary": "Get In-Store payment info",
-        "description": "Get in-store payment info\n",
-        "operationId": "getInStorePaymentInfo",
-        "parameters": [
-          {
-            "description": "External ID (unique identifier)",
-            "in": "query",
-            "name": "external_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "In-Store payment info.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "fc_id": {
-                      "type": "string"
-                    },
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "transaction_status": {
-                      "type": "string"
-                    },
-                    "transaction_status_code": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "401": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "403": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/api/partners/v1/fee-details": {
-      "get": {
-        "tags": [
-          "partners"
-        ],
-        "summary": "Get fee details",
-        "description": "Get fee details",
-        "operationId": "feeDetails",
-        "parameters": [
-          {
-            "description": "Merchant project id",
-            "in": "query",
-            "name": "merchant_project_id",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/FeeDetailsResponse"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/api/partners/v1/merchant-status": {
-      "get": {
-        "tags": [
-          "partners"
-        ],
-        "summary": "Get merchant status",
-        "description": "Get merchant status",
-        "operationId": "merchantStatus",
-        "parameters": [
-          {
-            "description": "Merchant project id",
-            "in": "query",
-            "name": "merchant_project_id",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Merchant entity id",
-            "in": "query",
-            "name": "merchant_entity_id",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/MerchantStatusResponse"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/api/partners/v1/transaction-details": {
-      "get": {
-        "tags": [
-          "partners"
-        ],
-        "summary": "Transaction details",
-        "description": "Fetch transaction details",
-        "operationId": "transactionDetails",
-        "parameters": [
-          {
-            "description": "Merchant entity id",
-            "in": "query",
-            "name": "merchant_entity_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Merchant order id",
-            "in": "query",
-            "name": "merchant_order_id",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Unified external id",
-            "in": "query",
-            "name": "unified_external_id",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/TransactionDetailsListResponse"
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
     "/api/merchants/v1/me": {
       "get": {
         "tags": [
@@ -3252,6 +2522,16 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "consolidated",
+            "in": "query",
+            "required": false,
+            "description": "Set to `true` when `payment_instruction_id` is a consolidated payment\ninstruction, to decline it together with every child instruction of the\nbatch. Defaults to `false`, which declines a single instruction.\n",
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -3640,6 +2920,10 @@
             "type": "string",
             "description": "Order description",
             "example": "Payment for order 001"
+          },
+          "order_recipient": {
+            "$ref": "#/components/schemas/OrderRecipient",
+            "description": "Beneficiary of a non-contractual credit transfer (e.g. a treasury/budget\npayment). The payment instruction names it instead of the merchant.\n`cardpay` only. Required for an order of a government entity and rejected\nfor any other.\n"
           }
         }
       },
@@ -3718,6 +3002,13 @@
               },
               "fingerprint": {
                 "$ref": "#/components/schemas/BrowserFingerprint"
+              },
+              "tin": {
+                "type": "string",
+                "description": "Payer's individual tax number (ІПН): 10 digits. A non-contractual credit\ntransfer requires either this or `document`.\n"
+              },
+              "document": {
+                "$ref": "#/components/schemas/CustomerDocument"
               }
             },
             "description": "Payer customer data."
@@ -3763,6 +3054,10 @@
             "type": "string",
             "description": "Unified external ID."
           },
+          "child_of": {
+            "type": "string",
+            "description": "External ID of parent order."
+          },
           "payload": {
             "type": "string",
             "maxLength": 4096,
@@ -3775,7 +3070,7 @@
           },
           "account_to_refill": {
             "type": "string",
-            "description": "Account number or phone number to refill (e.g. mobile top-up).\nOptional, per order. When provided, it is validated before the\nbatch is processed; if any check fails the whole batch is rejected\nwith a `partner_account_check_failed` error, and the failing order\nis identified by `hint.order_external_id`.\n"
+            "description": "Account number or phone number to refill (e.g. mobile top-up).\nOptional, per order. When provided, it is validated before the\nbatch is processed; if any check fails the whole batch is rejected\nwith a `partner_account_check_failed` or `paying_unavailable_for_recipient`\nerror, and the failing order is identified by `hint.order_external_id`.\n"
           },
           "products": {
             "items": {
@@ -3783,6 +3078,10 @@
             },
             "type": "array",
             "description": "An array of product objects that are added to the order."
+          },
+          "order_recipient": {
+            "$ref": "#/components/schemas/OrderRecipient",
+            "description": "Beneficiary of a non-contractual credit transfer (e.g. a treasury/budget\npayment). Optional; when provided, all of its fields are required together.\n"
           }
         },
         "required": [
@@ -3792,6 +3091,67 @@
           "description"
         ],
         "type": "object"
+      },
+      "OrderRecipient": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Recipient name, e.g. `Державне казначейство України`."
+          },
+          "tin": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Recipient identification code, e.g. `12345676`."
+          },
+          "iban": {
+            "type": "string",
+            "minLength": 15,
+            "maxLength": 34,
+            "description": "Recipient account (IBAN)."
+          },
+          "bank_name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Recipient's payment service provider (bank) name."
+          }
+        },
+        "required": [
+          "name",
+          "tin",
+          "iban",
+          "bank_name"
+        ],
+        "type": "object"
+      },
+      "CustomerDocument": {
+        "properties": {
+          "type": {
+            "enum": [
+              "passport",
+              "id",
+              "foreign-passport"
+            ],
+            "type": "string",
+            "description": "Identity document type."
+          },
+          "series": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "Document series: two Cyrillic letters for `passport`. Omit for `id`, which\nhas no series.\n"
+          },
+          "number": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Document number: six digits for `passport`, nine digits for `id`.\n"
+          }
+        },
+        "required": [
+          "type",
+          "number"
+        ],
+        "type": "object",
+        "description": "Identifies a payer who has no individual tax number. When `tin` is also passed,\nit takes precedence.\n"
       },
       "BatchDetails": {
         "properties": {
@@ -3887,6 +3247,14 @@
             "type": "string",
             "description": "Description of the operation status."
           },
+          "status_description_en": {
+            "type": "string",
+            "description": "Customer-facing description of the operation status in English."
+          },
+          "status_description_uk": {
+            "type": "string",
+            "description": "Customer-facing description of the operation status in Ukrainian."
+          },
           "method": {
             "$ref": "#/components/schemas/BatchMethodType"
           },
@@ -3900,6 +3268,18 @@
           "recurrent_id": {
             "type": "string",
             "description": "Identifier of a successful recurrent-initiating payment. Present only when\nthe order was created with `init_recurrent=true` and the payment succeeded.\nCan be used to initiate subsequent recurrent charges.\n"
+          },
+          "child_of": {
+            "type": "string",
+            "description": "External ID of parent order. Is empty if `has_child` = `true`."
+          },
+          "has_child": {
+            "type": "boolean",
+            "description": "Marks that the current order has child order. Is false if `child_of` contains value."
+          },
+          "order_recipient": {
+            "$ref": "#/components/schemas/OrderRecipient",
+            "description": "Beneficiary of a non-contractual credit transfer. Present only for such orders.\n"
           }
         }
       },
@@ -4210,139 +3590,58 @@
       },
       "ResponseCode": {
         "enum": [
-          "authorization_failed",
-          "customer_auth_not_found",
-          "request_failed",
-          "internal_error",
-          "access_not_allowed",
-          "invalid_request_body",
-          "payment_settings_not_found",
-          "transaction_already_paid",
-          "action_not_allowed",
-          "action_already_done",
-          "transaction_success_primary_not_found",
-          "payment_method_not_allowed",
-          "wallet_not_configured",
-          "payment_method_already_confirmed",
-          "payment_method_not_found",
-          "invalid_card_token",
-          "customer_auth_token_expired_or_invalid",
-          "customer_profile_not_found",
-          "customer_id_not_passed",
-          "transaction_not_found",
-          "waiting_for_verification",
-          "transaction_amount_limit",
-          "invalid_data",
-          "transaction_declined",
-          "authorization_error",
-          "transaction_rejected",
-          "transaction_successful",
-          "anti_fraud_check",
-          "card_not_supported",
-          "confirmation_timeout",
-          "invalid_card_data",
-          "invalid_currency",
-          "pending",
-          "waiting_for_complete",
-          "access_error",
-          "card_expired",
-          "receiver_info_error",
-          "transaction_limit_exceeded",
-          "transaction_not_supported",
           "3ds_not_supported",
           "3ds_required",
-          "failed_to_create_transaction",
-          "failed_to_finish_transaction",
-          "insufficient_funds",
-          "invalid_phone_number",
-          "card_has_constraints",
-          "pin_tries_exceeded",
-          "session_expired",
-          "timeout",
-          "transaction_created",
-          "waiting_for_redirect",
-          "wrong_amount",
-          "test_transaction",
-          "subscription_successful",
-          "unsubscribed_successfully",
-          "wrong_pin",
-          "wrong_authorization_code",
-          "wrong_cavv",
-          "wrong_cvv",
-          "wrong_account_number",
-          "confirm_required",
-          "cvv_is_required",
-          "confirmation_required",
-          "sender_info_required",
-          "missed_payout_method_data",
-          "card_verification_required",
-          "incorrect_refund_sum_or_currency",
-          "payment_card_has_invalid_status",
-          "wrong_card_number",
-          "user_not_found",
-          "failed_to_send_sms",
-          "wrong_sms_password",
-          "card_not_found",
-          "payment_system_not_supported",
-          "country_not_supported",
-          "no_discount_found",
-          "failed_to_load_wallet",
-          "invalid_verification_code",
-          "additional_information_is_pending",
-          "transaction_is_not_recurring",
-          "confirm_amount_cannot_be_more_than_the_transaction_amount",
-          "card_bin_not_found",
-          "currency_rate_not_found",
-          "invalid_recipient_name",
-          "daily_card_usage_limit_reached",
-          "invalid_transaction_amount",
-          "card_type_is_not_supported",
-          "store_is_blocked",
-          "store_is_not_active",
-          "payment_method_not_found",
-          "transaction_cannot_be_processed",
-          "invalid_transaction_status",
-          "public_key_not_found",
-          "terminal_not_found",
-          "fee_not_found",
-          "failed_to_verify_card",
-          "invalid_transaction_type",
-          "restricted_ip",
-          "invalid_token",
-          "preauth_not_allowed",
-          "token_does_not_exist",
-          "reached_the_limit_of_attempts_for_ip",
-          "card_branch_is_blocked",
-          "card_branch_daily_limit_reached",
-          "completion_limit_reached",
-          "recurring_transactions_not_allowed",
-          "transaction_is_canceled_by_payer",
-          "payment_was_refunded",
-          "card_is_lost_or_stolen",
-          "plan_not_found",
-          "plan_not_active",
-          "plan_project_missing",
-          "subscription_auto_renew_locked",
-          "subscription_not_found",
-          "subscription_not_active",
-          "subscription_already_exists",
-          "customer_email_not_allowed",
-          "order_canceled",
           "3ds_verification_failed",
+          "access_error",
+          "access_not_allowed",
           "account_number_and_phone_passed",
           "acs_service_unavailable",
+          "action_already_done",
+          "action_not_allowed",
+          "additional_information_is_pending",
+          "advance_payment_accepted",
+          "advance_payment_offered",
           "agreements_service_unavailable",
           "amount_was_successfully_blocked",
+          "anti_fraud_check",
+          "anti_fraud_check_in_progress",
+          "authorization_error",
+          "authorization_failed",
           "balances_limitation",
           "bank_is_not_supported",
           "banking_application_is_not_installed",
           "callback_url_missing",
           "cancel_successful",
           "cancel_transfer",
+          "card_bin_not_found",
+          "card_branch_daily_limit_reached",
+          "card_branch_is_blocked",
+          "card_expired",
+          "card_has_constraints",
+          "card_is_lost_or_stolen",
+          "card_not_found",
+          "card_not_supported",
+          "card_type_is_not_supported",
+          "card_verification_required",
           "chargeback-failed",
           "chargeback_successful",
+          "completion_limit_reached",
+          "confirm_amount_cannot_be_more_than_the_transaction_amount",
+          "confirm_required",
+          "confirmation_required",
+          "confirmation_timeout",
           "contract_was_signed_on_client_side",
+          "country_not_supported",
           "credit_limit_exceeded",
+          "currency_rate_not_found",
+          "customer_auth_not_found",
+          "customer_auth_token_expired_or_invalid",
+          "customer_email_not_allowed",
+          "customer_id_not_passed",
+          "customer_profile_not_found",
+          "cvv_is_required",
+          "daily_card_usage_limit_reached",
           "data_not_found",
           "entity_agreement_not_found",
           "entity_blocked",
@@ -4351,50 +3650,139 @@
           "entity_suspended",
           "expired_or_invalid_token",
           "failed_as_part_of_failed_batch",
+          "failed_to_create_transaction",
           "failed_to_fetch_recipient_data_from_diia",
+          "failed_to_finish_transaction",
+          "failed_to_load_wallet",
+          "failed_to_send_sms",
+          "failed_to_verify_card",
+          "fc_transaction_not_generated",
+          "fee_not_found",
           "finmon_payer_validation_failed",
           "finmon_recipient_validation_failed",
           "finmon_validation_failed",
           "free_bank_details_limit",
           "hold_cancelled_by_bank",
+          "incorrect_refund_sum_or_currency",
+          "insufficient_funds",
           "insufficient_funds_for_refund",
+          "internal_error",
           "invalid_apple_pay_token",
+          "invalid_card_data",
+          "invalid_card_token",
+          "invalid_currency",
+          "invalid_data",
           "invalid_google_pay_token",
           "invalid_operation",
+          "invalid_phone_number",
+          "invalid_recipient_name",
+          "invalid_request_body",
+          "invalid_token",
+          "invalid_transaction_amount",
+          "invalid_transaction_status",
+          "invalid_transaction_type",
+          "invalid_verification_code",
+          "missed_payout_method_data",
           "missing_route",
+          "no_discount_found",
           "operation_not_allowed",
           "operation_not_found",
+          "order_canceled",
           "order_expired",
           "order_is_duplicated",
           "partner_account_check_failed",
           "partner_account_not_found",
           "payer_card_error",
+          "paying_unavailable_for_recipient",
+          "payment_card_has_invalid_status",
           "payment_flow_not_supported",
+          "payment_method_already_confirmed",
+          "payment_method_not_allowed",
+          "payment_method_not_found",
           "payment_method_verification_failed",
           "payment_provider_failure",
+          "payment_settings_not_found",
+          "payment_system_not_supported",
+          "payment_was_refunded",
+          "pending",
           "pin_data_required",
+          "pin_tries_exceeded",
+          "plan_not_active",
+          "plan_not_found",
+          "plan_project_missing",
+          "preauth_not_allowed",
+          "public_key_not_found",
+          "reached_the_limit_of_attempts_for_ip",
           "receiver_card_error",
+          "receiver_info_error",
           "recipient_payment_method_not_found",
           "recurrent_not_found",
+          "recurring_transactions_not_allowed",
           "refund_is_cancelled_by_initiator",
           "refund_is_cancelled_by_system",
           "refund_pending",
           "refund_period_is_expired",
           "refund_successful",
           "refund_transaction_bank_daily_limit_exceeded",
+          "refund_waiting_for_funds",
           "rejected_by_bank",
           "representment-failed",
           "representment_successful",
+          "request_failed",
+          "restricted_card",
+          "restricted_ip",
+          "sender_info_required",
+          "session_expired",
           "simultaneous_open_orders_not_supported_by_bank",
+          "store_is_blocked",
+          "store_is_not_active",
+          "subscription_already_exists",
+          "subscription_auto_renew_locked",
+          "subscription_not_active",
+          "subscription_not_found",
+          "subscription_successful",
+          "terminal_limit_exceeded",
+          "terminal_not_found",
+          "test_transaction",
+          "timeout",
+          "token_does_not_exist",
           "too_many_requests",
+          "transaction_already_paid",
+          "transaction_amount_limit",
+          "transaction_cannot_be_processed",
+          "transaction_confirmation_timeout",
+          "transaction_created",
+          "transaction_declined",
           "transaction_is_canceled",
+          "transaction_is_canceled_by_payer",
+          "transaction_is_not_recurring",
+          "transaction_limit_exceeded",
+          "transaction_not_found",
+          "transaction_not_supported",
+          "transaction_rejected",
+          "transaction_success_primary_not_found",
+          "transaction_successful",
           "unknown_entity",
+          "unsubscribed_successfully",
           "user_collision_by_financial_number",
+          "user_not_found",
+          "waiting_for_complete",
+          "waiting_for_redirect",
+          "waiting_for_verification",
+          "wallet_not_configured",
+          "wrong_account_number",
+          "wrong_amount",
+          "wrong_authorization_code",
+          "wrong_card_number",
+          "wrong_cavv",
           "wrong_cooperation_type",
+          "wrong_cvv",
           "wrong_otp_code",
           "wrong_payment_count",
           "wrong_payparts_period",
-          "wrong_project_settings"
+          "wrong_pin",
+          "wrong_project_settings",
+          "wrong_sms_password"
         ],
         "type": "string"
       },
@@ -4441,6 +3829,14 @@
           "status_description": {
             "type": "string"
           },
+          "status_description_en": {
+            "type": "string",
+            "description": "Customer-facing description of the operation status in English."
+          },
+          "status_description_uk": {
+            "type": "string",
+            "description": "Customer-facing description of the operation status in Ukrainian."
+          },
           "transaction_id": {
             "type": "string"
           },
@@ -4473,7 +3869,23 @@
             "type": "string"
           },
           "recipient_iban": {
-            "type": "string"
+            "type": "string",
+            "description": "Account of the transfer beneficiary. For a non-contractual credit transfer\nthis is the account named in `recipient_name`; otherwise it is the card2iban\ndestination.\n"
+          },
+          "recipient_name": {
+            "type": "string",
+            "description": "Beneficiary of a non-contractual credit transfer (e.g. a treasury/budget\npayment). Present only for such payments.\n",
+            "example": "Державне казначейство України"
+          },
+          "recipient_tin": {
+            "type": "string",
+            "description": "Business registration number (ЄДРПОУ) of the beneficiary.",
+            "example": "12345676"
+          },
+          "recipient_bank_name": {
+            "type": "string",
+            "description": "Bank holding the beneficiary's account. Reported separately from\n`bank_name`, which is always the acquiring bank of the terminal.\n",
+            "example": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ПЕРШИЙ УКРАЇНСЬКИЙ МІЖНАРОДНИЙ БАНК\""
           },
           "subscription_id": {
             "type": "string"
@@ -4661,6 +4073,11 @@
           },
           "bin_country": {
             "type": "string"
+          },
+          "bin_alias_name": {
+            "type": "string",
+            "description": "The alias name of the card bin.",
+            "example": "ROZETKA CARD"
           }
         }
       },
@@ -4685,6 +4102,11 @@
           },
           "bin_country": {
             "type": "string"
+          },
+          "bin_alias_name": {
+            "type": "string",
+            "description": "The alias name of the card bin.",
+            "example": "ROZETKA CARD"
           }
         }
       },
@@ -4711,6 +4133,11 @@
           },
           "bin_country": {
             "type": "string"
+          },
+          "bin_alias_name": {
+            "type": "string",
+            "description": "The alias name of the card bin.",
+            "example": "ROZETKA CARD"
           }
         },
         "type": "object"
@@ -4741,6 +4168,10 @@
           },
           "phone": {
             "type": "string"
+          },
+          "tin": {
+            "type": "string",
+            "description": "Payer identification code."
           }
         }
       },
@@ -5122,14 +4553,20 @@
           "unprocessed",
           "processing",
           "processed",
-          "failed"
+          "failed",
+          "refunded",
+          "refund_failed",
+          "canceled"
         ],
         "type": "string",
         "x-enum-varnames": [
           "SubscriptionPaymentStateUnprocessed",
           "SubscriptionPaymentStateProcessing",
           "SubscriptionPaymentStateProcessed",
-          "SubscriptionPaymentStateFailed"
+          "SubscriptionPaymentStateFailed",
+          "SubscriptionPaymentStateRefunded",
+          "SubscriptionPaymentStateRefundFailed",
+          "SubscriptionPaymentStateCanceled"
         ]
       },
       "SubscriptionPaymentMetaPaymentMethod": {
@@ -5663,9 +5100,12 @@
         "type": "object"
       },
       "PartnerDetails": {
+        "description": "Identifiers assigned to the payment by the external partner system.\nThe object is returned only for payments processed through a partner\n(e.g. a mobile account top-up) and only after the partner has provided its identifiers.",
         "properties": {
           "transaction_id": {
-            "type": "string"
+            "description": "Transaction identifier in the external partner system.\nIs omitted while the partner has not returned it yet.",
+            "type": "string",
+            "example": "0e5b3f1c-24da-4f9c-9a4c-3ec2f0d6a1b7"
           }
         },
         "type": "object"
@@ -6623,6 +6063,14 @@
                 "batch_external_id": {
                   "type": "string",
                   "description": "External identifier from the merchant, one per batch.\nUnique within the project.\nThe parameter is used for the batch payment logic.\n"
+                },
+                "child_of": {
+                  "type": "string",
+                  "description": "External ID of parent order. Is empty if `has_child` = `true`."
+                },
+                "has_child": {
+                  "type": "boolean",
+                  "description": "Marks that the current order has child order. Is false if `child_of` contains value."
                 },
                 "id": {
                   "example": "0",
@@ -8954,7 +8402,7 @@
                     "$ref": "#/components/schemas/PayPartsProduct"
                   },
                   "type": "array",
-                  "description": "List of products in the order.\nRequired for `bank_name: rozetkapay` - the credit application cannot be created\nwithout the product list: the create call itself succeeds, but the credit flow\nfails when the customer proceeds in the RozetkaPay checkout.\nOptional for other banks - if provided, the list is forwarded to the bank with the order.\n"
+                  "description": "List of products in the order.\n\nRequired for:\n  * `bank_name: rozetkapay` - the credit application cannot be created\nwithout the product list: the create call itself succeeds, but the credit flow\nfails when the customer proceeds in the RozetkaPay checkout.\n  * `bank_name: monobank` - bank requirement.\n\nOptional for other banks - if provided, the list is forwarded to the bank with the order.\n"
                 },
                 "result_url": {
                   "format": "url",
@@ -9498,8 +8946,6 @@
         "customers",
         "subscriptions",
         "reports",
-        "In-Store Payments",
-        "partners",
         "merchants",
         "finmon"
       ]

@@ -39,9 +39,9 @@ public class RequestBodyParityTests
         { "CancelBatchPaymentRequest", typeof(CancelBatchPaymentRequest) },
         { "CreateBatchPaymentRequest", typeof(CreateBatchPaymentRequest) },
         { "CreateAlternativePayment", typeof(CreateAlternativePayment) },
-        // The body POST /api/payments/v1/new actually takes. The similarly named
-        // CreatePaymentRequest schema is referenced by no operation and differs by one field.
-        { "CreatePaymentRequestDev", typeof(CreatePaymentRequest) },
+        // The body POST /api/payments/v1/new takes since 2026-09-30. Until then the operation referenced
+        // CreatePaymentRequestDev, which lacks campaign_name and is now referenced by nothing.
+        { "CreatePaymentRequest", typeof(CreatePaymentRequest) },
         { "CreatePayPartsOrder", typeof(CreatePayPartsOrder) },
         { "RefundPPayRequest", typeof(RefundPPayRequest) },
         { "SetDefaultCardRequest", typeof(SetDefaultCardRequest) },

@@ -7,8 +7,17 @@ namespace SYT.RozetkaPay.Services;
 /// <see cref="InStorePaymentService"/> and intended as the injection/mocking seam for consumer code.
 /// </summary>
 /// <remarks>
+/// <para>
 /// The confirm and refund requests carry cardholder data. The SDK never logs a request body, a
 /// response body, or any identifier from these operations, and callers must apply the same rule.
+/// </para>
+/// <para>
+/// <b>Removed from the public document on 2026-09-30.</b> RozetkaPay no longer publishes any
+/// <c>/api/in-store-payments/v1/*</c> operation (nor the <c>In-Store Payments</c> tag) in
+/// <c>https://docs.rozetkapay.com/openapi.json</c>. Every method here is therefore
+/// <see cref="ObsoleteAttribute"/> (diagnostic <c>RZPAY001</c>) but unchanged on the wire: the same route,
+/// body and response type as in 7.0.0, for accounts that still have in-store access.
+/// </para>
 /// </remarks>
 public interface IInStorePaymentService
 {
@@ -20,6 +29,7 @@ public interface IInStorePaymentService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Created transaction and its receipt data</returns>
     /// <exception cref="ArgumentNullException"><paramref name="request"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.InStoreOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<InStorePaymentCreateResponse> CreateAsync(
         InStorePaymentCreateRequest request,
         CancellationToken cancellationToken = default);
@@ -32,6 +42,7 @@ public interface IInStorePaymentService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Confirmed transaction and its receipt data</returns>
     /// <exception cref="ArgumentNullException"><paramref name="request"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.InStoreOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<InStorePaymentConfirmResponse> ConfirmAsync(
         InStorePaymentConfirmRequest request,
         CancellationToken cancellationToken = default);
@@ -44,6 +55,7 @@ public interface IInStorePaymentService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Refund transaction and its receipt data</returns>
     /// <exception cref="ArgumentNullException"><paramref name="request"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.InStoreOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<InStorePaymentRefundResponse> RefundAsync(
         InStorePaymentRefundRequest request,
         CancellationToken cancellationToken = default);
@@ -61,6 +73,7 @@ public interface IInStorePaymentService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Current transaction state</returns>
     /// <exception cref="ArgumentNullException"><paramref name="externalId"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.InStoreOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<InStorePaymentInfoResponse> GetInfoAsync(
         string externalId,
         CancellationToken cancellationToken = default);

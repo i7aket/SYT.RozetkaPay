@@ -48,6 +48,7 @@ public class PartnerService : BaseService, IPartnerService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Inner and outer fees per channel</returns>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<PartnerFeeDetailsResponse> GetFeeDetailsAsync(CancellationToken cancellationToken = default)
     {
         return await GetAsync<PartnerFeeDetailsResponse>(FeeDetailsEndpoint, FeeDetailsEndpoint, cancellationToken);
@@ -61,6 +62,7 @@ public class PartnerService : BaseService, IPartnerService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Inner and outer fees per channel</returns>
     /// <exception cref="ArgumentNullException"><paramref name="merchantProjectId"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<PartnerFeeDetailsResponse> GetFeeDetailsAsync(
         string merchantProjectId,
         CancellationToken cancellationToken = default)
@@ -79,6 +81,7 @@ public class PartnerService : BaseService, IPartnerService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Entity, project and overall status</returns>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<MerchantStatusResponse> GetMerchantStatusAsync(CancellationToken cancellationToken = default)
     {
         return await GetAsync<MerchantStatusResponse>(
@@ -95,6 +98,7 @@ public class PartnerService : BaseService, IPartnerService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Entity, project and overall status</returns>
     /// <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<MerchantStatusResponse> GetMerchantStatusAsync(
         PartnerMerchantStatusOptions options,
         CancellationToken cancellationToken = default)
@@ -129,6 +133,7 @@ public class PartnerService : BaseService, IPartnerService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Matching transactions</returns>
     /// <exception cref="ArgumentNullException"><paramref name="merchantEntityId"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(
         string merchantEntityId,
         CancellationToken cancellationToken = default)
@@ -152,6 +157,7 @@ public class PartnerService : BaseService, IPartnerService
     /// <exception cref="ArgumentNullException">
     /// <paramref name="merchantEntityId"/> or <paramref name="options"/> is null.
     /// </exception>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(
         string merchantEntityId,
         PartnerTransactionDetailsOptions options,

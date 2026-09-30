@@ -113,10 +113,30 @@ public class TransactionDetails
     [JsonPropertyName("payment_id")]
     public string? PaymentId { get; set; }
     /// <summary>
-    /// Provider field &lt;c&gt;recipient_iban&lt;/c&gt;.
+    /// Bank holding the beneficiary's account (<c>recipient_bank_name</c>). Reported separately from
+    /// <see cref="BankName"/>, which is always the acquiring bank of the terminal. Added to the published
+    /// schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("recipient_bank_name")]
+    public string? RecipientBankName { get; set; }
+    /// <summary>
+    /// Account of the transfer beneficiary (<c>recipient_iban</c>). For a non-contractual credit transfer this
+    /// is the account named in <see cref="RecipientName"/>; otherwise it is the card2iban destination.
     /// </summary>
     [JsonPropertyName("recipient_iban")]
     public string? RecipientIban { get; set; }
+    /// <summary>
+    /// Beneficiary of a non-contractual credit transfer, for example a treasury or budget payment
+    /// (<c>recipient_name</c>). Present only for such payments. Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("recipient_name")]
+    public string? RecipientName { get; set; }
+    /// <summary>
+    /// Business registration number (ЄДРПОУ) of the beneficiary (<c>recipient_tin</c>). Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("recipient_tin")]
+    public string? RecipientTin { get; set; }
     /// <summary>
     /// Provider field &lt;c&gt;recurrent_id&lt;/c&gt;.
     /// </summary>
@@ -132,6 +152,18 @@ public class TransactionDetails
     /// </summary>
     [JsonPropertyName("status_description")]
     public string? StatusDescription { get; set; }
+    /// <summary>
+    /// Customer-facing description of the operation status in English (<c>status_description_en</c>). Added
+    /// to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("status_description_en")]
+    public string? StatusDescriptionEn { get; set; }
+    /// <summary>
+    /// Customer-facing description of the operation status in Ukrainian (<c>status_description_uk</c>).
+    /// Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("status_description_uk")]
+    public string? StatusDescriptionUk { get; set; }
     /// <summary>
     /// Provider field &lt;c&gt;subscription_id&lt;/c&gt;.
     /// </summary>

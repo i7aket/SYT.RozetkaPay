@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json.Serialization;
+using SYT.RozetkaPay.Models.Common;
 
 namespace SYT.RozetkaPay.Models.PaymentInstructions;
 
@@ -106,6 +107,18 @@ public class PaymentInstructionOrder
     /// </summary>
     [JsonPropertyName("description")]
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Beneficiary of a non-contractual credit transfer, for example a treasury or budget payment
+    /// (<c>order_recipient</c>). The payment instruction names it instead of the merchant. Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="PaymentInstructionProcessingType.CardPay"/> only. Required for an order of a government
+    /// entity and rejected for any other — the provider decides which, so the SDK does not validate it.
+    /// </remarks>
+    [JsonPropertyName("order_recipient")]
+    public OrderRecipient? OrderRecipient { get; set; }
 }
 
 /// <summary>

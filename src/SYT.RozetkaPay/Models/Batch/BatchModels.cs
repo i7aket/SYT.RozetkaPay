@@ -245,6 +245,12 @@ public class BatchOrder
     /// <summary>
     /// Account number or phone number to refill (e.g. mobile top-up).
     /// </summary>
+    /// <remarks>
+    /// Validated before the batch is processed. If any check fails the whole batch is rejected with
+    /// <see cref="ResponseCode.PartnerAccountCheckFailed"/> or
+    /// <see cref="ResponseCode.PayingUnavailableForRecipient"/>, and the failing order is identified by
+    /// <c>hint.order_external_id</c>.
+    /// </remarks>
     [JsonPropertyName("account_to_refill")]
     public string? AccountToRefill { get; set; }
     /// <summary>
@@ -257,6 +263,20 @@ public class BatchOrder
     /// </summary>
     [JsonPropertyName("payload")]
     public string? Payload { get; set; }
+
+    /// <summary>
+    /// External ID of the parent order (<c>child_of</c>). Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("child_of")]
+    public string? ChildOf { get; set; }
+
+    /// <summary>
+    /// Beneficiary of a non-contractual credit transfer, for example a treasury or budget payment
+    /// (<c>order_recipient</c>). Optional; when provided, all of its fields are required together. Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("order_recipient")]
+    public OrderRecipient? OrderRecipient { get; set; }
 }
 
 /// <summary>
@@ -476,6 +496,21 @@ public class BatchCustomerRequestUserDetails : BaseRequestUserDetails
     /// </summary>
     [JsonPropertyName("color_mode")]
     public CheckoutColorMode? ColorMode { get; set; }
+
+    /// <summary>
+    /// Payer's individual tax number (ІПН), 10 digits (<c>tin</c>). A non-contractual credit transfer requires
+    /// either this or <see cref="Document"/>; when both are sent, this takes precedence. Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("tin")]
+    public string? Tin { get; set; }
+
+    /// <summary>
+    /// Identity document of a payer who has no individual tax number (<c>document</c>). Added to the published
+    /// schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("document")]
+    public CustomerDocument? Document { get; set; }
 }
 
 /// <summary>
@@ -564,6 +599,41 @@ public class BatchOrderDetail
     /// </summary>
     [JsonPropertyName("recurrent_id")]
     public string? RecurrentId { get; set; }
+
+    /// <summary>
+    /// External ID of the parent order (<c>child_of</c>). Empty when <see cref="HasChild"/> is
+    /// <see langword="true"/>. Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("child_of")]
+    public string? ChildOf { get; set; }
+
+    /// <summary>
+    /// Whether this order has a child order (<c>has_child</c>); <see langword="false"/> when
+    /// <see cref="ChildOf"/> carries a value. Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("has_child")]
+    public bool? HasChild { get; set; }
+
+    /// <summary>
+    /// Beneficiary of a non-contractual credit transfer (<c>order_recipient</c>). Present only for such
+    /// orders. Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("order_recipient")]
+    public OrderRecipient? OrderRecipient { get; set; }
+
+    /// <summary>
+    /// Customer-facing description of the operation status in English (<c>status_description_en</c>). Added
+    /// to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("status_description_en")]
+    public string? StatusDescriptionEn { get; set; }
+
+    /// <summary>
+    /// Customer-facing description of the operation status in Ukrainian (<c>status_description_uk</c>).
+    /// Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("status_description_uk")]
+    public string? StatusDescriptionUk { get; set; }
 }
 
 /// <summary>

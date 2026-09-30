@@ -33,7 +33,13 @@ namespace SYT.RozetkaPay.Tests;
 public class OpenApiOperationContractTests
 {
     /// <summary>Operation count the pinned document declares, as <c>OpenApi59OperationTests</c> also pins.</summary>
-    private const int PinnedOperationCount = 67;
+    private const int PinnedOperationCount = 60;
+
+    /// <summary>Operations removed from the document on 2026-09-30 and kept as obsolete SDK members.</summary>
+    private const int RetiredOperationCount = 7;
+
+    /// <summary>The diagnostic ID every retired member must report instead of a bare <c>CS0618</c>.</summary>
+    private const string RetiredDiagnosticId = "RZPAY001";
 
     /// <summary>
     /// Content type a JSON operation must send, including the charset the SDK's <c>StringContent</c> adds.
@@ -56,6 +62,21 @@ public class OpenApiOperationContractTests
         {
             TheoryData<string> data = [];
             foreach (OpenApiOperationContract contract in OpenApiOperationManifest.All)
+            {
+                data.Add(contract.OperationId);
+            }
+
+            return data;
+        }
+    }
+
+    /// <summary>One case per retired operation (removed from the document on 2026-09-30).</summary>
+    public static TheoryData<string> RetiredOperationIds
+    {
+        get
+        {
+            TheoryData<string> data = [];
+            foreach (OpenApiOperationContract contract in OpenApiOperationManifest.Retired)
             {
                 data.Add(contract.OperationId);
             }
@@ -155,10 +176,11 @@ public class OpenApiOperationContractTests
                 $"{row}: the document declares body policy {declared} but the manifest row declares {row.Body}.");
         }
 
-        // The bodyless POST the provider publishes is a real shape, not a transcription slip: pinning it here
-        // keeps a future "every POST has a body" simplification from passing.
-        Assert.Equal(ContractBodyPolicy.None, Row("getInStorePaymentInfo").Body);
-        Assert.Equal("POST", Row("getInStorePaymentInfo").Method);
+        // The bodyless POST the provider published is a real shape, not a transcription slip: pinning it here
+        // keeps a future "every POST has a body" simplification from passing. The operation is retired since
+        // 2026-09-30, but the obsolete member still sends exactly this.
+        Assert.Equal(ContractBodyPolicy.None, RetiredRow("getInStorePaymentInfo").Body);
+        Assert.Equal("POST", RetiredRow("getInStorePaymentInfo").Method);
     }
 
     /// <summary>
@@ -509,6 +531,110 @@ public class OpenApiOperationContractTests
         Assert.Equal(Uri.UriSchemeHttps, request.RequestUri.Scheme);
     }
 
+    // ===================== Retired operations (removed from the document on 2026-09-30) =====================
+
+    /// <summary>
+    /// The retired rows are exactly the seven operations the document stopped publishing, grouped four
+    /// in-store and three partner, each once.
+    /// </summary>
+    [Fact]
+    public void RetiredRows_ShouldBeTheSevenRemovedOperationsEachOnce()
+    {
+        IReadOnlyList<OpenApiOperationContract> rows = OpenApiOperationManifest.Retired;
+
+        Assert.Equal(RetiredOperationCount, rows.Count);
+        Assert.Equal(RetiredOperationCount, rows.Select(static row => row.Identity).Distinct().Count());
+        Assert.Equal(
+            OpenApiOperationManifest.ExpectedRetiredGroupSizes.OrderBy(static entry => entry.Key, StringComparer.Ordinal),
+            rows.GroupBy(static row => row.Group, StringComparer.Ordinal)
+                .ToDictionary(static group => group.Key, static group => group.Count(), StringComparer.Ordinal)
+                .OrderBy(static entry => entry.Key, StringComparer.Ordinal));
+
+        // A row is either published or retired, never both.
+        Assert.Empty(rows.Select(Identity).Intersect(ManifestIdentities()));
+
+        // The route gates exempt RetiredRoutes and nothing else, so it must name exactly these rows.
+        Assert.Equal(
+            RetiredRoutes.ByMethodAndPath.OrderBy(static entry => entry.Key, StringComparer.Ordinal),
+            rows.ToDictionary(
+                    static row => $"{row.Method} {row.PathTemplate}",
+                    static row => row.OperationId,
+                    StringComparer.Ordinal)
+                .OrderBy(static entry => entry.Key, StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// A retired row must be absent from the pinned document — by identity and by path. If RozetkaPay publishes
+    /// one again, this fails: move the row back to <see cref="OpenApiOperationManifest.All"/> and drop the
+    /// obsoletion instead of leaving a published operation marked as removed.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(RetiredOperationIds))]
+    public void RetiredOperation_ShouldBeAbsentFromThePinnedDocument(string operationId)
+    {
+        OpenApiOperationContract row = RetiredRow(operationId);
+
+        Assert.DoesNotContain(Identity(row), DocumentIdentities());
+        Assert.DoesNotContain(row.PathTemplate, OpenApiSnapshot.DeclaredPaths());
+    }
+
+    /// <summary>
+    /// Every overload of a retired member is obsolete, on the interface a consumer injects and on the
+    /// concrete service, and reports <c>RZPAY001</c> — so a consumer can suppress exactly this after
+    /// confirming access with RozetkaPay, without silencing every other <c>CS0618</c>.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(RetiredOperationIds))]
+    public void RetiredOperation_ShouldBeServedOnlyByObsoleteMembersWithTheRetiredDiagnostic(string operationId)
+    {
+        OpenApiOperationContract row = RetiredRow(operationId);
+        Type implementation = row.ServiceInterface.Assembly.GetType(
+            $"{row.ServiceInterface.Namespace}.{row.ServiceInterface.Name[1..]}",
+            throwOnError: true)!;
+
+        foreach (Type type in new[] { row.ServiceInterface, implementation })
+        {
+            System.Reflection.MethodInfo[] overloads =
+                [.. type.GetMethods().Where(method => method.Name == row.ServiceMethod)];
+            Assert.NotEmpty(overloads);
+
+            foreach (System.Reflection.MethodInfo method in overloads)
+            {
+                ObsoleteAttribute? obsolete =
+                    (ObsoleteAttribute?)Attribute.GetCustomAttribute(method, typeof(ObsoleteAttribute));
+
+                Assert.True(obsolete is not null, $"{type.Name}.{method.Name} must be [Obsolete].");
+                Assert.Equal(RetiredDiagnosticId, obsolete!.DiagnosticId);
+                Assert.False(obsolete.IsError, $"{type.Name}.{method.Name} must warn, not fail the build.");
+                Assert.Contains("2026-09-30", obsolete.Message, StringComparison.Ordinal);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The retired members still send, byte for byte, what the 2026-07-25 document declared: verb, target,
+    /// body sentinels, authentication. "Kept for accounts with access" is only a promise if this holds.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(RetiredOperationIds))]
+    public async Task RetiredOperation_ShouldStillSendTheRequestItSentBeforeRetirement(string operationId)
+    {
+        OpenApiOperationContract row = RetiredRow(operationId);
+
+        using ContractRecordingHandler handler = new(row.Response, ContractServiceHost.ExpectedBasicCredentials);
+        using ContractServiceHost host = new(handler);
+        using CancellationTokenSource timeout = new(InvocationTimeout);
+
+        await AssertExpectedOutcomeAsync(row, host, timeout.Token);
+
+        ContractRequest request = Assert.Single(handler.Requests);
+
+        AssertRequestTarget(row, request);
+        AssertBody(row, request);
+        AssertAuthentication(row, request);
+        Assert.Equal(ContractServiceHost.Host, request.RequestUri.Host);
+    }
+
     // ===================== Assertion helpers =====================
 
     /// <summary>
@@ -672,6 +798,11 @@ public class OpenApiOperationContractTests
     private static OpenApiOperationContract Row(string operationId)
     {
         return Assert.Single(OpenApiOperationManifest.All, row => row.OperationId == operationId);
+    }
+
+    private static OpenApiOperationContract RetiredRow(string operationId)
+    {
+        return Assert.Single(OpenApiOperationManifest.Retired, row => row.OperationId == operationId);
     }
 
     /// <summary>Identities the pinned document declares, read from the snapshot on every call.</summary>

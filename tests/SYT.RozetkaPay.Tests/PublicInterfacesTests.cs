@@ -163,10 +163,14 @@ public class PublicInterfacesTests
             [nameof(IMerchantService)] = 1,
             [nameof(IFinMonService)] = 1,
             // EXP-354 service contracts. Disposal is not an API operation: PaymentInstructionService
-            // implements IDisposable explicitly, so the contract stays at its two official operations.
+            // implements IDisposable explicitly, so it is not counted.
+            //
+            // 2026-09-30: every IInStorePaymentService and IPartnerService member is obsolete (RZPAY001) but
+            // still present — the operations left the published document, not the SDK. The decline
+            // operation gained the optional consolidated flag as a third member, an overload of the second.
             [nameof(IInStorePaymentService)] = 4,
             [nameof(IPartnerService)] = 6,
-            [nameof(IPaymentInstructionService)] = 2
+            [nameof(IPaymentInstructionService)] = 3
         };
 
         Dictionary<string, int> actual = ServiceContractPairs.ToDictionary(

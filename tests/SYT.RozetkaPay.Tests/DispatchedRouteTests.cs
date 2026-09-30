@@ -52,10 +52,26 @@ public class DispatchedRouteTests
 
         List<string> offenders = [.. undeclared
             .Where(static route => !KnownUndeclared.ContainsKey(route))
+            .Where(static route => !RetiredRoutes.ByMethodAndPath.ContainsKey(route))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)];
 
         Assert.Empty(offenders);
+    }
+
+    /// <summary>
+    /// The routes retired from the document on 2026-09-30 are exactly the undeclared routes still dispatched —
+    /// each of them observed on the wire, none missing, none extra.
+    /// </summary>
+    [Fact]
+    public async Task EveryRetiredRoute_ShouldStillBeDispatchedExactlyAsListed()
+    {
+        (List<string> undeclared, _) = await ObserveAsync();
+        HashSet<string> observed = [.. undeclared];
+
+        Assert.Empty(RetiredRoutes.ByMethodAndPath.Keys
+            .Where(route => !observed.Contains(route))
+            .Order(StringComparer.Ordinal));
     }
 
     /// <summary>

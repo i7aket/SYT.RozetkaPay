@@ -155,15 +155,15 @@ public enum CustomerCheckoutLocale
 }
 
 /// <summary>
-/// Campaign a batch payment belongs to.
+/// Card campaign a payment or batch payment is validated against (document schema <c>CampaignName</c>).
 /// </summary>
 public enum CampaignName
 {
-    /// <summary>R-card campaign.</summary>
+    /// <summary>R-card campaign: validates that the customer paid with a Rozetka card.</summary>
     [JsonStringEnumMemberName("r_card")]
     RCard,
 
-    /// <summary>Diia card campaign.</summary>
+    /// <summary>Diia card campaign: validates that the customer paid with a Diia card.</summary>
     [JsonStringEnumMemberName("diia_card")]
     DiiaCard
 }
@@ -1661,7 +1661,65 @@ public enum ResponseCode
     /// Provider response code <c>wrong_project_settings</c>.
     /// </summary>
     [JsonStringEnumMemberName("wrong_project_settings")]
-    WrongProjectSettings
+    WrongProjectSettings,
+
+    // Published on 2026-09-30. Appended rather than inserted alphabetically, so the numeric value of
+    // every member that existed before keeps its meaning for a caller who persisted it.
+
+    /// <summary>
+    /// Provider response code <c>advance_payment_accepted</c>. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("advance_payment_accepted")]
+    AdvancePaymentAccepted,
+
+    /// <summary>
+    /// Provider response code <c>advance_payment_offered</c>. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("advance_payment_offered")]
+    AdvancePaymentOffered,
+
+    /// <summary>
+    /// Provider response code <c>anti_fraud_check_in_progress</c>. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("anti_fraud_check_in_progress")]
+    AntiFraudCheckInProgress,
+
+    /// <summary>
+    /// Provider response code <c>fc_transaction_not_generated</c>. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("fc_transaction_not_generated")]
+    FcTransactionNotGenerated,
+
+    /// <summary>
+    /// Provider response code <c>paying_unavailable_for_recipient</c>: a batch order's
+    /// <c>account_to_refill</c> failed validation. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("paying_unavailable_for_recipient")]
+    PayingUnavailableForRecipient,
+
+    /// <summary>
+    /// Provider response code <c>refund_waiting_for_funds</c>. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("refund_waiting_for_funds")]
+    RefundWaitingForFunds,
+
+    /// <summary>
+    /// Provider response code <c>restricted_card</c>. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("restricted_card")]
+    RestrictedCard,
+
+    /// <summary>
+    /// Provider response code <c>terminal_limit_exceeded</c>. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("terminal_limit_exceeded")]
+    TerminalLimitExceeded,
+
+    /// <summary>
+    /// Provider response code <c>transaction_confirmation_timeout</c>. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("transaction_confirmation_timeout")]
+    TransactionConfirmationTimeout
 }
 
 /// <summary>

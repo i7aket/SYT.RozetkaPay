@@ -50,9 +50,33 @@ public class OffSpecRouteTests
         List<string> undeclared = [.. RouteConstants()
             .Where(route => !declared.Contains(route))
             .Where(route => !AwaitingConfirmation.Contains(route))
+            .Where(route => !RetiredRoutes.Paths.Contains(route))
             .Order(StringComparer.Ordinal)];
 
         Assert.Empty(undeclared);
+    }
+
+    /// <summary>
+    /// Every route retired from the document on 2026-09-30 is still a constant the services hold. One that is
+    /// not has been deleted from the SDK, and <see cref="RetiredRoutes"/> must lose it too.
+    /// </summary>
+    [Fact]
+    public void EveryRetiredRoute_ShouldStillBeCalled()
+    {
+        HashSet<string> called = [.. RouteConstants()];
+
+        Assert.Empty(RetiredRoutes.Paths.Where(route => !called.Contains(route)).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// No retired route is declared again. If the document republishes one, it is no longer retired.
+    /// </summary>
+    [Fact]
+    public void NoRetiredRoute_ShouldBeDeclared()
+    {
+        HashSet<string> declared = [.. OpenApiSnapshot.DeclaredPaths()];
+
+        Assert.Empty(RetiredRoutes.Paths.Where(declared.Contains).Order(StringComparer.Ordinal));
     }
 
     /// <summary>
