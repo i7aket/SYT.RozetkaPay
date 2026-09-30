@@ -10,6 +10,125 @@ immediately before tagging a release (see the release process in `README.md`).
 
 ## [Unreleased]
 
+## [8.0.0] - 2026-09-30
+
+RozetkaPay changed its published OpenAPI document; the SDK follows it.
+
+The snapshot `src/SYT.RozetkaPay/docs/openapi.json` is refreshed byte-for-byte from
+`https://docs.rozetkapay.com/openapi.json` as served on 2026-09-30 (SHA-256 `2a343b47…95fcdd`): `52` paths and
+`60` operations, down from `59` and `67`. Every difference was reconciled by hand against the document — none
+of it was regenerated.
+
+**Breaking — read before upgrading.** Nothing on the wire changes for code that compiled against 7.0.0, but
+two things can stop a build:
+
+1. **Seven members are `[Obsolete]` with diagnostic `RZPAY001`.** With `TreatWarningsAsErrors` that warning is
+   an error. It is reported under its own ID, not `CS0618`, so `NoWarn CS0618` does not silence it — suppress
+   `RZPAY001` specifically, at the call site or in the project, once you have confirmed access with RozetkaPay.
+2. **`IPaymentInstructionService` gains a member.** A type that *implements* it — a hand-written test double —
+   must add the new `DeclineAsync` overload. Callers are unaffected.
+
+Under SemVer either one makes this a major release.
+
+### Deprecated
+
+- **The partner and in-store operations, removed from the public document on 2026-09-30.** The document no
+  longer publishes `GET /api/partners/v1/fee-details`, `/merchant-status`, `/transaction-details`, nor
+  `POST /api/in-store-payments/v1/create`, `/confirm`, `/info`, `/refund`, and dropped the `partners` and
+  `In-Store Payments` tags. Their component schemas are still in the document, unreferenced and unchanged.
+
+  Every member serving them — `IPartnerService.GetFeeDetailsAsync`, `GetMerchantStatusAsync`,
+  `GetTransactionDetailsAsync` (all overloads) and `IInStorePaymentService.CreateAsync`, `ConfirmAsync`,
+  `RefundAsync`, `GetInfoAsync`, on the interfaces and the concrete services — is now
+  `[Obsolete(DiagnosticId = "RZPAY001")]`, a warning.
+
+  **Why not deleted.** A route leaving the *public* document is not a route leaving service. Called live on
+  2026-09-30 with RozetkaPay's public test merchant, which has no partner access, all three partner routes
+  answered `400` — not `404`: they exist, the account is not entitled. Partner and in-store access is
+  provisioned per account, so deleting the methods would take a working call away from exactly the
+  integrators who have that access, in a package upgrade, with no replacement. Keeping them silently would be
+  the opposite mistake: they are no longer backed by a published contract, and nothing in the SDK can check
+  them against one. The warning states exactly that, and the members stay byte-for-byte as in 7.0.0.
+
+  What is still enforced: the seven operations move from the published manifest to a *retired* list that is
+  still executed — each member must send the request it sent before (verb, target, body, authentication),
+  every overload must carry `RZPAY001`, and each route must stay absent from the document. If RozetkaPay
+  publishes one again, the suite fails, and the operation goes back to published coverage without the
+  obsoletion.
+
+### Added
+
+- **`createPayment` sends `campaign_name`.** The operation now references the `CreatePaymentRequest` body
+  instead of `CreatePaymentRequestDev`; the two differ by exactly this field. `CreatePaymentRequest.CampaignName`
+  (`CampaignName.RCard` / `DiiaCard`, validating that the customer paid with a Rozetka or Diia card) closes the
+  last accepted gap in `ModelFieldCoverageTests`.
+- **Non-contractual credit transfers** (e.g. treasury or budget payments):
+  - new `Models.Common.OrderRecipient` (`name`, `tin`, `iban`, `bank_name`, all required together) on
+    `BatchOrder.OrderRecipient`, `PaymentInstructionOrder.OrderRecipient` (`cardpay` only; required for an
+    order of a government entity and rejected for any other) and, on responses, `BatchOrderDetail.OrderRecipient`;
+  - new `Models.Common.CustomerDocument` (`type`, `number` required; `series`) with `CustomerDocumentType`
+    (`passport`, `id`, `foreign-passport`), on `BatchCustomerRequestUserDetails.Document`, alongside the
+    payer's `BatchCustomerRequestUserDetails.Tin` (10-digit ІПН; takes precedence over the document);
+  - `TransactionDetails.RecipientName`, `RecipientTin` (ЄДРПОУ) and `RecipientBankName` — the beneficiary's
+    bank, reported separately from `BankName`, which is always the acquiring bank.
+- **Parent and child orders:** `ChildOf` on `BatchOrder`, `ChildOf` / `HasChild` on `BatchOrderDetail` and
+  `PaymentOperationResult` (the response of create, recurrent, confirm, cancel, refund and their retries).
+- **Customer-facing status texts:** `StatusDescriptionEn` / `StatusDescriptionUk` on `TransactionDetails` and
+  `BatchOrderDetail`.
+- **`ResultUserDetails.Tin`** — the payer identification code.
+- **`BinAliasName`** (e.g. `ROZETKA CARD`) on `ApplePayResponsePaymentMethod`, `GooglePayResponsePaymentMethod`
+  and `CCTokenResponsePaymentMethod`.
+- **Nine `ResponseCode` tokens:** `advance_payment_accepted`, `advance_payment_offered`,
+  `anti_fraud_check_in_progress`, `fc_transaction_not_generated`, `paying_unavailable_for_recipient`
+  (a batch `account_to_refill` rejection, next to `partner_account_check_failed`), `refund_waiting_for_funds`,
+  `restricted_card`, `terminal_limit_exceeded`, `transaction_confirmation_timeout`. They are **appended** to
+  the enum, not sorted in, so every existing member keeps its numeric value for callers who persisted it.
+  Under 7.0.0 these tokens already deserialized — to `null`, through the tolerant nullable-enum converter.
+- **Three `SubscriptionPaymentState` tokens:** `refunded`, `refund_failed`, `canceled` (also appended).
+- **`IPaymentInstructionService.DeclineAsync(projectId, paymentInstructionId, bool consolidated, ct)`** — the
+  document's new optional `consolidated` flag declines a consolidated instruction together with every child
+  instruction of the batch. `false` is the documented default and is not sent, so the new overload with
+  `false` and the existing two-identifier overload produce the identical request.
+- **A daily drift check.** `.github/workflows/openapi-drift.yml` runs `scripts/verify-openapi-drift.sh` at
+  05:17 UTC and on demand. The pull-request job only asked when someone opened a pull request; this document
+  change would have waited for one.
+
+### Changed
+
+- **Descriptions follow the document.** `PartnerDetails` (returned only for partner-processed payments, e.g.
+  mobile top-up, once the partner has returned its identifiers), `BatchOrder.AccountToRefill` (the two
+  rejection codes), `CampaignName`, `TransactionDetails.RecipientIban`.
+- **Partner fee comments stop guessing.** The document never described `inner_fee`, `outer_fee`, `pnfp`, or the
+  unit and scale of `FeeItem`'s `fix` / `max` / `min` / `percent`; `online` is "empty for now". The comments
+  claimed the inner fee was RozetkaPay's, the outer one "the external participant's", and that `pnfp` meant
+  "pay-now-fund-provider". They now say what is published and that the rest is not.
+- **Wire-neutral document changes, noted for completeness:** the batch operations' callback now references
+  `CardPayProcessingCallback`, an alias of the unchanged `CPAYProcessingCallback`; the `payment-instructions`
+  tag and the PayParts `products` description (now also required for `monobank`) were reworded.
+
+### Documentation
+
+- **"Sandbox and RozetkaPay's public test credentials"** in `README.md` and the package README — moved out of
+  the 2.0.0 notes (EXP-424), where nobody configuring the SDK would look. RozetkaPay shows its public test pair next to
+  `api-epdev.rozetkapay.com`; that host answers it `401`, production answers `200` (re-verified live on
+  2026-09-30). `Environment = Sandbox` still points at `api-epdev`.
+
+### Migration
+
+- If you call a partner or in-store member: confirm with RozetkaPay that your account still has access, then
+  suppress `RZPAY001` where you call it (`#pragma warning disable RZPAY001`) or in the project
+  (`<NoWarn>$(NoWarn);RZPAY001</NoWarn>`). Behaviour does not change.
+- If you implement `IPaymentInstructionService`: add the `consolidated` overload.
+- If you `switch` over `ResponseCode` or `SubscriptionPaymentState`: the new members fall into your default
+  branch until you handle them.
+
+### Verification
+
+- `net10.0`: `1546` passed, `0` failed, `1` skipped (live sandbox smoke, no credentials). `Release` build with
+  `-warnaserror`: `0` warnings.
+- Live, read-only, public test pair: `Sandbox` host `401`; production `validateMerchantKeys`,
+  `payPartsGetBanksInfo`, `getPlans` `200`; the three retired partner GETs `400`. No mutating call.
+
 ## [7.0.0] - 2026-08-01
 
 One core account, many child merchants — addressable per call instead of once per client.
@@ -551,12 +670,9 @@ learns at runtime, in production, against money. Read `Removed` and `Changed` be
 ### Documentation
 
 - **The contract documentation describes only what the tests prove (EXP-407).**
-- **The sandbox host rejects RozetkaPay's published test credentials (EXP-424).** Against
-  `api-epdev.rozetkapay.com` they answer `401`; against production the same pair authenticates and
-  creates real hosted checkouts. A first run naturally pairs `Sandbox` with the only test credentials
-  a developer can find, and that combination fails at authentication — which reads like a broken SDK
-  and is not. The constant is unchanged: it is what the document publishes as the development server,
-  and quietly repointing an environment named `Sandbox` at production would be a worse surprise.
+- **The sandbox host rejects RozetkaPay's published test credentials (EXP-424).** Now documented where
+  callers read it — "Sandbox and RozetkaPay's public test credentials" in `README.md` and in the package
+  README — and re-verified live on 2026-09-30.
 
 ### Migration
 

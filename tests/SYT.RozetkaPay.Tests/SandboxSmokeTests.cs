@@ -12,15 +12,20 @@ namespace SYT.RozetkaPay.Tests;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is deliberately not part of the 67-operation coverage. Most published operations create, confirm,
+/// This is deliberately not part of the 60-operation coverage. Most published operations create, confirm,
 /// cancel, refund, or pay out real money, and calling them against a shared sandbox would leave provider-side
-/// state behind. The deterministic 67/67 coverage lives in <see cref="OpenApiOperationContractTests"/>; the
+/// state behind. The deterministic 60/60 coverage lives in <see cref="OpenApiOperationContractTests"/>; the
 /// only thing proven here is that the credentials, endpoint selection, TLS, and authentication headers
 /// actually work end to end against RozetkaPay.
 /// </para>
 /// <para>
 /// The operation used - <c>validateMerchantKeys</c>, <c>GET /api/merchants/v1/me</c> - exists precisely to be
 /// called this way: it reads back the identity of the calling merchant and changes nothing.
+/// </para>
+/// <para>
+/// RozetkaPay's <i>public</i> test credentials (docs.rozetkapay.com/sandbox/credentials) do not pass here: the
+/// sandbox host answers them <c>401</c>, verified on 2026-09-30, and only production accepts them. The test
+/// still targets the sandbox and never falls back to production, so it needs credentials issued for that host.
 /// </para>
 /// <para>
 /// Without both environment variables the test is skipped with a stated reason and makes no network call. It
