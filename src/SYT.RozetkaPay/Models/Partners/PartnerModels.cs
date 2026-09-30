@@ -52,43 +52,67 @@ public class PartnerTransactionDetailsOptions
 }
 
 /// <summary>
-/// Inner and outer fee of one partner payment channel.
+/// The <c>inner_fee</c> / <c>outer_fee</c> pair of one channel in a <c>feeDetails</c> response (document schema
+/// <c>partners.FeeDetails</c>).
 /// </summary>
 /// <remarks>
-/// This is the shape the official <c>feeDetails</c> operation returns. The historical
-/// <see cref="SYT.RozetkaPay.Models.Merchants.PartnersFeeDetails"/> and
-/// <see cref="SYT.RozetkaPay.Models.Common.PartnersFeeDetails"/> types describe an older layout and are
-/// left untouched for consumers that already compiled against them.
+/// <para>
+/// <b>What the document does and does not say.</b> It declares the two property names and that each is a
+/// <see cref="FeeItem"/> (<c>fix</c>, <c>max</c>, <c>min</c>, <c>percent</c>, all plain numbers). It gives
+/// <i>no</i> description of either property: it does not say who charges the inner or the outer fee, whether
+/// one includes the other, or in what currency or scale the numbers are. The property comments below are
+/// therefore limited to the JSON names; an earlier version of this file attributed the fees to "RozetkaPay" and
+/// "the external participant", which was the SDK's guess, not the provider's contract.
+/// </para>
+/// <para>
+/// Since 2026-09-30 the operation that returns this shape is no longer in the public document at all (see
+/// <see cref="SYT.RozetkaPay.Services.IPartnerService"/>); the schema itself is still published, unreferenced
+/// and unchanged. Interpret the values against a real response from your account before relying on them.
+/// </para>
+/// <para>
+/// The historical <see cref="SYT.RozetkaPay.Models.Merchants.PartnersFeeDetails"/> and
+/// <see cref="SYT.RozetkaPay.Models.Common.PartnersFeeDetails"/> types describe an older layout and are left
+/// untouched for consumers that already compiled against them.
+/// </para>
 /// </remarks>
 public class PartnerFeeDetails
 {
     /// <summary>
-    /// Fee charged by RozetkaPay (JSON object).
+    /// JSON <c>inner_fee</c>. The document declares its type (<see cref="FeeItem"/>) and nothing else — no
+    /// description of what the inner fee is.
     /// </summary>
     [JsonPropertyName("inner_fee")]
     public FeeItem? InnerFee { get; set; }
 
     /// <summary>
-    /// Fee charged by the external participant (JSON object).
+    /// JSON <c>outer_fee</c>. The document declares its type (<see cref="FeeItem"/>) and nothing else — no
+    /// description of what the outer fee is.
     /// </summary>
     [JsonPropertyName("outer_fee")]
     public FeeItem? OuterFee { get; set; }
 }
 
 /// <summary>
-/// Response of the official <c>feeDetails</c> operation:
-/// <c>GET /api/partners/v1/fee-details</c>.
+/// Response of the <c>feeDetails</c> operation: <c>GET /api/partners/v1/fee-details</c> (document response
+/// <c>FeeDetailsResponse</c>; the operation left the public document on 2026-09-30).
 /// </summary>
+/// <remarks>
+/// The document describes exactly one thing about this body: <c>online</c> is "empty for now". <c>pnfp</c> has
+/// no description; the acronym is not expanded anywhere in the document, and the SDK does not guess it (an
+/// earlier comment here read it as "pay-now-fund-provider", which nothing published supports).
+/// </remarks>
 public class PartnerFeeDetailsResponse
 {
     /// <summary>
-    /// Fees of the online channel (JSON object).
+    /// JSON <c>online</c>. The document describes it as "empty for now", so expect <see langword="null"/> or an
+    /// object without fees.
     /// </summary>
     [JsonPropertyName("online")]
     public PartnerFeeDetails? Online { get; set; }
 
     /// <summary>
-    /// Fees of the pay-now-fund-provider channel (JSON object).
+    /// JSON <c>pnfp</c>. Undescribed by the document — neither the channel it stands for nor when it is
+    /// present is published.
     /// </summary>
     [JsonPropertyName("pnfp")]
     public PartnerFeeDetails? Pnfp { get; set; }

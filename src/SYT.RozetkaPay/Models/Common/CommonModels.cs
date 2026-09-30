@@ -413,30 +413,36 @@ public class FeeDetails
 }
 
 /// <summary>
-/// Fee item with various fee components
+/// One fee as the partner <c>feeDetails</c> response carries it (document schema <c>FeeItem</c>).
 /// </summary>
+/// <remarks>
+/// The document declares four properties, each only <c>type: number</c>, and describes none of them: no unit,
+/// no currency, no scale. In particular it does not say whether <see cref="Percent"/> is <c>1.5</c> or
+/// <c>0.015</c> for one and a half percent, nor how <see cref="Min"/> and <see cref="Max"/> bound the result.
+/// The summaries below are the plain reading of the JSON names, not provider statements.
+/// </remarks>
 public class FeeItem
 {
     /// <summary>
-    /// Fixed fee amount (JSON number as per CDN documentation)
+    /// JSON <c>fix</c> — by its name, a fixed component. Undescribed by the document.
     /// </summary>
     [JsonPropertyName("fix")]
     public decimal? Fix { get; set; }
 
     /// <summary>
-    /// Maximum fee amount (JSON number as per CDN documentation)
+    /// JSON <c>max</c> — by its name, an upper bound. Undescribed by the document.
     /// </summary>
     [JsonPropertyName("max")]
     public decimal? Max { get; set; }
 
     /// <summary>
-    /// Minimum fee amount (JSON number as per CDN documentation)
+    /// JSON <c>min</c> — by its name, a lower bound. Undescribed by the document.
     /// </summary>
     [JsonPropertyName("min")]
     public decimal? Min { get; set; }
 
     /// <summary>
-    /// Percentage fee (JSON number as per CDN documentation)
+    /// JSON <c>percent</c> — by its name, a proportional component. The document gives no scale.
     /// </summary>
     [JsonPropertyName("percent")]
     public decimal? Percent { get; set; }
