@@ -293,6 +293,7 @@ SYT.RozetkaPay.Models.Batch.BatchConfirmOrder
 SYT.RozetkaPay.Models.Batch.BatchCustomer
     .ctor()
     BrowserFingerprint Fingerprint { get; set; }
+    CustomerDocument Document { get; set; }
     CustomerRequestPaymentMethod PaymentMethod { get; set; }
     String Address { get; set; }
     String City { get; set; }
@@ -305,6 +306,7 @@ SYT.RozetkaPay.Models.Batch.BatchCustomer
     String Patronym { get; set; }
     String Phone { get; set; }
     String PostalCode { get; set; }
+    String Tin { get; set; }
 SYT.RozetkaPay.Models.Batch.BatchCustomerRequestUserDetails
     .ctor()
     BrowserFingerprint Fingerprint { get; set; }

@@ -67,8 +67,10 @@ Under SemVer either one makes this a major release.
     `BatchOrder.OrderRecipient`, `PaymentInstructionOrder.OrderRecipient` (`cardpay` only; required for an
     order of a government entity and rejected for any other) and, on responses, `BatchOrderDetail.OrderRecipient`;
   - new `Models.Common.CustomerDocument` (`type`, `number` required; `series`) with `CustomerDocumentType`
-    (`passport`, `id`, `foreign-passport`), on `BatchCustomerRequestUserDetails.Document`, alongside the
-    payer's `BatchCustomerRequestUserDetails.Tin` (10-digit ІПН; takes precedence over the document);
+    (`passport`, `id`, `foreign-passport`), on `BatchCustomer.Document` — the type
+    `CreateBatchPaymentRequest.Customer` sends — alongside the payer's `BatchCustomer.Tin` (10-digit ІПН; takes
+    precedence over the document); the same two members are on `BatchCustomerRequestUserDetails`, the
+    same-named model of the schema;
   - `TransactionDetails.RecipientName`, `RecipientTin` (ЄДРПОУ) and `RecipientBankName` — the beneficiary's
     bank, reported separately from `BankName`, which is always the acquiring bank.
 - **Parent and child orders:** `ChildOf` on `BatchOrder`, `ChildOf` / `HasChild` on `BatchOrderDetail` and

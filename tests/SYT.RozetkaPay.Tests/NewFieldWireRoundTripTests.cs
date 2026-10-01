@@ -127,6 +127,52 @@ public class NewFieldWireRoundTripTests
         Assert.Equivalent(customer.Document, back.Document, strict: true);
     }
 
+    /// <summary>
+    /// The batch request's customer — <see cref="BatchCustomer"/>, not the same-named
+    /// <see cref="BatchCustomerRequestUserDetails"/> no request references — carries <c>tin</c> and
+    /// <c>document</c> too. Until it did, the 2026-09-30 fields were modelled on a type nothing sent.
+    /// </summary>
+    [Fact]
+    public void CreateBatch_ShouldCarryTheCustomerTinAndDocumentUnderTheDocumentedNames()
+    {
+        CreateBatchPaymentRequest request = new()
+        {
+            Currency = "UAH",
+            BatchExternalId = "batch-1",
+            Customer = new BatchCustomer
+            {
+                Tin = "1234567890",
+                Document = new CustomerDocument { Type = CustomerDocumentType.Passport, Series = "АА", Number = "123456" },
+            },
+        };
+
+        JsonObject json = Write(request);
+        JsonObject customer = json["customer"]!.AsObject();
+
+        AssertKeysAreDeclared("BatchCustomerRequestUserDetails", customer, "tin", "document");
+        AssertKeysAreExactly("CustomerDocument", customer["document"]!.AsObject());
+
+        BatchCustomer back = Read<CreateBatchPaymentRequest>(json).Customer!;
+        Assert.Equal("1234567890", back.Tin);
+        Assert.Equivalent(request.Customer.Document, back.Document, strict: true);
+    }
+
+    /// <summary>
+    /// What the batch customer still lacks against its schema is a known, named list — not an accident.
+    /// </summary>
+    [Fact]
+    public void BatchCustomer_ShouldLackOnlyTheKnownFieldsOfItsSchema()
+    {
+        // color_mode: pre-existing, not part of the 2026-09-30 change; BatchCustomerRequestUserDetails has it.
+        string[] knownGaps = ["color_mode"];
+
+        string[] missing = [.. OpenApiSnapshot.PropertyNamesOfSchema("BatchCustomerRequestUserDetails")
+            .Except(OpenApiSnapshot.JsonPropertyNamesOf(typeof(BatchCustomer)), StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)];
+
+        Assert.Equal(knownGaps, missing);
+    }
+
     [Theory]
     [MemberData(nameof(CampaignNames))]
     public void CreatePayment_ShouldCarryTheCampaignUnderTheDocumentedNameAndToken(CampaignName campaign)

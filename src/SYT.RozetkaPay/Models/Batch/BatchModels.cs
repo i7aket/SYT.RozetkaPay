@@ -193,6 +193,21 @@ public class BatchCustomer
     /// </summary>
     [JsonPropertyName("fingerprint")]
     public BrowserFingerprint? Fingerprint { get; set; }
+
+    /// <summary>
+    /// Payer's individual tax number (ІПН), 10 digits (<c>tin</c>). A non-contractual credit transfer requires
+    /// either this or <see cref="Document"/>; when both are sent, this takes precedence. Added to the
+    /// published schema (<c>BatchCustomerRequestUserDetails</c>) on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("tin")]
+    public string? Tin { get; set; }
+
+    /// <summary>
+    /// Identity document of a payer who has no individual tax number (<c>document</c>). Added to the published
+    /// schema (<c>BatchCustomerRequestUserDetails</c>) on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("document")]
+    public CustomerDocument? Document { get; set; }
 }
 
 /// <summary>
