@@ -8,8 +8,16 @@ namespace SYT.RozetkaPay.Services;
 /// as the injection/mocking seam for consumer code.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Every identifier is a caller-supplied query value. Pass raw values: each is percent-encoded exactly
 /// once, and none of them is ever logged.
+/// </para>
+/// <para>
+/// <b>Removed from the public document on 2026-09-30.</b> RozetkaPay no longer publishes any
+/// <c>/api/partners/v1/*</c> operation in <c>https://docs.rozetkapay.com/openapi.json</c>. Every method here
+/// is therefore <see cref="ObsoleteAttribute"/> (diagnostic <c>RZPAY001</c>) but unchanged on the wire: the
+/// same route, query and response type as in 7.0.0, for accounts that still have partner access.
+/// </para>
 /// </remarks>
 public interface IPartnerService
 {
@@ -19,6 +27,7 @@ public interface IPartnerService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Inner and outer fees per channel</returns>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<PartnerFeeDetailsResponse> GetFeeDetailsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -32,6 +41,7 @@ public interface IPartnerService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Inner and outer fees per channel</returns>
     /// <exception cref="ArgumentNullException"><paramref name="merchantProjectId"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<PartnerFeeDetailsResponse> GetFeeDetailsAsync(
         string merchantProjectId,
         CancellationToken cancellationToken = default);
@@ -42,6 +52,7 @@ public interface IPartnerService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Entity, project and overall status</returns>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<MerchantStatusResponse> GetMerchantStatusAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -55,6 +66,7 @@ public interface IPartnerService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Entity, project and overall status</returns>
     /// <exception cref="ArgumentNullException"><paramref name="options"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<MerchantStatusResponse> GetMerchantStatusAsync(
         PartnerMerchantStatusOptions options,
         CancellationToken cancellationToken = default);
@@ -71,6 +83,7 @@ public interface IPartnerService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Matching transactions</returns>
     /// <exception cref="ArgumentNullException"><paramref name="merchantEntityId"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(
         string merchantEntityId,
         CancellationToken cancellationToken = default);
@@ -92,6 +105,7 @@ public interface IPartnerService
     /// <exception cref="ArgumentNullException">
     /// <paramref name="merchantEntityId"/> or <paramref name="options"/> is null.
     /// </exception>
+    [Obsolete(RemovedFromPublicDocument.PartnerOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     Task<PartnerTransactionDetailsListResponse> GetTransactionDetailsAsync(
         string merchantEntityId,
         PartnerTransactionDetailsOptions options,

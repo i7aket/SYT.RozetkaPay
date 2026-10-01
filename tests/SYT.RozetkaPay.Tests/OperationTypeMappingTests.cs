@@ -74,9 +74,14 @@ public class OperationTypeMappingTests
     [Fact]
     public void EveryServiceOperation_ShouldMapToADeclaredOperation()
     {
+        // Retired rows count as mapped: each names an obsolete member of an operation the document published
+        // until 2026-09-30, and OpenApiOperationContractTests holds them to that separately — absent from the
+        // document, obsolete with RZPAY001, and still sending their pre-retirement request.
         HashSet<string> mapped =
         [
             .. OpenApiOperationManifest.All.Select(
+                static contract => $"{contract.ServiceInterface.Name}.{contract.ServiceMethod}"),
+            .. OpenApiOperationManifest.Retired.Select(
                 static contract => $"{contract.ServiceInterface.Name}.{contract.ServiceMethod}"),
         ];
 

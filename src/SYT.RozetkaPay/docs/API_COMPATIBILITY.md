@@ -2,7 +2,7 @@
 
 ## Scope
 
-- SDK: `SYT.RozetkaPay` (`1.0.0` published; this document describes the current `main`)
+- SDK: `SYT.RozetkaPay` (`7.0.0` published; this document describes the current `main`, released as `8.0.0`)
 - API path family: `v1` (`/api/*/v1/*`)
 - OpenAPI schema version: `3.0.3`
 
@@ -20,19 +20,22 @@ coverage therefore does not imply operation parity, and the two are reported sep
 
 ### Pinned repository snapshot (`docs/openapi.json`)
 
-- SHA-256: `d3114314e542adc8239579116f02a367496387636af0707c332c848ac27766cf`
-- Observed: `2026-07-29`
-- Paths: `59`
-- Operations: `67`
-- Path coverage: `59/59`
-- Operation coverage: a typed SDK method exists for each of the pinned `67` operations.
+- SHA-256: `2a343b47aed37e5d4d7fd10c1e6dfb74d7cadf6a96ced7cc1f0d96689395fcdd` (bytes as served, LF)
+- Observed: `2026-09-30`
+- Paths: `52`
+- Operations: `60`
+- Path coverage: `52/52`
+- Operation coverage: a typed SDK method exists for each of the pinned `60` operations.
 - Request bodies compared property-by-property against the document: `15`
-- Routes the SDK calls that the document does not declare: `10`, listed by name in
-  `tests/SYT.RozetkaPay.Tests/OffSpecRouteTests.cs` and awaiting confirmation from RozetkaPay
+- Routes the SDK calls that the document does not declare: `7`, all **retired** on 2026-09-30 (see
+  [Operations removed from the public document](#operations-removed-from-the-public-document-2026-09-30)),
+  listed literally in `tests/SYT.RozetkaPay.Tests/TestInfrastructure/RetiredRoutes.cs`. None is invented
+  by the SDK; the "awaiting confirmation" list in `OffSpecRouteTests` is empty.
 
 Two different questions, answered by two different checks. Whether the committed snapshot still matches
 what RozetkaPay serves is answered by `scripts/verify-openapi-drift.sh`, which downloads the live
-document on every CI run and fails on a semantic difference. Whether the committed file was edited
+document on every pull request and once a day (`.github/workflows/openapi-drift.yml`) and fails on a
+semantic difference. Whether the committed file was edited
 locally is answered by the SHA-256 pin in `OpenApi59OperationTests`.
 
 The distinction matters because the suite reads its expectations from the snapshot. Before the drift job
@@ -50,16 +53,56 @@ and it is answered per body: fifteen are compared property-by-property, in both 
 are not yet. `RequestBodyParityTests` is the list, and it is a record of what has been compared rather
 than an aspiration.
 
-On the response side, no declared field is left without somewhere to land, bar one recorded exception —
-`ModelFieldCoverageTests`. Extra properties are not treated as failures there; several are inherited from
+On the response side, no declared field is left without somewhere to land, and since 8.0.0 there is no
+recorded exception left — `ModelFieldCoverageTests`. Extra properties are not treated as failures there; several are inherited from
 a base class shared with another schema, and removing them is a judgement per type.
 That is proven by the wire-level tests listed under each section below, and — since EXP-337 — by an
 executable row per operation (see [Deterministic 67/67 Coverage](#deterministic-6767-coverage-exp-337)).
 
-It is **not** a claim that a live sandbox has answered all `67` operations, and it never will be: most
+It is **not** a claim that a live sandbox has answered all `60` operations, and it never will be: most
 published operations create, confirm, cancel, refund, or pay out real money. Calling all of them against
 a shared environment would leave provider-side financial state behind, so the SDK deliberately does not
-do it. This SDK therefore does **not** claim live, provider-verified `67/67` parity.
+do it. This SDK therefore does **not** claim live, provider-verified `60/60` parity.
+
+Sections below that carry an EXP number describe the snapshot of their time (`59` paths, `67` operations on
+2026-07-25) and are kept as history.
+
+## Operations removed from the public document (2026-09-30)
+
+The document RozetkaPay published on 2026-09-30 no longer contains these seven operations, nor the
+`In-Store Payments` and `partners` tags. Their component schemas and responses are still in the document,
+unreferenced and unchanged.
+
+| operationId | Verb and path | SDK member (all `[Obsolete]`, `RZPAY001`) |
+|---|---|---|
+| `createInStorePayment` | `POST /api/in-store-payments/v1/create` | `IInStorePaymentService.CreateAsync` |
+| `confirmInStorePayment` | `POST /api/in-store-payments/v1/confirm` | `IInStorePaymentService.ConfirmAsync` |
+| `refundInStorePayment` | `POST /api/in-store-payments/v1/refund` | `IInStorePaymentService.RefundAsync` |
+| `getInStorePaymentInfo` | `POST /api/in-store-payments/v1/info` | `IInStorePaymentService.GetInfoAsync` |
+| `feeDetails` | `GET /api/partners/v1/fee-details` | `IPartnerService.GetFeeDetailsAsync` (both overloads) |
+| `merchantStatus` | `GET /api/partners/v1/merchant-status` | `IPartnerService.GetMerchantStatusAsync` (both overloads) |
+| `transactionDetails` | `GET /api/partners/v1/transaction-details` | `IPartnerService.GetTransactionDetailsAsync` (both overloads) |
+
+Why obsolete rather than deleted: leaving the *public* document is not the same as leaving service. Called
+live on 2026-09-30 with RozetkaPay's public test merchant (not a partner), all three partner routes answered
+`400`, not `404` — the routes exist, the account simply lacks access. Partner and in-store access is
+provisioned per account, so deleting the methods would take a working call away from an integrator who has
+it, with no replacement. What the SDK can no longer promise is a published contract, and the warning says so.
+
+What still holds, and is tested (`OpenApiOperationContractTests`, `OffSpecRouteTests`, `DispatchedRouteTests`):
+
+- each member sends exactly the request it sent in 7.0.0 — verb, target, body sentinels, authentication;
+- every overload is `[Obsolete]` with `DiagnosticId = "RZPAY001"`, as a warning, on the interface and the
+  concrete service;
+- each retired route is absent from the pinned document. If RozetkaPay publishes one again, the suite fails,
+  and the operation moves back to published coverage with its obsoletion removed.
+
+Other changes in the same document, all modelled in 8.0.0: `createPayment` references `CreatePaymentRequest`
+instead of `CreatePaymentRequestDev` (adds `campaign_name`); new `OrderRecipient` and `CustomerDocument`
+schemas; new fields on `PaymentOperationResult`, `ResultUserDetails`, `TransactionDetails`, `BatchOrder`,
+`BatchOrderDetail`, `BatchCustomerRequestUserDetails`, `PaymentInstructionOrder` and the three response
+payment-method schemas; nine new `ResponseCode` tokens; three new `SubscriptionPaymentState` tokens; and the
+optional `consolidated` query flag on `declinePaymentInstruction`. The full list is in `CHANGELOG.md`.
 
 ## New Operations (EXP-354)
 
@@ -434,10 +477,32 @@ dotnet test tests/SYT.RozetkaPay.Tests/SYT.RozetkaPay.Tests.csproj -c Release --
 dotnet test tests/SYT.RozetkaPay.Tests/SYT.RozetkaPay.Tests.csproj -c Release --filter 'Category!=Sandbox'
 ```
 
-There is no scheduled workflow and no CI secret for the sandbox. A workflow that reported green because
-secrets were absent would be a false claim of live verification, so it does not exist.
+There is no scheduled workflow and no CI secret for the sandbox smoke test. A workflow that reported green
+because secrets were absent would be a false claim of live verification, so it does not exist. (The daily
+scheduled workflow that does exist, `openapi-drift.yml`, only compares the published document with the
+snapshot; it calls no API and needs no credential.)
+
+With RozetkaPay's *public* test credentials this test fails by design: they are rejected by the `Sandbox`
+host (`401`) and accepted only by production — see "Sandbox and RozetkaPay's public test credentials" in the
+package README. Verified on 2026-09-30.
 
 ## Last Verification
+
+- Date: `2026-09-30` (8.0.0)
+- Snapshot: refreshed byte-for-byte from `https://docs.rozetkapay.com/openapi.json`, SHA-256
+  `2a343b47aed37e5d4d7fd10c1e6dfb74d7cadf6a96ced7cc1f0d96689395fcdd`; `52` paths, `60` operations
+- Deterministic operation contract coverage: `60/60`, asserted as an exact set against the pinned document;
+  plus `7` retired operations executed against their pre-retirement wire shape
+- Test result: `net10.0` — `1546` passed, `1` skipped, `0` failed (the skip: live sandbox smoke without
+  credentials)
+- Build: `Release` with `-warnaserror` — `0` warnings, `0` errors
+- Live, read-only, with RozetkaPay's public hosted-checkout test pair: `Sandbox` host —
+  `validateMerchantKeys` `401 authorization_failed` (the opt-in `SandboxSmokeTests` fails the same way);
+  production host — `validateMerchantKeys` `200`, `payPartsGetBanksInfo` `200`, `getPlans` `200`,
+  `paymentInfo` for a random ID `404 data_not_found`; the three retired partner GETs `400`, not `404`.
+  No mutating operation was called.
+
+### Previous verification
 
 - Date: `2026-07-25`
 - Result: deterministic contract coverage for all `67` pinned operations, executed per operation on both

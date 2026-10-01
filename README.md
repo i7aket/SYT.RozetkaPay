@@ -58,17 +58,22 @@ to the same DI-managed instance. API services are scoped; the immutable webhook 
 a singleton. The concrete types stay public and unchanged, so existing code continues to
 compile. Details and testing examples are in the package README.
 
-The SDK is pinned to the official OpenAPI document observed on `2026-07-25` — `59` paths and
-`67` operations — and exposes a typed method for each of those operations.
+The SDK is pinned to the official OpenAPI document observed on `2026-09-30` — `52` paths and
+`60` operations — and exposes a typed method for each of those operations.
 
-Every one of those `67` operations is covered by an executable contract test: the SDK method is
+That day RozetkaPay removed seven operations from the public document: the three partner reads
+(`/api/partners/v1/*`) and the four in-store operations (`/api/in-store-payments/v1/*`). The SDK keeps
+their methods unchanged on the wire but marks them `[Obsolete]` with diagnostic `RZPAY001` — see the
+`8.0.0` section of the [changelog](CHANGELOG.md).
+
+Every one of those `60` operations is covered by an executable contract test: the SDK method is
 invoked and the request it produces is asserted against the pinned document, which is compared
 with the test manifest as an exact set. Outbound authentication, the anonymous decline redirect,
 and the inbound webhook signature pipeline are additionally proven against a real Kestrel server
 on loopback. All of that runs in ordinary CI on both target frameworks and needs no network.
 
 That is a statement about the pinned document and about what the SDK puts on the wire — **not** a
-claim that a live RozetkaPay environment answered all 67. Most published operations move real
+claim that a live RozetkaPay environment answered all 60. Most published operations move real
 money and are never called live. The single live check is an opt-in, read-only merchant identity
 call that is skipped unless `ROZETKAPAY_SANDBOX_LOGIN` and `ROZETKAPAY_SANDBOX_PASSWORD` are both
 set; no sandbox credentials are configured in CI, so it does not run there. See
@@ -85,11 +90,45 @@ so a broken configuration fails before the first request instead of during one. 
 `RozetkaPayConfiguration` overloads are unchanged. See
 [Configuration](src/SYT.RozetkaPay/README.md#configuration) in the package README.
 
-`Sandbox` needs credentials issued for the sandbox host. RozetkaPay's publicly published test pair
-is not one of them: against `api-epdev.rozetkapay.com` it answers `401`, while against production
-the same pair authenticates and creates real hosted checkouts. A first run that pairs `Sandbox`
-with the published test credentials therefore fails at authentication, which reads like a broken
-SDK and is not.
+### Sandbox and RozetkaPay's public test credentials
+
+RozetkaPay publishes test credentials at
+[docs.rozetkapay.com/sandbox/credentials](https://docs.rozetkapay.com/sandbox/credentials/), and its
+curl examples pair them with `https://api-epdev.rozetkapay.com` — the host `Environment = Sandbox`
+selects. **That combination does not work.** Checked live on `2026-09-30` with the hosted-checkout pair:
+
+| Host | `GET /api/merchants/v1/me` with the public pair |
+| --- | --- |
+| `https://api-epdev.rozetkapay.com` (`Sandbox`) | `401 authorization_failed` |
+| `https://api.rozetkapay.com` (`Production`) | `200` — the pair authenticates on the live host |
+
+What RozetkaPay's documentation says, and what it does not (read on `2026-10-01`):
+
+- The pairs are a **shared test merchant**, published to everyone, and "intended only for the test
+  environment" — the page names `api-epdev` as that environment. Real payments require onboarding.
+- Its [test cards](https://docs.rozetkapay.com/sandbox/test-cards/) work "only with the `stub` bank",
+  "exclusively on the development environment".
+- It says nothing about the pair on `api.rozetkapay.com`: not that it is supported there, and not that
+  payments made there are free of real money. Production is the live processing host, and the documented
+  test cards are not documented to work on it.
+
+So:
+
+- A first run with `Sandbox` and the published pair fails at authentication. That reads like a broken
+  SDK and is not — the host rejects the pair. Report it to RozetkaPay; the SDK cannot fix it.
+- **Do not point the public pair at `Production` to experiment.** That it authenticates there is an
+  observation, not a documented test path: it is the live host, the merchant is shared with everyone who
+  read the page, and whether a card entered on a checkout it creates is really charged is undocumented.
+  If you do it anyway, only read-only calls (`validateMerchantKeys`, `getPlans`, bank lists) are safe to
+  assume harmless.
+- For real testing, ask RozetkaPay for credentials of your own on `api-epdev` and use `Sandbox` with the
+  documented test cards.
+- `Sandbox` is kept pointing at `api-epdev`: it is the development server the OpenAPI document publishes,
+  and quietly repointing an environment named `Sandbox` at production would be a worse surprise.
+
+The opt-in live smoke test (`SandboxSmokeTests`, enabled by `ROZETKAPAY_SANDBOX_LOGIN` and
+`ROZETKAPAY_SANDBOX_PASSWORD`) deliberately targets `Sandbox`, so it fails with the public pair for the
+same reason. See [API compatibility](src/SYT.RozetkaPay/docs/API_COMPATIBILITY.md).
 
 Callback signatures must be checked against the raw request body before the payload is
 deserialized; the package README documents the full flow under
@@ -222,7 +261,13 @@ second checkout under `mktemp -d`, and removes only that temporary worktree. Add
 been pushed yet — its sources cannot be on the remote, so only then does the download check
 have to be skipped. CI and release builds never skip it.
 
-The suite includes the `67`-operation contract coverage and the loopback HTTP-boundary
+The OpenAPI drift check (`scripts/verify-openapi-drift.sh`) also runs **once a day** from
+`.github/workflows/openapi-drift.yml` (05:17 UTC, or on demand via *Run workflow*), because RozetkaPay
+changes its published document on its own schedule and a pull request may not come along for weeks.
+It is read-only; a failure is GitHub's usual failed-scheduled-run notification.
+
+The suite includes the `60`-operation contract coverage (plus the seven retired operations, still
+executed against their pre-retirement wire shape) and the loopback HTTP-boundary
 tests, and it makes no outbound network request: the contract transport targets a reserved
 `.invalid` host and the boundary tests bind `127.0.0.1` on an ephemeral port. CI therefore
 does not depend on RozetkaPay being reachable.

@@ -60,6 +60,11 @@ public class Exp354ResponseDisposalTests
     }
 
     // ===================== bodyless POST (new EXP-354 helper) =====================
+    //
+    // The in-store info member is the helper's only caller, and it is obsolete since the operation left the
+    // published document on 2026-09-30. It still ships, so the disposal guarantee is still pinned through it.
+
+#pragma warning disable RZPAY001 // Deliberate: the retired member is the only caller of the helper under test.
 
     [Fact]
     public async Task PostWithoutBody_ShouldDisposeTheResponse_OnSuccess()
@@ -89,6 +94,8 @@ public class Exp354ResponseDisposalTests
 
         AssertDisposed(handler);
     }
+
+#pragma warning restore RZPAY001
 
     // ===================== decline transport =====================
 

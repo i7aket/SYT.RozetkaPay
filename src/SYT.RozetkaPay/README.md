@@ -9,8 +9,10 @@ It provides typed clients and models for:
 - Customers and wallets
 - Subscriptions (including gift subscriptions and payment-method replacement)
 - Alternative payments (including callback resend)
-- In-store (POS) payments (create, confirm, refund, info)
-- Partner reporting (fee details, merchant status, transaction details)
+- In-store (POS) payments (create, confirm, refund, info) — **obsolete since 8.0.0**: removed from the
+  public OpenAPI on 2026-09-30, kept unchanged for accounts with in-store access (`RZPAY001`)
+- Partner reporting (fee details, merchant status, transaction details) — **obsolete since 8.0.0**: removed
+  from the public OpenAPI on 2026-09-30, kept unchanged for accounts with partner access (`RZPAY001`)
 - Payment instructions (batch creation and the unauthenticated decline redirect)
 - Merchant and FinMon APIs
 - Webhook payloads (`PaymentWebhook`)
@@ -45,25 +47,28 @@ instead.
 - OpenAPI schema version: `3.0.3`
 - Local spec snapshot: `docs/openapi.json`
 - Official docs/source of truth: `https://cdn.rozetkapay.com/public-docs/index.html`
-- Last checked against official public docs: `2026-07-25`
+- Last checked against official public docs: `2026-09-30` (`https://docs.rozetkapay.com/openapi.json`,
+  re-checked daily by CI)
 - Detailed compatibility notes: `docs/API_COMPATIBILITY.md`
 
 Coverage is reported at three levels, because the weaker ones were being read as the stronger.
 
-- **Routes.** The pinned snapshot holds `59` paths and `67` operations, and the SDK has a typed method
-  for each. This has been true for a while and says nothing about what those methods send.
+- **Routes.** The pinned snapshot holds `52` paths and `60` operations, and the SDK has a typed method
+  for each. This has been true for a while and says nothing about what those methods send. Seven more
+  methods serve operations the document stopped publishing on 2026-09-30; they are `[Obsolete]`
+  (`RZPAY001`) and pinned to the request they sent before.
 - **Request bodies.** Fifteen request bodies are checked property-by-property against the document, in
   both directions, so a missing field and an invented one both fail the build. The list is in
   `RequestBodyParityTests` and it is the record of what has actually been compared. Bodies not on it
   have not been.
 - **Fields the SDK can receive.** No published schema declares a field the SDK has nowhere to put,
-  with one recorded exception. `ModelFieldCoverageTests` holds that, and every exemption carries a
+  with no recorded exception left (the last one, `campaign_name` on `createPayment`, closed in 8.0.0). `ModelFieldCoverageTests` holds that, and every exemption carries a
   reason and fails when it goes stale.
 
 Enum values are compared as exact token sets against the document, in both directions, including the
 two schemas that inherit their values through `allOf`.
 
-Every one of those `67` operations has an executable contract row: the SDK method is invoked for real and
+Every one of those `60` operations has an executable contract row: the SDK method is invoked for real and
 the request it produces — verb, concrete request target, percent-encoding, body policy, and authentication
 headers — is asserted against the pinned document. The manifest and the document are compared as exact
 sets, so an operation that is added, removed, renamed, duplicated, or moved to another verb fails the
@@ -72,8 +77,8 @@ a real Kestrel server over a real socket. All of it runs in ordinary CI, on `net
 no network access.
 
 All of that is a statement about the **pinned document**, which a CI job compares against the live one
-on every run — so "pinned" does not mean "possibly stale". It is **not** a claim that a live RozetkaPay
-environment has answered all `67` operations — most of them move real money, so the SDK does not call them
+on every pull request and once a day — so "pinned" does not mean "possibly stale". It is **not** a claim
+that a live RozetkaPay environment has answered all `60` operations — most of them move real money, so the SDK does not call them
 against a live environment. The only live check is one opt-in, read-only merchant identity call; see
 [Live sandbox smoke test](#live-sandbox-smoke-test) and `docs/API_COMPATIBILITY.md`.
 
@@ -267,6 +272,33 @@ sandbox credentials — production credentials will not authenticate there.
 `Environment` defaults to `Production`, so an application that never sets it keeps talking to the endpoint
 it always has.
 
+### Sandbox and RozetkaPay's public test credentials
+
+RozetkaPay publishes test credentials at
+[docs.rozetkapay.com/sandbox/credentials](https://docs.rozetkapay.com/sandbox/credentials/) and shows them
+next to `api-epdev.rozetkapay.com` — the `Sandbox` host. **Those two do not work together.** Checked live on
+2026-09-30 with the hosted-checkout pair, `GET /api/merchants/v1/me`:
+
+| `Environment` | Host | Result with the public pair |
+| --- | --- | --- |
+| `Sandbox` | `https://api-epdev.rozetkapay.com` | `401 authorization_failed` (`RozetkaPayAuthorizationException`) |
+| `Production` | `https://api.rozetkapay.com` | `200` — the pair authenticates on the live host |
+
+RozetkaPay's documentation (read 2026-10-01) calls the pairs a **shared test merchant** "intended only for the
+test environment" (`api-epdev`); its [test cards](https://docs.rozetkapay.com/sandbox/test-cards/) work "only
+with the `stub` bank", "exclusively on the development environment". It says nothing about the pair on
+`api.rozetkapay.com` — neither that it is supported there nor that payments made there are free of real money.
+
+- If a first run with `Sandbox` and the public pair fails at authentication, the SDK is not broken — the
+  host rejects the pair. Report it to RozetkaPay.
+- **Do not point the public pair at `Production` to experiment.** It authenticates there, but that is an
+  observation, not a documented test path: production is the live host, the merchant is shared with every
+  reader of the page, and whether a card entered on a checkout it creates is really charged is undocumented.
+  Only read-only calls (`validateMerchantKeys`, `getPlans`, bank lists) are safe to assume harmless there.
+- For real testing, ask RozetkaPay for credentials of your own on `api-epdev` and use `Sandbox` with the
+  documented test cards. `Sandbox` keeps pointing at `api-epdev`, the development server the OpenAPI
+  document publishes.
+
 ### Live sandbox smoke test
 
 The repository ships one test that talks to a real RozetkaPay environment, and it is off by default. It
@@ -288,6 +320,10 @@ dotnet test tests/SYT.RozetkaPay.Tests/SYT.RozetkaPay.Tests.csproj -c Release --
 Without the variables the test reports
 `Requires ROZETKAPAY_SANDBOX_LOGIN and ROZETKAPAY_SANDBOX_PASSWORD. No network call was made.` and makes
 no request. Missing credentials are never a silent pass and never break an ordinary build.
+
+The test targets `Sandbox` on purpose and never falls back to production, so with RozetkaPay's *public*
+test pair it fails with `RozetkaPayAuthorizationException` — see the section above. It needs credentials
+issued for `api-epdev`.
 
 No mutating operation — create, confirm, cancel, refund, payout, subscription, callback resend, report
 generation, or payment instruction — is ever called against a live environment by this repository's tests.
@@ -879,7 +915,14 @@ type; the historical `SubscriptionPaymentMethod` describes a different shape and
 
 ## In-Store (POS) Payments
 
-`IInStorePaymentService` covers the four official in-store operations.
+`IInStorePaymentService` covers the four in-store operations.
+
+> **Obsolete since 8.0.0.** On 2026-09-30 RozetkaPay removed `/api/in-store-payments/v1/*` (and the
+> `In-Store Payments` tag) from its public OpenAPI document. The methods still send exactly what they sent in
+> 7.0.0, for accounts that have in-store access, but they are no longer checked against a published contract,
+> and calling them reports warning `RZPAY001`. Confirm availability with RozetkaPay; once you have, suppress
+> exactly that warning (`<NoWarn>$(NoWarn);RZPAY001</NoWarn>`, or `#pragma warning disable RZPAY001` at the
+> call site) rather than every `CS0618`.
 
 ```csharp
 using SYT.RozetkaPay.Models.InStorePayments;
@@ -923,8 +966,16 @@ Rules that matter:
 
 ## Partner Reporting
 
-`IPartnerService` covers the three official partner operations. Every input is a query value: pass raw
+`IPartnerService` covers the three partner operations. Every input is a query value: pass raw
 values and the SDK encodes each exactly once.
+
+> **Obsolete since 8.0.0.** On 2026-09-30 RozetkaPay removed `/api/partners/v1/*` (and the `partners` tag)
+> from its public OpenAPI document. The routes were still served on that day — called live with a non-partner
+> account, all three answered `400`, not `404` — so the methods are kept, byte-for-byte as in 7.0.0, for
+> accounts with partner access. They are no longer checked against a published contract and report warning
+> `RZPAY001`; suppress exactly that once RozetkaPay has confirmed your access. The fee fields are also
+> undocumented: the document never described `inner_fee`, `outer_fee`, `pnfp` or the units of `FeeItem`, so
+> interpret them against a real response from your account.
 
 ```csharp
 using SYT.RozetkaPay.Models.Partners;
@@ -1073,6 +1124,10 @@ What the SDK guarantees, and what it deliberately leaves to you:
 - **Navigating there is your decision, and validate it first.** `Location` is provider-controlled input.
   Redirecting a browser to it is the normal use. Fetching it *server-side* without validating scheme and
   host is a server-side request-forgery sink — treat it as untrusted data.
+- **A consolidated instruction declines its children too.** Since 2026-09-30 the operation takes an
+  optional `consolidated` flag: `DeclineAsync(projectId, consolidatedInstructionId, consolidated: true,
+  cancellationToken)` appends `&consolidated=true` and declines every child instruction of the batch.
+  `false` is the documented default and is not sent, so it is byte-identical to the two-identifier call.
 - **Neither identifier nor the location is logged.** Only the static route
   `/api/payment-instructions/v1/decline` reaches a log sink. A `302` without a usable `Location`, or a
   successful status that is not `302`, throws `RozetkaPayException` with a message that repeats neither

@@ -129,6 +129,18 @@ public class CreatePaymentRequest
     public decimal? CheckoutTtl { get; set; }
 
     /// <summary>
+    /// Card campaign the payment is validated against (<c>campaign_name</c>): <see cref="CampaignName.RCard"/>
+    /// checks that the customer paid with a Rozetka card, <see cref="CampaignName.DiiaCard"/> with a Diia card.
+    /// </summary>
+    /// <remarks>
+    /// Declared on <c>createPayment</c> since 2026-09-30, when the document switched that operation from the
+    /// <c>CreatePaymentRequestDev</c> body to <c>CreatePaymentRequest</c>; the two differ by exactly this
+    /// field. Left <see langword="null"/>, nothing is sent.
+    /// </remarks>
+    [JsonPropertyName("campaign_name")]
+    public CampaignName? CampaignName { get; set; }
+
+    /// <summary>
     /// Subscription this payment belongs to.
     /// </summary>
     [JsonPropertyName("subscription_id")]

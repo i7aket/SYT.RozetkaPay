@@ -71,7 +71,25 @@ public enum SubscriptionPaymentState
     /// Payment failed
     /// </summary>
     [JsonStringEnumMemberName("failed")]
-    Failed
+    Failed,
+
+    /// <summary>
+    /// Payment was refunded. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("refunded")]
+    Refunded,
+
+    /// <summary>
+    /// Refund of the payment failed. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("refund_failed")]
+    RefundFailed,
+
+    /// <summary>
+    /// Payment was canceled. Published on 2026-09-30.
+    /// </summary>
+    [JsonStringEnumMemberName("canceled")]
+    Canceled
 }
 
 /// <summary>

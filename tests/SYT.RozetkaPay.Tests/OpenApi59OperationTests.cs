@@ -4,48 +4,63 @@ using System.Text.Json;
 namespace SYT.RozetkaPay.Tests;
 
 /// <summary>
-/// Guards the pinned OpenAPI snapshot refreshed by EXP-354.
+/// Guards the pinned OpenAPI snapshot, refreshed on 2026-09-30.
 ///
 /// The snapshot is the SDK's single statement about what the provider publishes, so its identity is
 /// asserted byte-for-byte: the SHA-256 below is the hash of the document fetched from
-/// <c>https://docs.rozetkapay.com/openapi.json</c> on 2026-07-25. Path and operation counts, the ten
-/// operations EXP-354 adds, and the two operationIds that stopped being duplicates are asserted from the
-/// document itself rather than from a hand-maintained list.
+/// <c>https://docs.rozetkapay.com/openapi.json</c> on 2026-09-30. Path and operation counts, the three
+/// EXP-354 operations the document still publishes, the seven operations it stopped publishing that day,
+/// and the two operationIds that stopped being duplicates are asserted from the document itself rather than
+/// from a hand-maintained list.
 ///
-/// This class proves what the pinned document declares. It does not prove that a live sandbox answers
-/// all 67 operations - that coverage is EXP-337, and no claim about it is made here.
+/// The class keeps its EXP-354 name — it was written when the document had 59 paths — so that history and
+/// the compatibility notes that cite it still resolve.
+///
+/// This class proves what the pinned document declares. It does not prove that a live environment answers
+/// all 60 operations, and no claim about that is made here.
 /// </summary>
 public class OpenApi59OperationTests
 {
     /// <summary>
-    /// SHA-256 of the official document observed on 2026-07-25 and pinned by EXP-354.
+    /// SHA-256 of the official document observed on 2026-09-30. Computed over the bytes as served (LF line
+    /// endings). <c>.gitattributes</c> marks the snapshot <c>-text</c>, so a Windows checkout with
+    /// <c>core.autocrlf=true</c> no longer rewrites them to CRLF; a snapshot that does not match is a real edit.
     /// </summary>
     private const string PinnedSha256 =
-        "d3114314e542adc8239579116f02a367496387636af0707c332c848ac27766cf";
+        "2a343b47aed37e5d4d7fd10c1e6dfb74d7cadf6a96ced7cc1f0d96689395fcdd";
 
-    private const int PinnedPathCount = 59;
+    private const int PinnedPathCount = 52;
 
-    private const int PinnedOperationCount = 67;
+    private const int PinnedOperationCount = 60;
 
     private static readonly string[] HttpVerbs =
         ["get", "put", "post", "delete", "patch", "head", "options", "trace"];
 
     /// <summary>
-    /// The ten net-new verb/path/operationId triples EXP-354 covers.
+    /// The EXP-354 operations the 2026-09-30 document still publishes.
     /// </summary>
     public static TheoryData<string, string, string> NewOperations =>
         new()
         {
             { "PATCH", "/api/subscriptions/v1/subscriptions/{subscription_id}/payment-method", "UpdateSubscriptionPaymentMethod" },
+            { "POST", "/api/payment-instructions/v1/new", "createPaymentInstructions" },
+            { "GET", "/api/payment-instructions/v1/decline", "declinePaymentInstruction" }
+        };
+
+    /// <summary>
+    /// The seven operations the document stopped publishing on 2026-09-30. The SDK keeps them as obsolete
+    /// members; <c>OpenApiOperationContractTests</c> pins what they still send.
+    /// </summary>
+    public static TheoryData<string, string, string> RemovedOperations =>
+        new()
+        {
             { "POST", "/api/in-store-payments/v1/create", "createInStorePayment" },
             { "POST", "/api/in-store-payments/v1/confirm", "confirmInStorePayment" },
             { "POST", "/api/in-store-payments/v1/refund", "refundInStorePayment" },
             { "POST", "/api/in-store-payments/v1/info", "getInStorePaymentInfo" },
             { "GET", "/api/partners/v1/fee-details", "feeDetails" },
             { "GET", "/api/partners/v1/merchant-status", "merchantStatus" },
-            { "GET", "/api/partners/v1/transaction-details", "transactionDetails" },
-            { "POST", "/api/payment-instructions/v1/new", "createPaymentInstructions" },
-            { "GET", "/api/payment-instructions/v1/decline", "declinePaymentInstruction" }
+            { "GET", "/api/partners/v1/transaction-details", "transactionDetails" }
         };
 
     /// <summary>
@@ -53,9 +68,9 @@ public class OpenApi59OperationTests
     /// </summary>
     /// <remarks>
     /// Whether that snapshot still matches what RozetkaPay publishes is a different question, and
-    /// <c>scripts/verify-openapi-drift.sh</c> answers it in CI. This hash catches the other failure: a
-    /// local edit to the snapshot, which would quietly move every expectation the contract tests read
-    /// from it.
+    /// <c>scripts/verify-openapi-drift.sh</c> answers it in CI — on every pull request and once a day. This
+    /// hash catches the other failure: a local edit to the snapshot, which would quietly move every
+    /// expectation the contract tests read from it.
     /// </remarks>
     [Fact]
     public void PinnedSnapshot_ShouldMatchTheDocumentedHash()
@@ -67,7 +82,7 @@ public class OpenApi59OperationTests
     }
 
     [Fact]
-    public void PinnedSnapshot_ShouldDeclareFiftyNinePathsAndSixtySevenOperations()
+    public void PinnedSnapshot_ShouldDeclareFiftyTwoPathsAndSixtyOperations()
     {
         using JsonDocument document = LoadSnapshot();
         JsonElement paths = document.RootElement.GetProperty("paths");
@@ -91,8 +106,44 @@ public class OpenApi59OperationTests
         Assert.Equal(operationId, operation.GetProperty("operationId").GetString());
     }
 
+    /// <summary>
+    /// Each removed operation is gone as a path, not merely as a verb, and its operationId appears nowhere
+    /// else. If RozetkaPay publishes one again this fails — and the obsolete SDK member should come back as
+    /// canonical coverage instead of staying a retired row.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(RemovedOperations))]
+    public void PinnedSnapshot_ShouldNoLongerDeclareTheRemovedOperation(string verb, string path, string operationId)
+    {
+        using JsonDocument document = LoadSnapshot();
+        Dictionary<(string Verb, string Path), JsonElement> operations =
+            EnumerateOperations(document.RootElement.GetProperty("paths"));
+
+        Assert.False(operations.ContainsKey((verb, path)), $"{verb} {path} is declared again.");
+        Assert.False(document.RootElement.GetProperty("paths").TryGetProperty(path, out _), $"{path} is declared again.");
+        Assert.DoesNotContain(
+            operations.Values,
+            operation => operation.TryGetProperty("operationId", out JsonElement id)
+                && id.GetString() == operationId);
+    }
+
+    /// <summary>
+    /// The two tags that carried the removed operations went with them.
+    /// </summary>
     [Fact]
-    public void PinnedSnapshot_ShouldDeclareTenNewOperationsAndRemoveNone()
+    public void PinnedSnapshot_ShouldNoLongerPublishTheInStoreAndPartnerTags()
+    {
+        using JsonDocument document = LoadSnapshot();
+
+        string[] tags = [.. document.RootElement.GetProperty("tags").EnumerateArray()
+            .Select(static tag => tag.GetProperty("name").GetString()!)];
+
+        Assert.DoesNotContain("In-Store Payments", tags);
+        Assert.DoesNotContain("partners", tags);
+    }
+
+    [Fact]
+    public void PinnedSnapshot_ShouldDeclareTheThreeSurvivingNewOperationsAndRemoveSeven()
     {
         using JsonDocument document = LoadSnapshot();
         HashSet<(string, string)> declared =
@@ -101,9 +152,14 @@ public class OpenApi59OperationTests
         HashSet<(string, string)> expectedNew = NewOperations
             .Select(row => ((string)row[0], (string)row[1]))
             .ToHashSet();
+        HashSet<(string, string)> removed = RemovedOperations
+            .Select(row => ((string)row[0], (string)row[1]))
+            .ToHashSet();
 
-        Assert.Equal(10, expectedNew.Count);
+        Assert.Equal(3, expectedNew.Count);
+        Assert.Equal(7, removed.Count);
         Assert.Subset(declared, expectedNew);
+        Assert.Empty(declared.Intersect(removed));
     }
 
     /// <summary>
@@ -161,11 +217,16 @@ public class OpenApi59OperationTests
         // The verb is a GET, and nothing is sent with it.
         Assert.False(decline.TryGetProperty("requestBody", out _));
 
-        // Both query parameters are required.
+        // Both identifiers are required; consolidated (published 2026-09-30) is an optional boolean that
+        // defaults to false, which is why the SDK leaves it off the wire unless the caller asks for true.
         Dictionary<string, JsonElement> parameters = QueryParameters(decline);
         Assert.True(IsRequired(parameters["project_id"]));
         Assert.True(IsRequired(parameters["payment_instruction_id"]));
-        Assert.Equal(2, parameters.Count);
+        Assert.False(IsRequired(parameters["consolidated"]));
+        JsonElement consolidated = parameters["consolidated"].GetProperty("schema");
+        Assert.Equal("boolean", consolidated.GetProperty("type").GetString());
+        Assert.False(consolidated.GetProperty("default").GetBoolean());
+        Assert.Equal(3, parameters.Count);
 
         // 200 is not a documented outcome, so the SDK is right to treat it as a protocol failure.
         Assert.False(responses.TryGetProperty("200", out _));
@@ -199,26 +260,28 @@ public class OpenApi59OperationTests
     }
 
     /// <summary>
-    /// The info operation is a POST that declares no request body. The SDK must therefore send a POST
-    /// with no content at all — not a GET, and not an invented empty JSON object.
+    /// <c>createPayment</c> takes the <c>CreatePaymentRequest</c> body since 2026-09-30 (it referenced
+    /// <c>CreatePaymentRequestDev</c> before), and the one field that separates the two is
+    /// <c>campaign_name</c>, a <c>$ref</c> to the <c>CampaignName</c> enum.
     /// </summary>
     [Fact]
-    public void PinnedSnapshot_InStoreInfoOperation_ShouldBeABodylessPostWithRequiredExternalId()
+    public void PinnedSnapshot_CreatePayment_ShouldTakeCreatePaymentRequestWithCampaignName()
     {
         using JsonDocument document = LoadSnapshot();
-        JsonElement info = Operation(document, "post", "/api/in-store-payments/v1/info");
+        JsonElement create = Operation(document, "post", "/api/payments/v1/new");
 
-        Assert.False(info.TryGetProperty("requestBody", out _));
+        Assert.Equal(
+            "#/components/requestBodies/CreatePaymentRequest",
+            create.GetProperty("requestBody").GetProperty("$ref").GetString());
 
-        Dictionary<string, JsonElement> parameters = QueryParameters(info);
-        Assert.True(IsRequired(parameters["external_id"]));
-        Assert.Single(parameters);
-
-        // The same path is not also published as a GET.
-        JsonElement pathItem = document.RootElement.GetProperty("paths").GetProperty("/api/in-store-payments/v1/info");
-        Assert.False(pathItem.TryGetProperty("get", out _));
-
-        Assert.True(HasJsonResponse(document, info, "200"));
+        JsonElement properties = RequestBodySchema(document, create).GetProperty("properties");
+        Assert.Equal(
+            "#/components/schemas/CampaignName",
+            properties.GetProperty("campaign_name").GetProperty("$ref").GetString());
+        Assert.Equal(
+            ["r_card", "diia_card"],
+            document.RootElement.GetProperty("components").GetProperty("schemas").GetProperty("CampaignName")
+                .GetProperty("enum").EnumerateArray().Select(static value => value.GetString()));
     }
 
     [Fact]
@@ -251,70 +314,20 @@ public class OpenApi59OperationTests
     }
 
     /// <summary>
-    /// The eight remaining new operations declare a JSON <c>200</c>; the four in-store and the
-    /// payment-instruction create operations also declare a JSON request body.
+    /// The payment-instruction create operation declares a JSON request body and a JSON <c>200</c>.
     /// </summary>
     [Fact]
     public void PinnedSnapshot_NewOperations_ShouldDeclareTheExpectedBodiesAndResponses()
     {
         using JsonDocument document = LoadSnapshot();
 
-        string[] jsonBodyOperations =
-        [
-            "/api/in-store-payments/v1/create",
-            "/api/in-store-payments/v1/confirm",
-            "/api/in-store-payments/v1/refund",
-            "/api/payment-instructions/v1/new"
-        ];
-
-        foreach (string path in jsonBodyOperations)
-        {
-            JsonElement operation = Operation(document, "post", path);
-            Assert.True(
-                HasJsonRequestBody(document, operation),
-                $"POST {path} must declare an application/json request body.");
-            Assert.True(HasJsonResponse(document, operation, "200"), $"POST {path} must declare a JSON 200.");
-        }
-
-        string[] partnerOperations =
-        [
-            "/api/partners/v1/fee-details",
-            "/api/partners/v1/merchant-status",
-            "/api/partners/v1/transaction-details"
-        ];
-
-        foreach (string path in partnerOperations)
-        {
-            JsonElement operation = Operation(document, "get", path);
-            Assert.False(operation.TryGetProperty("requestBody", out _));
-            Assert.True(HasJsonResponse(document, operation, "200"), $"GET {path} must declare a JSON 200.");
-        }
-    }
-
-    /// <summary>
-    /// Partner query parameter names and requiredness, as the SDK renders them.
-    /// </summary>
-    [Fact]
-    public void PinnedSnapshot_PartnerOperations_ShouldDeclareTheExpectedQueryParameters()
-    {
-        using JsonDocument document = LoadSnapshot();
-
-        Dictionary<string, JsonElement> fee = QueryParameters(Operation(document, "get", "/api/partners/v1/fee-details"));
-        Assert.False(IsRequired(fee["merchant_project_id"]));
-        Assert.Single(fee);
-
-        Dictionary<string, JsonElement> status =
-            QueryParameters(Operation(document, "get", "/api/partners/v1/merchant-status"));
-        Assert.False(IsRequired(status["merchant_project_id"]));
-        Assert.False(IsRequired(status["merchant_entity_id"]));
-        Assert.Equal(2, status.Count);
-
-        Dictionary<string, JsonElement> transactions =
-            QueryParameters(Operation(document, "get", "/api/partners/v1/transaction-details"));
-        Assert.True(IsRequired(transactions["merchant_entity_id"]));
-        Assert.False(IsRequired(transactions["merchant_order_id"]));
-        Assert.False(IsRequired(transactions["unified_external_id"]));
-        Assert.Equal(3, transactions.Count);
+        JsonElement operation = Operation(document, "post", "/api/payment-instructions/v1/new");
+        Assert.True(
+            HasJsonRequestBody(document, operation),
+            "POST /api/payment-instructions/v1/new must declare an application/json request body.");
+        Assert.True(
+            HasJsonResponse(document, operation, "200"),
+            "POST /api/payment-instructions/v1/new must declare a JSON 200.");
     }
 
     /// <summary>
@@ -324,12 +337,6 @@ public class OpenApi59OperationTests
     public void PinnedSnapshot_ShouldDeclareTheExpectedEnumTokens()
     {
         using JsonDocument document = LoadSnapshot();
-
-        JsonElement create = RequestBodySchema(document, Operation(document, "post", "/api/in-store-payments/v1/create"));
-        Assert.Equal(
-            ["980"],
-            create.GetProperty("properties").GetProperty("currency").GetProperty("enum")
-                .EnumerateArray().Select(static value => value.GetString()));
 
         JsonElement instructions = RequestBodySchema(
             document,
@@ -367,6 +374,14 @@ public class OpenApi59OperationTests
         Assert.Equal(
             ["type", "cc_token", "wallet", "apple_pay", "google_pay", "recurrent_id"],
             paymentMethod.GetProperty("properties").EnumerateObject().Select(static property => property.Name));
+
+        // CustomerDocument.type is an inline enum (no component of its own), so EnumWireTokenTests cannot
+        // reach it by schema name; its three tokens are pinned here instead.
+        Assert.Equal(
+            ["passport", "id", "foreign-passport"],
+            document.RootElement.GetProperty("components").GetProperty("schemas").GetProperty("CustomerDocument")
+                .GetProperty("properties").GetProperty("type").GetProperty("enum")
+                .EnumerateArray().Select(static value => value.GetString()));
     }
 
     private static string SnapshotPath()

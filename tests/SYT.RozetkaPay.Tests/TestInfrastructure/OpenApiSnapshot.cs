@@ -58,6 +58,167 @@ internal static class OpenApiSnapshot
     }
 
     /// <summary>
+    /// The distinct values of an enum declared inline on one property of a component schema, in declaration
+    /// order.
+    /// </summary>
+    /// <remarks>
+    /// An inline enum has no component name of its own, so <see cref="EnumValues"/> cannot reach it — the gap
+    /// <c>CustomerDocument.type</c> fell into. The property is looked up through <c>allOf</c> as well.
+    /// </remarks>
+    internal static IReadOnlyList<string> InlineEnumValues(string schemaName, string propertyName)
+    {
+        JsonElement property = FindProperty(Schemas().GetProperty(schemaName), propertyName)
+            ?? throw new InvalidOperationException($"Schema '{schemaName}' declares no property '{propertyName}'.");
+        List<string> values = CollectEnumValues(property);
+
+        return values.Count == 0
+            ? throw new InvalidOperationException($"'{schemaName}.{propertyName}' declares no enum values.")
+            : [.. values.Distinct(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// The property names one component schema declares, directly or through <c>allOf</c>.
+    /// </summary>
+    internal static IReadOnlyCollection<string> PropertyNamesOfSchema(string schemaName)
+    {
+        return [.. CollectPropertyNames(Schemas().GetProperty(schemaName)).Distinct(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// The component a named callback posts, as <c>(section, name)</c> — for example
+    /// <c>("responses", "PaymentOperationResult")</c>. An alias callback (a bare <c>$ref</c> to another) is
+    /// followed.
+    /// </summary>
+    internal static (string Section, string Name) CallbackRequestBody(string callbackName)
+    {
+        JsonElement callback = Resolve(
+            Document.Value.RootElement.GetProperty("components").GetProperty("callbacks").GetProperty(callbackName));
+        JsonElement post = callback.EnumerateObject().Single().Value.GetProperty("post");
+        string reference = post.GetProperty("requestBody").GetProperty("$ref").GetString()!;
+        string[] segments = reference.Split('/');
+
+        return (segments[^2], segments[^1]);
+    }
+
+    /// <summary>
+    /// The property names a component declares — a schema, or the JSON body of a request body or response —
+    /// directly or through <c>allOf</c>.
+    /// </summary>
+    internal static IReadOnlyCollection<string> PropertyNamesOfComponent(string section, string name)
+    {
+        JsonElement component = Document.Value.RootElement.GetProperty("components").GetProperty(section).GetProperty(name);
+        JsonElement schema = section == "schemas" ? component : BodySchemaOrDefault(component);
+
+        return [.. CollectPropertyNames(schema).Distinct(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// The component schema one property of a component refers to by <c>$ref</c>.
+    /// </summary>
+    internal static string ReferencedSchemaOf(string section, string name, string propertyName)
+    {
+        JsonElement component = Document.Value.RootElement.GetProperty("components").GetProperty(section).GetProperty(name);
+        JsonElement schema = section == "schemas" ? component : BodySchemaOrDefault(component);
+        JsonElement property = FindProperty(schema, propertyName)
+            ?? throw new InvalidOperationException($"'{name}' declares no property '{propertyName}'.");
+
+        return property.GetProperty("$ref").GetString()!.Split('/')[^1];
+    }
+
+    /// <summary>
+    /// The property names one component schema lists as <c>required</c>, directly or through <c>allOf</c>.
+    /// </summary>
+    internal static IReadOnlyCollection<string> RequiredPropertyNamesOfSchema(string schemaName)
+    {
+        List<string> required = [];
+        CollectRequired(Schemas().GetProperty(schemaName), required, 0);
+        return [.. required.Distinct(StringComparer.Ordinal)];
+
+        static void CollectRequired(JsonElement schema, List<string> into, int depth)
+        {
+            if (depth > 10)
+            {
+                return;
+            }
+
+            schema = Resolve(schema);
+            if (schema.TryGetProperty("required", out JsonElement names))
+            {
+                into.AddRange(names.EnumerateArray().Select(static name => name.GetString()!));
+            }
+
+            if (schema.TryGetProperty("allOf", out JsonElement composed))
+            {
+                foreach (JsonElement part in composed.EnumerateArray())
+                {
+                    CollectRequired(part, into, depth + 1);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The <c>minLength</c> / <c>maxLength</c> a schema declares on one property, or <see langword="null"/>
+    /// for a limit it does not declare.
+    /// </summary>
+    internal static (int? Min, int? Max) LengthLimitsOf(string schemaName, string propertyName)
+    {
+        JsonElement property = FindProperty(Schemas().GetProperty(schemaName), propertyName)
+            ?? throw new InvalidOperationException($"Schema '{schemaName}' declares no property '{propertyName}'.");
+
+        return (Limit(property, "minLength"), Limit(property, "maxLength"));
+
+        static int? Limit(JsonElement property, string key) =>
+            property.TryGetProperty(key, out JsonElement value) ? value.GetInt32() : null;
+    }
+
+    /// <summary>
+    /// The names of the query parameters an operation declares, in declaration order.
+    /// </summary>
+    internal static IReadOnlyList<string> QueryParameterNamesOf(string method, string pathTemplate)
+    {
+        if (!TryGetOperation(method, pathTemplate, out JsonElement operation) ||
+            !operation.TryGetProperty("parameters", out JsonElement parameters))
+        {
+            return [];
+        }
+
+        return [.. parameters.EnumerateArray()
+            .Select(static parameter => Resolve(parameter))
+            .Where(static parameter => parameter.GetProperty("in").GetString() == "query")
+            .Select(static parameter => parameter.GetProperty("name").GetString()!)];
+    }
+
+    private static JsonElement? FindProperty(JsonElement schema, string propertyName, int depth = 0)
+    {
+        if (depth > 10)
+        {
+            return null;
+        }
+
+        schema = Resolve(schema);
+
+        if (schema.TryGetProperty("properties", out JsonElement properties) &&
+            properties.TryGetProperty(propertyName, out JsonElement property))
+        {
+            return property;
+        }
+
+        if (schema.TryGetProperty("allOf", out JsonElement composed))
+        {
+            foreach (JsonElement part in composed.EnumerateArray())
+            {
+                if (FindProperty(part, propertyName, depth + 1) is JsonElement found)
+                {
+                    return found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// The property names a named request body declares.
     /// </summary>
     internal static IEnumerable<string> RequestBodyPropertyNames(string requestBodyName)

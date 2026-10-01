@@ -175,9 +175,11 @@ public class Exp354FactoryLoggingTests
         using ServiceProvider provider = BuildProvider(logs, authenticated, RecordingHandler.Json("{}"));
         using IServiceScope scope = provider.CreateScope();
 
+#pragma warning disable RZPAY001 // Deliberate: the retired in-store member must still keep its query out of logs.
         InStorePaymentInfoResponse response = await scope.ServiceProvider
             .GetRequiredService<IInStorePaymentService>()
             .GetInfoAsync(Exp354TestContext.SecretExternalId);
+#pragma warning restore RZPAY001
 
         Assert.Equal("fc-1", response.FcId);
 
@@ -239,11 +241,14 @@ public class Exp354FactoryLoggingTests
         using ServiceProvider provider = BuildProvider(logs, authenticated, RecordingHandler.Json("{}"));
         using IServiceScope scope = provider.CreateScope();
 
-        await scope.ServiceProvider.GetRequiredService<IPartnerService>().GetFeeDetailsAsync();
+        // validateMerchantKeys, not the partner fee read this test used until 2026-09-30: that operation left
+        // the published document and its member is obsolete, while this one is published and equally free
+        // of caller identifiers.
+        await scope.ServiceProvider.GetRequiredService<IMerchantService>().GetInfoAsync();
 
         Assert.Contains(
             logs.AllText,
-            text => text.Contains("/api/partners/v1/fee-details", StringComparison.Ordinal));
+            text => text.Contains("/api/merchants/v1/me", StringComparison.Ordinal));
         Assert.Contains(logs.AllText, text => text.Contains("Response status", StringComparison.Ordinal));
 
         // The SDK logs come from the service categories, never from the factory ones.

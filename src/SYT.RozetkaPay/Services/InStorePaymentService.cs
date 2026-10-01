@@ -44,6 +44,7 @@ public class InStorePaymentService : BaseService, IInStorePaymentService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Created transaction and its receipt data</returns>
     /// <exception cref="ArgumentNullException"><paramref name="request"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.InStoreOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<InStorePaymentCreateResponse> CreateAsync(
         InStorePaymentCreateRequest request,
         CancellationToken cancellationToken = default)
@@ -65,6 +66,7 @@ public class InStorePaymentService : BaseService, IInStorePaymentService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Confirmed transaction and its receipt data</returns>
     /// <exception cref="ArgumentNullException"><paramref name="request"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.InStoreOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<InStorePaymentConfirmResponse> ConfirmAsync(
         InStorePaymentConfirmRequest request,
         CancellationToken cancellationToken = default)
@@ -86,6 +88,7 @@ public class InStorePaymentService : BaseService, IInStorePaymentService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Refund transaction and its receipt data</returns>
     /// <exception cref="ArgumentNullException"><paramref name="request"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.InStoreOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<InStorePaymentRefundResponse> RefundAsync(
         InStorePaymentRefundRequest request,
         CancellationToken cancellationToken = default)
@@ -113,6 +116,7 @@ public class InStorePaymentService : BaseService, IInStorePaymentService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Current transaction state</returns>
     /// <exception cref="ArgumentNullException"><paramref name="externalId"/> is null.</exception>
+    [Obsolete(RemovedFromPublicDocument.InStoreOperation, DiagnosticId = RemovedFromPublicDocument.DiagnosticId, UrlFormat = RemovedFromPublicDocument.UrlFormat)]
     public async Task<InStorePaymentInfoResponse> GetInfoAsync(
         string externalId,
         CancellationToken cancellationToken = default)

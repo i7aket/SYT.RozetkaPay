@@ -31,12 +31,12 @@ public class ModelFieldCoverageTests
     /// <summary>
     /// Declared fields the SDK deliberately does not carry, and why.
     /// </summary>
-    private static readonly Dictionary<string, string> AcceptedGaps = new()
-    {
-        ["CreatePaymentRequest.campaign_name"] =
-            "the operation POST /api/payments/v1/new takes CreatePaymentRequestDev, which does not "
-            + "declare campaign_name; the similarly named schema it appears on is referenced by nothing",
-    };
+    /// <remarks>
+    /// Empty since 2026-09-30. The one entry it held — <c>CreatePaymentRequest.campaign_name</c>, excused
+    /// because <c>createPayment</c> referenced <c>CreatePaymentRequestDev</c> — went stale when the document
+    /// switched the operation to <c>CreatePaymentRequest</c>, and the SDK now sends the field.
+    /// </remarks>
+    private static readonly Dictionary<string, string> AcceptedGaps = [];
 
     [Fact]
     public void NoPublishedSchema_ShouldDeclareAFieldTheSdkCannotReceive()

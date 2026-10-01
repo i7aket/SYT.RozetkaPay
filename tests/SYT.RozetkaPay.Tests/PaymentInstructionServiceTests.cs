@@ -430,6 +430,87 @@ public class PaymentInstructionServiceTests
         }
     }
 
+    /// <summary>
+    /// <c>consolidated=true</c> (published 2026-09-30) goes last, after both identifiers, over the same
+    /// credential-free client.
+    /// </summary>
+    [Fact]
+    public async Task Decline_Consolidated_ShouldAppendTheFlagAfterBothIdentifiersAndStayAnonymous()
+    {
+        RecordingHandler authenticated = RecordingHandler.Json("{}");
+        RecordingHandler decline = RecordingHandler.Redirect("https://provider.example/declined");
+        using HttpClient declineClient = Exp354TestContext.CreateDeclineHttpClient(decline);
+
+        PaymentInstructionDeclineResult result = await Exp354TestContext
+            .PaymentInstructions(authenticated, declineClient, Exp354TestContext.WithCustomerAuth())
+            .DeclineAsync(Exp354TestContext.HostileRawId, "pi-1", consolidated: true);
+
+        Exp354Request recorded = Assert.Single(decline.Requests);
+        Assert.Empty(authenticated.Requests);
+
+        Assert.Equal(HttpMethod.Get, recorded.Method);
+        Assert.Equal(
+            $"{DeclineEndpoint}?project_id={Exp354TestContext.HostileEncodedId}&payment_instruction_id=pi-1" +
+            "&consolidated=true",
+            recorded.RequestUri.PathAndQuery);
+        Assert.False(recorded.HasContent);
+        Assert.Equal(HttpStatusCode.Redirect, result.StatusCode);
+
+        foreach (string headerName in CredentialHeaderNames)
+        {
+            Assert.False(
+                recorded.Headers.ContainsKey(headerName),
+                $"The consolidated decline request must not carry '{headerName}'.");
+        }
+    }
+
+    /// <summary>
+    /// <c>false</c> is the document's default, so it is not sent: the request is byte-identical to the
+    /// two-identifier overload, which is what keeps that overload's 7.0.0 wire behaviour unchanged.
+    /// </summary>
+    [Fact]
+    public async Task Decline_NotConsolidated_ShouldSendExactlyWhatTheTwoIdentifierOverloadSends()
+    {
+        RecordingHandler legacy = RecordingHandler.Redirect("https://provider.example/declined");
+        RecordingHandler explicitFalse = RecordingHandler.Redirect("https://provider.example/declined");
+        using HttpClient legacyClient = Exp354TestContext.CreateDeclineHttpClient(legacy);
+        using HttpClient explicitFalseClient = Exp354TestContext.CreateDeclineHttpClient(explicitFalse);
+
+        await Exp354TestContext
+            .PaymentInstructions(RecordingHandler.Json("{}"), legacyClient)
+            .DeclineAsync("project-1", "pi-1");
+        await Exp354TestContext
+            .PaymentInstructions(RecordingHandler.Json("{}"), explicitFalseClient)
+            .DeclineAsync("project-1", "pi-1", consolidated: false);
+
+        Assert.Equal(
+            Assert.Single(legacy.Requests).RequestUri.PathAndQuery,
+            Assert.Single(explicitFalse.Requests).RequestUri.PathAndQuery);
+        Assert.DoesNotContain(
+            "consolidated",
+            Assert.Single(explicitFalse.Requests).RequestUri.Query,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Decline_Consolidated_ShouldRejectNullIdentifiersBeforeSendingAnything()
+    {
+        RecordingHandler decline = RecordingHandler.Redirect("https://provider.example/declined");
+        using HttpClient declineClient = Exp354TestContext.CreateDeclineHttpClient(decline);
+        PaymentInstructionService service =
+            Exp354TestContext.PaymentInstructions(RecordingHandler.Json("{}"), declineClient);
+
+        Assert.Equal(
+            "projectId",
+            (await Assert.ThrowsAsync<ArgumentNullException>(
+                () => service.DeclineAsync(null!, "pi-1", consolidated: true))).ParamName);
+        Assert.Equal(
+            "paymentInstructionId",
+            (await Assert.ThrowsAsync<ArgumentNullException>(
+                () => service.DeclineAsync("project-1", null!, consolidated: true))).ParamName);
+        Assert.Empty(decline.Requests);
+    }
+
     [Theory]
     [InlineData(Exp354TestContext.HostileRawId, Exp354TestContext.HostileEncodedId)]
     [InlineData(Exp354TestContext.LooksEncodedRawId, Exp354TestContext.LooksEncodedExpectedId)]

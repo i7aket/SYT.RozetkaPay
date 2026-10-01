@@ -33,8 +33,9 @@ public class MetadataContractTests
     /// </summary>
     /// <remarks>
     /// Ten sites, nine types. <c>CreatePaymentRequest</c> and <c>CreatePaymentRequestDev</c> are the
-    /// same body under two names — only the second is referenced by an operation, and they differ by
-    /// one field the referenced one does not have — so a single SDK type serves both.
+    /// same body under two names — since 2026-09-30 only the first is referenced by an operation, and
+    /// they differ by one field (<c>campaign_name</c>) the second does not have — so a single SDK type
+    /// serves both.
     /// </remarks>
     private static readonly Dictionary<string, Type> MetadataSites = new()
     {

@@ -78,13 +78,34 @@ internal static class OpenApiOperationManifest
         .. CustomerWallet(),
         .. Subscriptions(),
         .. Reports(),
-        .. InStorePayments(),
-        .. Partners(),
         .. MerchantInstructionsAndFinMon()
     ];
 
     /// <summary>
-    /// Expected size of each coverage group. The sizes are asserted, and they sum to the 67 operations the
+    /// Operations the document stopped publishing on 2026-09-30 and the SDK still exposes as obsolete
+    /// members (diagnostic <c>RZPAY001</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// They are deliberately not in <see cref="All"/>: that set is compared exactly against the pinned
+    /// document, and these are no longer in it. They are not deleted either. Each row still states the
+    /// request the member sent in 7.0.0 — verb, target, body sentinels, authentication — and
+    /// <c>OpenApiOperationContractTests</c> executes it, so "kept for accounts with partner or in-store
+    /// access" stays a tested promise rather than untested code.
+    /// </para>
+    /// <para>
+    /// The expectations are no longer backed by a published contract. They are what the document said on
+    /// 2026-07-25, frozen.
+    /// </para>
+    /// </remarks>
+    internal static IReadOnlyList<OpenApiOperationContract> Retired { get; } =
+    [
+        .. InStorePayments(),
+        .. Partners()
+    ];
+
+    /// <summary>
+    /// Expected size of each coverage group. The sizes are asserted, and they sum to the 60 operations the
     /// pinned document declares.
     /// </summary>
     internal static IReadOnlyDictionary<string, int> ExpectedGroupSizes { get; } =
@@ -98,9 +119,18 @@ internal static class OpenApiOperationManifest
             ["Customer wallet"] = 6,
             ["Subscriptions"] = 14,
             ["Reports"] = 2,
-            ["In-store payments"] = 4,
-            ["Partner operations"] = 3,
             ["Merchant, payment instructions and FinMon"] = 4
+        };
+
+    /// <summary>
+    /// Expected size of each retired group: the four in-store and three partner operations removed from the
+    /// document on 2026-09-30.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, int> ExpectedRetiredGroupSizes { get; } =
+        new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            ["In-store payments"] = 4,
+            ["Partner operations"] = 3
         };
 
     /// <summary>A caller-supplied raw identifier: an operation-unique slug plus the hostile suffix.</summary>
@@ -1183,7 +1213,15 @@ internal static class OpenApiOperationManifest
         }
     ];
 
-    // ===================== In-store payments - 4 =====================
+    // ===================== Retired on 2026-09-30 =====================
+    //
+    // The two groups below are Retired, not All: the document no longer publishes them. The rows call the
+    // obsolete members on purpose - pinning what those members still send is the whole point - so the
+    // RZPAY001 warning is suppressed for exactly these two methods and nowhere else in this file.
+
+#pragma warning disable RZPAY001 // Deliberate: retired rows pin the wire behaviour of the obsolete members.
+
+    // ===================== In-store payments - 4 (retired) =====================
 
     private static OpenApiOperationContract[] InStorePayments() =>
     [
@@ -1277,7 +1315,7 @@ internal static class OpenApiOperationManifest
         }
     ];
 
-    // ===================== Partner operations - 3 =====================
+    // ===================== Partner operations - 3 (retired) =====================
 
     private static OpenApiOperationContract[] Partners() =>
     [
@@ -1340,6 +1378,8 @@ internal static class OpenApiOperationManifest
                 token)
         }
     ];
+
+#pragma warning restore RZPAY001
 
     // ===================== Merchant, payment instructions and FinMon - 4 =====================
 

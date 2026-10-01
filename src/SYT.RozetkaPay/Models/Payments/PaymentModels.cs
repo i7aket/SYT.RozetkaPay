@@ -791,6 +791,12 @@ public class ResultUserDetails
     /// </summary>
     [JsonPropertyName("phone")]
     public string? Phone { get; set; }
+
+    /// <summary>
+    /// Payer identification code (<c>tin</c>). Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("tin")]
+    public string? Tin { get; set; }
 }
 
 /// <summary>
@@ -885,6 +891,21 @@ public class PaymentOperationResult
     /// </summary>
     [JsonPropertyName("project_id")]
     public string? ProjectId { get; set; }
+
+    /// <summary>
+    /// External ID of the parent order (<c>child_of</c>). Empty when <see cref="HasChild"/> is
+    /// <see langword="true"/>. Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("child_of")]
+    public string? ChildOf { get; set; }
+
+    /// <summary>
+    /// Whether this order has a child order (<c>has_child</c>); <see langword="false"/> when
+    /// <see cref="ChildOf"/> carries a value. <see langword="null"/> when the provider omitted it. Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("has_child")]
+    public bool? HasChild { get; set; }
 }
 
 /// <summary>
@@ -1154,6 +1175,13 @@ public class ApplePayResponsePaymentMethod
     public string? BankShortName { get; set; }
 
     /// <summary>
+    /// Alias name of the card BIN (<c>bin_alias_name</c>), for example <c>ROZETKA CARD</c>. Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("bin_alias_name")]
+    public string? BinAliasName { get; set; }
+
+    /// <summary>
     /// Card expiration date (ISO 8601 format)
     /// </summary>
     [JsonPropertyName("expires_at")]
@@ -1195,6 +1223,13 @@ public class GooglePayResponsePaymentMethod
     /// </summary>
     [JsonPropertyName("bank_short_name")]
     public string? BankShortName { get; set; }
+
+    /// <summary>
+    /// Alias name of the card BIN (<c>bin_alias_name</c>), for example <c>ROZETKA CARD</c>. Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("bin_alias_name")]
+    public string? BinAliasName { get; set; }
 
     /// <summary>
     /// Card expiration date (ISO 8601 format)
@@ -1240,6 +1275,13 @@ public class CCTokenResponsePaymentMethod
     public string? BankShortName { get; set; }
 
     /// <summary>
+    /// Alias name of the card BIN (<c>bin_alias_name</c>), for example <c>ROZETKA CARD</c>. Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("bin_alias_name")]
+    public string? BinAliasName { get; set; }
+
+    /// <summary>
     /// Card expiration date (ISO 8601 format)
     /// </summary>
     [JsonPropertyName("expires_at")]
@@ -1277,12 +1319,17 @@ public class CCTokenResponsePaymentMethod
 }
 
 /// <summary>
-/// Partner details (JSON object as per CDN documentation)
+/// Identifiers assigned to the payment by an external partner system.
 /// </summary>
+/// <remarks>
+/// Returned only for payments processed through a partner (for example a mobile account top-up), and only
+/// after the partner has provided its identifiers — so a missing object is normal for most payments.
+/// </remarks>
 public class PartnerDetails
 {
     /// <summary>
-    /// Partner transaction ID (JSON string as per CDN documentation)
+    /// Transaction identifier in the external partner system. Omitted while the partner has not returned it
+    /// yet.
     /// </summary>
     [JsonPropertyName("transaction_id")]
     public string? TransactionId { get; set; }
