@@ -1319,7 +1319,8 @@ learns at runtime, in production, against money. Read `Removed` and `Changed` be
 ### Added
 - Initial alpha SDK package.
 
-[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v7.0.0...main
+[Unreleased]: https://github.com/i7aket/SYT.RozetkaPay/compare/v8.0.0...main
+[8.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/8.0.0
 [7.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/7.0.0
 [6.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/6.0.0
 [5.0.0]: https://www.nuget.org/packages/SYT.RozetkaPay/5.0.0
