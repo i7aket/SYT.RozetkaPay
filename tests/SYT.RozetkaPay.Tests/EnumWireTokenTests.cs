@@ -89,6 +89,56 @@ public class EnumWireTokenTests
         ["SubscriptionState"] = typeof(SubscriptionState),
     };
 
+    /// <summary>
+    /// SDK enums that mirror an enum declared inline on one property of a published schema.
+    /// </summary>
+    /// <remarks>
+    /// An inline enum has no component name, so <see cref="ModelledSchemas"/> — and the coverage sweep
+    /// over component names — cannot see it. Without this list a typo such as <c>foreign_passport</c> on
+    /// <see cref="CustomerDocumentType.ForeignPassport"/> left the whole suite green.
+    /// </remarks>
+    private static readonly Dictionary<(string Schema, string Property), Type> ModelledInlineEnums = new()
+    {
+        [("CustomerDocument", "type")] = typeof(CustomerDocumentType),
+    };
+
+    public static TheoryData<string, string> PublishedInlineEnums
+    {
+        get
+        {
+            TheoryData<string, string> data = [];
+            foreach ((string schema, string property) in ModelledInlineEnums.Keys.Order())
+            {
+                data.Add(schema, property);
+            }
+
+            return data;
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(PublishedInlineEnums))]
+    public void InlineEnum_ShouldSerializeToExactlyTheDeclaredTokens(string schemaName, string propertyName)
+    {
+        HashSet<string> expected = [.. OpenApiSnapshot.InlineEnumValues(schemaName, propertyName)];
+        HashSet<string> actual = [.. WireTokensOf(ModelledInlineEnums[(schemaName, propertyName)])];
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [MemberData(nameof(PublishedInlineEnums))]
+    public void InlineEnum_ShouldReadBackEveryDeclaredToken(string schemaName, string propertyName)
+    {
+        Type enumType = ModelledInlineEnums[(schemaName, propertyName)];
+
+        foreach (string token in OpenApiSnapshot.InlineEnumValues(schemaName, propertyName))
+        {
+            object? parsed = JsonSerializer.Deserialize($"\"{token}\"", enumType, SdkSerializerOptions.Value);
+            Assert.NotNull(parsed);
+        }
+    }
+
     public static TheoryData<string> PublishedEnumSchemas
     {
         get

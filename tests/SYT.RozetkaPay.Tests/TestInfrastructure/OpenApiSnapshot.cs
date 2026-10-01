@@ -58,6 +58,79 @@ internal static class OpenApiSnapshot
     }
 
     /// <summary>
+    /// The distinct values of an enum declared inline on one property of a component schema, in declaration
+    /// order.
+    /// </summary>
+    /// <remarks>
+    /// An inline enum has no component name of its own, so <see cref="EnumValues"/> cannot reach it — the gap
+    /// <c>CustomerDocument.type</c> fell into. The property is looked up through <c>allOf</c> as well.
+    /// </remarks>
+    internal static IReadOnlyList<string> InlineEnumValues(string schemaName, string propertyName)
+    {
+        JsonElement property = FindProperty(Schemas().GetProperty(schemaName), propertyName)
+            ?? throw new InvalidOperationException($"Schema '{schemaName}' declares no property '{propertyName}'.");
+        List<string> values = CollectEnumValues(property);
+
+        return values.Count == 0
+            ? throw new InvalidOperationException($"'{schemaName}.{propertyName}' declares no enum values.")
+            : [.. values.Distinct(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// The property names one component schema declares, directly or through <c>allOf</c>.
+    /// </summary>
+    internal static IReadOnlyCollection<string> PropertyNamesOfSchema(string schemaName)
+    {
+        return [.. CollectPropertyNames(Schemas().GetProperty(schemaName)).Distinct(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// The names of the query parameters an operation declares, in declaration order.
+    /// </summary>
+    internal static IReadOnlyList<string> QueryParameterNamesOf(string method, string pathTemplate)
+    {
+        if (!TryGetOperation(method, pathTemplate, out JsonElement operation) ||
+            !operation.TryGetProperty("parameters", out JsonElement parameters))
+        {
+            return [];
+        }
+
+        return [.. parameters.EnumerateArray()
+            .Select(static parameter => Resolve(parameter))
+            .Where(static parameter => parameter.GetProperty("in").GetString() == "query")
+            .Select(static parameter => parameter.GetProperty("name").GetString()!)];
+    }
+
+    private static JsonElement? FindProperty(JsonElement schema, string propertyName, int depth = 0)
+    {
+        if (depth > 10)
+        {
+            return null;
+        }
+
+        schema = Resolve(schema);
+
+        if (schema.TryGetProperty("properties", out JsonElement properties) &&
+            properties.TryGetProperty(propertyName, out JsonElement property))
+        {
+            return property;
+        }
+
+        if (schema.TryGetProperty("allOf", out JsonElement composed))
+        {
+            foreach (JsonElement part in composed.EnumerateArray())
+            {
+                if (FindProperty(part, propertyName, depth + 1) is JsonElement found)
+                {
+                    return found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// The property names a named request body declares.
     /// </summary>
     internal static IEnumerable<string> RequestBodyPropertyNames(string requestBodyName)
