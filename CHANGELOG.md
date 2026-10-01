@@ -149,7 +149,7 @@ Under SemVer either one makes this a major release.
 
 ### Verification
 
-- `net10.0`: `1546` passed, `0` failed, `1` skipped (live sandbox smoke, no credentials). `Release` build with
+- `net10.0`: `1578` passed, `0` failed, `1` skipped (live sandbox smoke, no credentials). `Release` build with
   `-warnaserror`: `0` warnings.
 - Live, read-only, public test pair: `Sandbox` host `401`; production `validateMerchantKeys`,
   `payPartsGetBanksInfo`, `getPlans` `200`; the three retired partner GETs `400`. No mutating call.
