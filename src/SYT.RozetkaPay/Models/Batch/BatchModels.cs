@@ -27,6 +27,7 @@ public class CreateBatchPaymentRequest
     /// Payer customer data. Optional: the document does not list it among the required fields, and a
     /// hosted batch does not carry it.
     /// </summary>
+    [ValidateNested(OwnAnnotations = false)]
     [JsonPropertyName("customer")]
     public BatchCustomer? Customer { get; set; }
 
@@ -59,6 +60,7 @@ public class CreateBatchPaymentRequest
     /// List of orders of batch (max 10 items)
     /// </summary>
     [Required]
+    [ValidateNested(OwnAnnotations = false)]
     [JsonPropertyName("orders")]
     public List<BatchOrder> Orders { get; set; } = new();
 
@@ -206,6 +208,7 @@ public class BatchCustomer
     /// Identity document of a payer who has no individual tax number (<c>document</c>). Added to the published
     /// schema (<c>BatchCustomerRequestUserDetails</c>) on 2026-09-30.
     /// </summary>
+    [ValidateNested]
     [JsonPropertyName("document")]
     public CustomerDocument? Document { get; set; }
 }
@@ -290,6 +293,7 @@ public class BatchOrder
     /// (<c>order_recipient</c>). Optional; when provided, all of its fields are required together. Added to the
     /// published schema on 2026-09-30.
     /// </summary>
+    [ValidateNested]
     [JsonPropertyName("order_recipient")]
     public OrderRecipient? OrderRecipient { get; set; }
 }
@@ -524,6 +528,7 @@ public class BatchCustomerRequestUserDetails : BaseRequestUserDetails
     /// Identity document of a payer who has no individual tax number (<c>document</c>). Added to the published
     /// schema on 2026-09-30.
     /// </summary>
+    [ValidateNested]
     [JsonPropertyName("document")]
     public CustomerDocument? Document { get; set; }
 }

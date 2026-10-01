@@ -117,6 +117,7 @@ public class PaymentInstructionOrder
     /// <see cref="PaymentInstructionProcessingType.CardPay"/> only. Required for an order of a government
     /// entity and rejected for any other — the provider decides which, so the SDK does not validate it.
     /// </remarks>
+    [ValidateNested]
     [JsonPropertyName("order_recipient")]
     public OrderRecipient? OrderRecipient { get; set; }
 }
@@ -167,6 +168,7 @@ public class CreatePaymentInstructionsRequest
     [JsonPropertyName("orders")]
     [Required]
     [MinLength(1)]
+    [ValidateNested(OwnAnnotations = false)]
     public List<PaymentInstructionOrder> Orders { get; set; } = [];
 }
 

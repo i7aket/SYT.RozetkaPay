@@ -14,6 +14,11 @@ namespace SYT.RozetkaPay.Models.Common;
 /// fields are required together.
 /// </para>
 /// <para>
+/// On a request the SDK enforces that, and the documented lengths, before sending: an incomplete recipient
+/// raises <see cref="SYT.RozetkaPay.Exceptions.RozetkaPayValidationException"/> instead of reaching the
+/// provider.
+/// </para>
+/// <para>
 /// Not to be confused with <c>ExpressCheckoutRecipient</c>, the delivery recipient a payment-info response carries
 /// under the same JSON name.
 /// </para>
@@ -24,6 +29,7 @@ public class OrderRecipient
     /// Recipient name, for example <c>Державне казначейство України</c>. At most 255 characters.
     /// </summary>
     [Required]
+    [StringLength(255)]
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
@@ -31,6 +37,7 @@ public class OrderRecipient
     /// Recipient identification code, for example <c>12345676</c>. At most 20 characters.
     /// </summary>
     [Required]
+    [StringLength(20)]
     [JsonPropertyName("tin")]
     public string? Tin { get; set; }
 
@@ -38,6 +45,7 @@ public class OrderRecipient
     /// Recipient account (IBAN), 15 to 34 characters.
     /// </summary>
     [Required]
+    [StringLength(34, MinimumLength = 15)]
     [JsonPropertyName("iban")]
     public string? Iban { get; set; }
 
@@ -45,6 +53,7 @@ public class OrderRecipient
     /// Recipient's payment service provider (bank) name. At most 255 characters.
     /// </summary>
     [Required]
+    [StringLength(255)]
     [JsonPropertyName("bank_name")]
     public string? BankName { get; set; }
 }
@@ -70,6 +79,7 @@ public class CustomerDocument
     /// Document series: two Cyrillic letters for <see cref="CustomerDocumentType.Passport"/>. Omit it for
     /// <see cref="CustomerDocumentType.Id"/>, which has no series. At most 10 characters.
     /// </summary>
+    [StringLength(10)]
     [JsonPropertyName("series")]
     public string? Series { get; set; }
 
@@ -78,6 +88,7 @@ public class CustomerDocument
     /// <see cref="CustomerDocumentType.Id"/>. At most 20 characters.
     /// </summary>
     [Required]
+    [StringLength(20)]
     [JsonPropertyName("number")]
     public string? Number { get; set; }
 }

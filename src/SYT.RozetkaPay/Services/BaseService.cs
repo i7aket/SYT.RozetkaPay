@@ -1,7 +1,9 @@
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using SYT.RozetkaPay.Configuration;
@@ -297,6 +299,14 @@ public abstract class BaseService
     /// order deliberately: sixteen annotations contradicted it, so switching validation on first would
     /// have started rejecting requests the provider accepts.
     /// </para>
+    /// <para>
+    /// <see cref="Validator"/> reads only the object it is given. Nested objects are validated too, but only
+    /// through properties marked <see cref="SYT.RozetkaPay.Models.Common.ValidateNestedAttribute"/> — the
+    /// paths whose annotations have been held to the document (an incomplete <c>order_recipient</c>, for
+    /// instance). Objects on the way that were never validated before (a batch order) are walked through
+    /// without enforcing their own annotations. A failure is reported under its path, e.g.
+    /// <c>Orders[0].OrderRecipient: The Iban field is required.</c>
+    /// </para>
     /// </remarks>
     /// <typeparam name="TRequest">Body type.</typeparam>
     /// <param name="request">Body to validate and serialize.</param>
@@ -309,18 +319,14 @@ public abstract class BaseService
     {
         if (request is not null)
         {
-            List<ValidationResult> failures = [];
-            if (!Validator.TryValidateObject(
-                    request,
-                    new ValidationContext(request),
-                    failures,
-                    validateAllProperties: true))
+            List<string?> failures = [];
+            CollectValidationFailures(request, path: null, failures, depth: 0);
+
+            if (failures.Count > 0)
             {
                 // Member names and rule text only. A validation message never carries the offending
                 // value, which may be a card number or a customer's details.
-                string detail = string.Join(
-                    "; ",
-                    failures.Select(static failure => failure.ErrorMessage).Where(static m => m is not null));
+                string detail = string.Join("; ", failures.Where(static m => m is not null));
 
                 throw new RozetkaPayValidationException(
                     $"The request does not satisfy the contract: {detail}");
@@ -328,6 +334,84 @@ public abstract class BaseService
         }
 
         return JsonSerializer.Serialize(request, SdkSerializerOptions.Value);
+    }
+
+    /// <summary>
+    /// Deepest <see cref="SYT.RozetkaPay.Models.Common.ValidateNestedAttribute"/> chain followed. The models
+    /// are trees two or three levels deep; the bound only keeps a future cycle from recursing forever.
+    /// </summary>
+    private const int MaxNestedValidationDepth = 8;
+
+    private static readonly ConcurrentDictionary<Type, (PropertyInfo Property, bool OwnAnnotations)[]>
+        NestedValidationProperties = new();
+
+    /// <summary>
+    /// Validate one object's own annotations (unless it is only walked through), then walk into the
+    /// properties marked <see cref="SYT.RozetkaPay.Models.Common.ValidateNestedAttribute"/>.
+    /// </summary>
+    private static void CollectValidationFailures(
+        object instance,
+        string? path,
+        List<string?> failures,
+        int depth,
+        bool ownAnnotations = true)
+    {
+        if (ownAnnotations)
+        {
+            List<ValidationResult> results = [];
+            Validator.TryValidateObject(instance, new ValidationContext(instance), results, validateAllProperties: true);
+
+            // A failure without a message still fails the request, exactly as it did before nesting existed.
+            failures.AddRange(results.Select(result =>
+                path is null || result.ErrorMessage is null ? result.ErrorMessage : $"{path}: {result.ErrorMessage}"));
+        }
+
+        if (depth >= MaxNestedValidationDepth)
+        {
+            return;
+        }
+
+        (PropertyInfo Property, bool OwnAnnotations)[] nested = NestedValidationProperties.GetOrAdd(
+            instance.GetType(),
+            static type => [.. type
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(static property => property.GetIndexParameters().Length == 0)
+                .Select(static property => (
+                    Property: property,
+                    Marker: property.GetCustomAttribute<SYT.RozetkaPay.Models.Common.ValidateNestedAttribute>(inherit: true)))
+                .Where(static entry => entry.Marker is not null)
+                .Select(static entry => (entry.Property, entry.Marker!.OwnAnnotations))]);
+
+        foreach ((PropertyInfo property, bool validateOwn) in nested)
+        {
+            object? value = property.GetValue(instance);
+            string name = path is null ? property.Name : $"{path}.{property.Name}";
+
+            switch (value)
+            {
+                case null:
+                case string:
+                    break;
+
+                case System.Collections.IEnumerable items:
+                    int index = 0;
+                    foreach (object? item in items)
+                    {
+                        if (item is not null)
+                        {
+                            CollectValidationFailures(item, $"{name}[{index}]", failures, depth + 1, validateOwn);
+                        }
+
+                        index++;
+                    }
+
+                    break;
+
+                default:
+                    CollectValidationFailures(value, name, failures, depth + 1, validateOwn);
+                    break;
+            }
+        }
     }
 
     /// <summary>

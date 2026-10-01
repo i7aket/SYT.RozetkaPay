@@ -85,6 +85,53 @@ internal static class OpenApiSnapshot
     }
 
     /// <summary>
+    /// The property names one component schema lists as <c>required</c>, directly or through <c>allOf</c>.
+    /// </summary>
+    internal static IReadOnlyCollection<string> RequiredPropertyNamesOfSchema(string schemaName)
+    {
+        List<string> required = [];
+        CollectRequired(Schemas().GetProperty(schemaName), required, 0);
+        return [.. required.Distinct(StringComparer.Ordinal)];
+
+        static void CollectRequired(JsonElement schema, List<string> into, int depth)
+        {
+            if (depth > 10)
+            {
+                return;
+            }
+
+            schema = Resolve(schema);
+            if (schema.TryGetProperty("required", out JsonElement names))
+            {
+                into.AddRange(names.EnumerateArray().Select(static name => name.GetString()!));
+            }
+
+            if (schema.TryGetProperty("allOf", out JsonElement composed))
+            {
+                foreach (JsonElement part in composed.EnumerateArray())
+                {
+                    CollectRequired(part, into, depth + 1);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The <c>minLength</c> / <c>maxLength</c> a schema declares on one property, or <see langword="null"/>
+    /// for a limit it does not declare.
+    /// </summary>
+    internal static (int? Min, int? Max) LengthLimitsOf(string schemaName, string propertyName)
+    {
+        JsonElement property = FindProperty(Schemas().GetProperty(schemaName), propertyName)
+            ?? throw new InvalidOperationException($"Schema '{schemaName}' declares no property '{propertyName}'.");
+
+        return (Limit(property, "minLength"), Limit(property, "maxLength"));
+
+        static int? Limit(JsonElement property, string key) =>
+            property.TryGetProperty(key, out JsonElement value) ? value.GetInt32() : null;
+    }
+
+    /// <summary>
     /// The names of the query parameters an operation declares, in declaration order.
     /// </summary>
     internal static IReadOnlyList<string> QueryParameterNamesOf(string method, string pathTemplate)

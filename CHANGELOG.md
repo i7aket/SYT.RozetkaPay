@@ -72,7 +72,14 @@ Under SemVer either one makes this a major release.
     precedence over the document); the same two members are on `BatchCustomerRequestUserDetails`, the
     same-named model of the schema;
   - `TransactionDetails.RecipientName`, `RecipientTin` (ЄДРПОУ) and `RecipientBankName` — the beneficiary's
-    bank, reported separately from `BankName`, which is always the acquiring bank.
+    bank, reported separately from `BankName`, which is always the acquiring bank;
+  - **both new request objects are validated before sending**, nested as they are: an `OrderRecipient`
+    missing any of its four fields or outside the documented lengths (`name`/`bank_name` ≤ 255, `tin` ≤ 20,
+    `iban` 15–34), or a `CustomerDocument` without `type` or `number`, raises `RozetkaPayValidationException`
+    naming the path (`Orders[0].OrderRecipient: The Iban field is required.`) and nothing is sent.
+    `Validator` is not recursive, so until now no nested annotation was read. The walk is opt-in and goes
+    *through* batch and payment-instruction orders and the batch customer without starting to enforce
+    their own annotations — a request 7.0.0 sent is not refused by 8.0.0.
 - **Parent and child orders:** `ChildOf` on `BatchOrder`, `ChildOf` / `HasChild` on `BatchOrderDetail` and
   `PaymentOperationResult` (the response of create, recurrent, confirm, cancel, refund and their retries).
 - **Customer-facing status texts:** `StatusDescriptionEn` / `StatusDescriptionUk` on `TransactionDetails` and
