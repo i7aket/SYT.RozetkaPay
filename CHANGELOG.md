@@ -36,7 +36,11 @@ Under SemVer either one makes this a major release.
 - **The partner and in-store operations, removed from the public document on 2026-09-30.** The document no
   longer publishes `GET /api/partners/v1/fee-details`, `/merchant-status`, `/transaction-details`, nor
   `POST /api/in-store-payments/v1/create`, `/confirm`, `/info`, `/refund`, and dropped the `partners` and
-  `In-Store Payments` tags. Their component schemas are still in the document, unreferenced and unchanged.
+  `In-Store Payments` tags. The partner operations' component schemas (`FeeItem`, `FeeDetailsResponse`,
+  `MerchantStatusResponse`, `TransactionDetailsListResponse`) are still in the document, unreferenced and
+  unchanged. The in-store operations had no component schemas — their bodies were declared inline in the
+  removed paths — so nothing of them remains in the document; the SDK's in-store models are now checked
+  against nothing published.
 
   Every member serving them — `IPartnerService.GetFeeDetailsAsync`, `GetMerchantStatusAsync`,
   `GetTransactionDetailsAsync` (all overloads) and `IInStorePaymentService.CreateAsync`, `ConfirmAsync`,
