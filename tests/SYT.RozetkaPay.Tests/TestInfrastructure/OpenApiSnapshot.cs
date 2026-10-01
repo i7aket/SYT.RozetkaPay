@@ -85,6 +85,47 @@ internal static class OpenApiSnapshot
     }
 
     /// <summary>
+    /// The component a named callback posts, as <c>(section, name)</c> — for example
+    /// <c>("responses", "PaymentOperationResult")</c>. An alias callback (a bare <c>$ref</c> to another) is
+    /// followed.
+    /// </summary>
+    internal static (string Section, string Name) CallbackRequestBody(string callbackName)
+    {
+        JsonElement callback = Resolve(
+            Document.Value.RootElement.GetProperty("components").GetProperty("callbacks").GetProperty(callbackName));
+        JsonElement post = callback.EnumerateObject().Single().Value.GetProperty("post");
+        string reference = post.GetProperty("requestBody").GetProperty("$ref").GetString()!;
+        string[] segments = reference.Split('/');
+
+        return (segments[^2], segments[^1]);
+    }
+
+    /// <summary>
+    /// The property names a component declares — a schema, or the JSON body of a request body or response —
+    /// directly or through <c>allOf</c>.
+    /// </summary>
+    internal static IReadOnlyCollection<string> PropertyNamesOfComponent(string section, string name)
+    {
+        JsonElement component = Document.Value.RootElement.GetProperty("components").GetProperty(section).GetProperty(name);
+        JsonElement schema = section == "schemas" ? component : BodySchemaOrDefault(component);
+
+        return [.. CollectPropertyNames(schema).Distinct(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// The component schema one property of a component refers to by <c>$ref</c>.
+    /// </summary>
+    internal static string ReferencedSchemaOf(string section, string name, string propertyName)
+    {
+        JsonElement component = Document.Value.RootElement.GetProperty("components").GetProperty(section).GetProperty(name);
+        JsonElement schema = section == "schemas" ? component : BodySchemaOrDefault(component);
+        JsonElement property = FindProperty(schema, propertyName)
+            ?? throw new InvalidOperationException($"'{name}' declares no property '{propertyName}'.");
+
+        return property.GetProperty("$ref").GetString()!.Split('/')[^1];
+    }
+
+    /// <summary>
     /// The property names one component schema lists as <c>required</c>, directly or through <c>allOf</c>.
     /// </summary>
     internal static IReadOnlyCollection<string> RequiredPropertyNamesOfSchema(string schemaName)

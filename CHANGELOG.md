@@ -17,7 +17,8 @@ RozetkaPay changed its published OpenAPI document; the SDK follows it.
 The snapshot `src/SYT.RozetkaPay/docs/openapi.json` is refreshed byte-for-byte from
 `https://docs.rozetkapay.com/openapi.json` as served on 2026-09-30 (SHA-256 `2a343b47…95fcdd`): `52` paths and
 `60` operations, down from `59` and `67`. Every difference was reconciled by hand against the document — none
-of it was regenerated.
+of it was regenerated — on the request and response models and on `PaymentWebhook`, the model of the
+processing callback's body (see *Added*).
 
 **Breaking — read before upgrading.** Nothing on the wire changes for code that compiled against 7.0.0, but
 two things can stop a build:
@@ -84,6 +85,14 @@ Under SemVer either one makes this a major release.
   `PaymentOperationResult` (the response of create, recurrent, confirm, cancel, refund and their retries).
 - **Customer-facing status texts:** `StatusDescriptionEn` / `StatusDescriptionUk` on `TransactionDetails` and
   `BatchOrderDetail`.
+- **The processing callback, `PaymentWebhook`, receives the same fields.** The callback posts a
+  `PaymentOperationResult`, but the webhook types are named differently, so the name-matched coverage test
+  never compared them and the webhook had drifted behind the response. Now, all nullable: `PaymentWebhook.ChildOf` / `HasChild`, plus the previously missing `BatchExternalId` and
+  `Metadata`; `PaymentWebhookDetails.StatusDescriptionEn` / `StatusDescriptionUk`, `RecipientIban`,
+  `RecipientName`, `RecipientTin`, `RecipientBankName`, plus `RecurrentId`, `Mid`, `Tid`, `SubscriptionId`,
+  `Fiscalization`; `WebhookPaymentMethod.ApplePay` / `GooglePay`; `WebhookCardToken.SavedCard`,
+  `BinCountry`, `BinAliasName`; `WebhookCustomer.ExternalId`. `EventKey` is unchanged.
+  `WebhookModelCoverageTests` follows the callback's `$ref`s and fails if a declared field is missing again.
 - **`ResultUserDetails.Tin`** — the payer identification code.
 - **`BinAliasName`** (e.g. `ROZETKA CARD`) on `ApplePayResponsePaymentMethod`, `GooglePayResponsePaymentMethod`
   and `CCTokenResponsePaymentMethod`.

@@ -1622,7 +1622,11 @@ SYT.RozetkaPay.Models.Payments.PaymentWebhook
     .ctor()
     Boolean ActionRequired { get; set; }
     Boolean IsSuccess { get; set; }
+    Boolean? HasChild { get; set; }
+    Dictionary<String, String> Metadata { get; set; }
     PaymentWebhookDetails Details { get; set; }
+    String BatchExternalId { get; set; }
+    String ChildOf { get; set; }
     String EventKey { get; }
     String ExternalId { get; set; }
     String Id { get; set; }
@@ -1638,6 +1642,7 @@ SYT.RozetkaPay.Models.Payments.PaymentWebhookDetails
     DateTime? CreatedAt { get; set; }
     DateTime? ProcessedAt { get; set; }
     Decimal? Amount { get; set; }
+    Fiscalization Fiscalization { get; set; }
     String AuthCode { get; set; }
     String BankName { get; set; }
     String BillingOrderId { get; set; }
@@ -1646,15 +1651,25 @@ SYT.RozetkaPay.Models.Payments.PaymentWebhookDetails
     String Description { get; set; }
     String GatewayOrderId { get; set; }
     String Method { get; set; }
+    String Mid { get; set; }
     String OperationId { get; set; }
     String Payload { get; set; }
     String PaymentId { get; set; }
+    String RecipientBankName { get; set; }
     String RecipientCardMask { get; set; }
+    String RecipientIban { get; set; }
+    String RecipientName { get; set; }
+    String RecipientTin { get; set; }
+    String RecurrentId { get; set; }
     String Rrn { get; set; }
     String Status { get; set; }
     String StatusCode { get; set; }
     String StatusDescription { get; set; }
+    String StatusDescriptionEn { get; set; }
+    String StatusDescriptionUk { get; set; }
+    String SubscriptionId { get; set; }
     String TerminalName { get; set; }
+    String Tid { get; set; }
     String TransactionId { get; set; }
     WebhookFee Fee { get; set; }
 SYT.RozetkaPay.Models.Payments.RecipientCCNumberRequestPaymentMethod
@@ -1755,8 +1770,11 @@ SYT.RozetkaPay.Models.Payments.WalletItem
     String Type { get; set; }
 SYT.RozetkaPay.Models.Payments.WebhookCardToken
     .ctor()
+    Boolean? SavedCard { get; set; }
     DateTime? ExpiresAt { get; set; }
     String BankShortName { get; set; }
+    String BinAliasName { get; set; }
+    String BinCountry { get; set; }
     String Mask { get; set; }
     String PaymentSystem { get; set; }
     String Token { get; set; }
@@ -1767,6 +1785,7 @@ SYT.RozetkaPay.Models.Payments.WebhookCustomer
     String City { get; set; }
     String Country { get; set; }
     String Email { get; set; }
+    String ExternalId { get; set; }
     String Fingerprint { get; set; }
     String FirstName { get; set; }
     String IpAddress { get; set; }
@@ -1780,6 +1799,8 @@ SYT.RozetkaPay.Models.Payments.WebhookFee
     String Currency { get; set; }
 SYT.RozetkaPay.Models.Payments.WebhookPaymentMethod
     .ctor()
+    ApplePayResponsePaymentMethod ApplePay { get; set; }
+    GooglePayResponsePaymentMethod GooglePay { get; set; }
     String Type { get; set; }
     WebhookCardToken CardToken { get; set; }
 SYT.RozetkaPay.Models.Payouts.CancelCashPayoutRequest

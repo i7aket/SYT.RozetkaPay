@@ -7,6 +7,13 @@ namespace SYT.RozetkaPay.Models.Payments;
 /// <summary>
 /// RozetkaPay webhook callback payload
 /// </summary>
+/// <remarks>
+/// The document's processing callback (<c>CPAYProcessingCallback</c>, aliased as
+/// <c>CardPayProcessingCallback</c>) posts a <c>PaymentOperationResult</c>. This type is the SDK's historical,
+/// lenient shape of that body — strings where the response model has enums, a few fields the document does not
+/// declare — and carries every field the document declares for it, all nullable, so a field the provider omits
+/// reads as <see langword="null"/>. <c>WebhookModelCoverageTests</c> keeps it that way.
+/// </remarks>
 public class PaymentWebhook
 {
     /// <summary>
@@ -80,6 +87,33 @@ public class PaymentWebhook
     /// </summary>
     [JsonPropertyName("operation")]
     public string? Operation { get; set; }
+
+    /// <summary>
+    /// External identifier of the batch the payment belongs to (<c>batch_external_id</c>), for batch payments.
+    /// </summary>
+    [JsonPropertyName("batch_external_id")]
+    public string? BatchExternalId { get; set; }
+
+    /// <summary>
+    /// External ID of the parent order (<c>child_of</c>). Empty when <see cref="HasChild"/> is
+    /// <see langword="true"/>. Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("child_of")]
+    public string? ChildOf { get; set; }
+
+    /// <summary>
+    /// Whether this order has a child order (<c>has_child</c>); <see langword="false"/> when
+    /// <see cref="ChildOf"/> carries a value, <see langword="null"/> when the provider omitted it. Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("has_child")]
+    public bool? HasChild { get; set; }
+
+    /// <summary>
+    /// Merchant-defined data sent with the payment (<c>metadata</c>).
+    /// </summary>
+    [JsonPropertyName("metadata")]
+    public Dictionary<string, string>? Metadata { get; set; }
 
     /// <summary>
     /// A key that identifies this delivery, for deduplication.
@@ -258,6 +292,79 @@ public class PaymentWebhookDetails
     /// </summary>
     [JsonPropertyName("recipient_cc_mask")]
     public string? RecipientCardMask { get; set; }
+
+    /// <summary>
+    /// Customer-facing description of the operation status in English (<c>status_description_en</c>). Added
+    /// to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("status_description_en")]
+    public string? StatusDescriptionEn { get; set; }
+
+    /// <summary>
+    /// Customer-facing description of the operation status in Ukrainian (<c>status_description_uk</c>).
+    /// Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("status_description_uk")]
+    public string? StatusDescriptionUk { get; set; }
+
+    /// <summary>
+    /// Account of the transfer beneficiary (<c>recipient_iban</c>). For a non-contractual credit transfer this
+    /// is the account named in <see cref="RecipientName"/>; otherwise it is the card2iban destination.
+    /// </summary>
+    [JsonPropertyName("recipient_iban")]
+    public string? RecipientIban { get; set; }
+
+    /// <summary>
+    /// Beneficiary of a non-contractual credit transfer, for example a treasury or budget payment
+    /// (<c>recipient_name</c>). Present only for such payments. Added to the published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("recipient_name")]
+    public string? RecipientName { get; set; }
+
+    /// <summary>
+    /// Business registration number (ЄДРПОУ) of the beneficiary (<c>recipient_tin</c>). Added to the
+    /// published schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("recipient_tin")]
+    public string? RecipientTin { get; set; }
+
+    /// <summary>
+    /// Bank holding the beneficiary's account (<c>recipient_bank_name</c>). Reported separately from
+    /// <see cref="BankName"/>, which is always the acquiring bank of the terminal. Added to the published
+    /// schema on 2026-09-30.
+    /// </summary>
+    [JsonPropertyName("recipient_bank_name")]
+    public string? RecipientBankName { get; set; }
+
+    /// <summary>
+    /// Identifier of a successful recurrent-initiating payment (<c>recurrent_id</c>).
+    /// </summary>
+    [JsonPropertyName("recurrent_id")]
+    public string? RecurrentId { get; set; }
+
+    /// <summary>
+    /// Merchant identifier (<c>mid</c>).
+    /// </summary>
+    [JsonPropertyName("mid")]
+    public string? Mid { get; set; }
+
+    /// <summary>
+    /// Terminal identifier (<c>tid</c>).
+    /// </summary>
+    [JsonPropertyName("tid")]
+    public string? Tid { get; set; }
+
+    /// <summary>
+    /// Subscription the payment belongs to (<c>subscription_id</c>).
+    /// </summary>
+    [JsonPropertyName("subscription_id")]
+    public string? SubscriptionId { get; set; }
+
+    /// <summary>
+    /// Fiscalization details (<c>fiscalization</c>).
+    /// </summary>
+    [JsonPropertyName("fiscalization")]
+    public Fiscalization? Fiscalization { get; set; }
 }
 
 /// <summary>
@@ -295,6 +402,18 @@ public class WebhookPaymentMethod
     /// </summary>
     [JsonPropertyName("cc_token")]
     public WebhookCardToken? CardToken { get; set; }
+
+    /// <summary>
+    /// Apple Pay details (<c>apple_pay</c>), when the payer paid with Apple Pay.
+    /// </summary>
+    [JsonPropertyName("apple_pay")]
+    public ApplePayResponsePaymentMethod? ApplePay { get; set; }
+
+    /// <summary>
+    /// Google Pay details (<c>google_pay</c>), when the payer paid with Google Pay.
+    /// </summary>
+    [JsonPropertyName("google_pay")]
+    public GooglePayResponsePaymentMethod? GooglePay { get; set; }
 }
 
 /// <summary>
@@ -331,6 +450,24 @@ public class WebhookCardToken
     /// </summary>
     [JsonPropertyName("payment_system")]
     public string? PaymentSystem { get; set; }
+
+    /// <summary>
+    /// Whether the card was saved (<c>saved_card</c>).
+    /// </summary>
+    [JsonPropertyName("saved_card")]
+    public bool? SavedCard { get; set; }
+
+    /// <summary>
+    /// Country of the card's BIN (<c>bin_country</c>).
+    /// </summary>
+    [JsonPropertyName("bin_country")]
+    public string? BinCountry { get; set; }
+
+    /// <summary>
+    /// Alias name of the card BIN (<c>bin_alias_name</c>), for example <c>ROZETKA CARD</c>.
+    /// </summary>
+    [JsonPropertyName("bin_alias_name")]
+    public string? BinAliasName { get; set; }
 }
 
 /// <summary>
@@ -409,4 +546,10 @@ public class WebhookCustomer
     /// </summary>
     [JsonPropertyName("fingerprint")]
     public string? Fingerprint { get; set; }
-} 
+
+    /// <summary>
+    /// User ID in the merchant's system (<c>external_id</c>).
+    /// </summary>
+    [JsonPropertyName("external_id")]
+    public string? ExternalId { get; set; }
+}
