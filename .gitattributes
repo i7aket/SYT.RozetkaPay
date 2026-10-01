@@ -1,0 +1,6 @@
+# Byte-pinned: OpenApi59OperationTests asserts the SHA-256 of the bytes RozetkaPay served (LF line endings).
+# A checkout with core.autocrlf=true rewrote them to CRLF and failed that test on Windows. Never convert.
+src/SYT.RozetkaPay/docs/openapi.json -text
+
+# Shell scripts run on Linux CI and under Git Bash; a CRLF line ending breaks the shebang and `set -euo pipefail`.
+*.sh text eol=lf

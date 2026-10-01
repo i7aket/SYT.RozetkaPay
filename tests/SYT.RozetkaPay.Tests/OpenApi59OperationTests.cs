@@ -23,8 +23,8 @@ public class OpenApi59OperationTests
 {
     /// <summary>
     /// SHA-256 of the official document observed on 2026-09-30. Computed over the bytes as served (LF line
-    /// endings); a Windows checkout with <c>core.autocrlf=true</c> rewrites them and fails this test locally,
-    /// which is the snapshot guard working, not a defect.
+    /// endings). <c>.gitattributes</c> marks the snapshot <c>-text</c>, so a Windows checkout with
+    /// <c>core.autocrlf=true</c> no longer rewrites them to CRLF; a snapshot that does not match is a real edit.
     /// </summary>
     private const string PinnedSha256 =
         "2a343b47aed37e5d4d7fd10c1e6dfb74d7cadf6a96ced7cc1f0d96689395fcdd";
