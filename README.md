@@ -100,18 +100,31 @@ selects. **That combination does not work.** Checked live on `2026-09-30` with t
 | Host | `GET /api/merchants/v1/me` with the public pair |
 | --- | --- |
 | `https://api-epdev.rozetkapay.com` (`Sandbox`) | `401 authorization_failed` |
-| `https://api.rozetkapay.com` (`Production`) | `200` — the pair authenticates, and creates real hosted checkouts |
+| `https://api.rozetkapay.com` (`Production`) | `200` — the pair authenticates on the live host |
+
+What RozetkaPay's documentation says, and what it does not (read on `2026-10-01`):
+
+- The pairs are a **shared test merchant**, published to everyone, and "intended only for the test
+  environment" — the page names `api-epdev` as that environment. Real payments require onboarding.
+- Its [test cards](https://docs.rozetkapay.com/sandbox/test-cards/) work "only with the `stub` bank",
+  "exclusively on the development environment".
+- It says nothing about the pair on `api.rozetkapay.com`: not that it is supported there, and not that
+  payments made there are free of real money. Production is the live processing host, and the documented
+  test cards are not documented to work on it.
 
 So:
 
 - A first run with `Sandbox` and the published pair fails at authentication. That reads like a broken
-  SDK and is not — the host rejects the pair.
-- To try the SDK with the public pair, use `Environment = Production` (the default) and treat the account
-  as a test merchant: test cards only, non-live amounts, never real customers. RozetkaPay states the pair
-  is for testing only, and real payments require onboarding.
+  SDK and is not — the host rejects the pair. Report it to RozetkaPay; the SDK cannot fix it.
+- **Do not point the public pair at `Production` to experiment.** That it authenticates there is an
+  observation, not a documented test path: it is the live host, the merchant is shared with everyone who
+  read the page, and whether a card entered on a checkout it creates is really charged is undocumented.
+  If you do it anyway, only read-only calls (`validateMerchantKeys`, `getPlans`, bank lists) are safe to
+  assume harmless.
+- For real testing, ask RozetkaPay for credentials of your own on `api-epdev` and use `Sandbox` with the
+  documented test cards.
 - `Sandbox` is kept pointing at `api-epdev`: it is the development server the OpenAPI document publishes,
-  and quietly repointing an environment named `Sandbox` at production would be a worse surprise. Use it
-  with credentials RozetkaPay issued for that host.
+  and quietly repointing an environment named `Sandbox` at production would be a worse surprise.
 
 The opt-in live smoke test (`SandboxSmokeTests`, enabled by `ROZETKAPAY_SANDBOX_LOGIN` and
 `ROZETKAPAY_SANDBOX_PASSWORD`) deliberately targets `Sandbox`, so it fails with the public pair for the

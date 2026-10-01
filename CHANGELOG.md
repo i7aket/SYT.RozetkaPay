@@ -133,7 +133,10 @@ Under SemVer either one makes this a major release.
 - **"Sandbox and RozetkaPay's public test credentials"** in `README.md` and the package README — moved out of
   the 2.0.0 notes (EXP-424), where nobody configuring the SDK would look. RozetkaPay shows its public test pair next to
   `api-epdev.rozetkapay.com`; that host answers it `401`, production answers `200` (re-verified live on
-  2026-09-30). `Environment = Sandbox` still points at `api-epdev`.
+  2026-09-30). `Environment = Sandbox` still points at `api-epdev`. The section does **not** recommend the
+  public pair on `Production`: RozetkaPay documents it as a shared test merchant for the test environment
+  only, and its test cards for the development `stub` bank only — nothing documents the pair on the live
+  host, or says payments made there carry no real money.
 
 ### Migration
 

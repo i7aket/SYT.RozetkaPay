@@ -282,15 +282,22 @@ next to `api-epdev.rozetkapay.com` — the `Sandbox` host. **Those two do not wo
 | `Environment` | Host | Result with the public pair |
 | --- | --- | --- |
 | `Sandbox` | `https://api-epdev.rozetkapay.com` | `401 authorization_failed` (`RozetkaPayAuthorizationException`) |
-| `Production` | `https://api.rozetkapay.com` | `200`; the same pair also creates real hosted checkouts |
+| `Production` | `https://api.rozetkapay.com` | `200` — the pair authenticates on the live host |
+
+RozetkaPay's documentation (read 2026-10-01) calls the pairs a **shared test merchant** "intended only for the
+test environment" (`api-epdev`); its [test cards](https://docs.rozetkapay.com/sandbox/test-cards/) work "only
+with the `stub` bank", "exclusively on the development environment". It says nothing about the pair on
+`api.rozetkapay.com` — neither that it is supported there nor that payments made there are free of real money.
 
 - If a first run with `Sandbox` and the public pair fails at authentication, the SDK is not broken — the
-  host rejects the pair.
-- To experiment with the public pair, leave `Environment` at `Production` and treat the account as a test
-  merchant: test cards only, non-live amounts, no real customers. RozetkaPay states the pair is for testing,
-  and that real payments require onboarding.
-- `Sandbox` keeps pointing at `api-epdev`, the development server the OpenAPI document publishes. Use it with
-  credentials RozetkaPay issued for that host.
+  host rejects the pair. Report it to RozetkaPay.
+- **Do not point the public pair at `Production` to experiment.** It authenticates there, but that is an
+  observation, not a documented test path: production is the live host, the merchant is shared with every
+  reader of the page, and whether a card entered on a checkout it creates is really charged is undocumented.
+  Only read-only calls (`validateMerchantKeys`, `getPlans`, bank lists) are safe to assume harmless there.
+- For real testing, ask RozetkaPay for credentials of your own on `api-epdev` and use `Sandbox` with the
+  documented test cards. `Sandbox` keeps pointing at `api-epdev`, the development server the OpenAPI
+  document publishes.
 
 ### Live sandbox smoke test
 
